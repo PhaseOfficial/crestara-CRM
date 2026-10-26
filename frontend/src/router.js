@@ -94,8 +94,7 @@ const routes = [
   {
     path: '/organizations/:organizationId',
     name: 'Organization',
-    component: () => import(`@/pages/${handleMobileView('Organization')}.vue`),
-    props: true,
+    redirect: (to) => ({ path: `/clients/${to.params.organizationId}` }),
   },
   {
     path: '/clients/:clientId',

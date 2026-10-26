@@ -70,22 +70,140 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT OR UPDATE ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 3. ORGANIZATIONS / ACCOUNTS
-CREATE TABLE IF NOT EXISTS public.organizations (
+-- 3. CUSTOMERS MASTER TABLE (Clients / Organizations Single Source of Truth)
+CREATE TABLE IF NOT EXISTS public.customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  domain TEXT,
-  website TEXT,
-  phone TEXT,
+  customer_type TEXT NOT NULL CHECK (customer_type IN ('Business', 'Individual', 'Non-Profit', 'Government')) DEFAULT 'Business',
+  status TEXT NOT NULL CHECK (status IN ('Active', 'Inactive', 'Suspended', 'Prospect', 'Archived')) DEFAULT 'Active',
+  lifecycle_stage TEXT CHECK (lifecycle_stage IN ('Onboarding', 'Active', 'At-Risk', 'Churned', 'Advocate')) DEFAULT 'Onboarding',
+  account_manager_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+
+  -- B2B Corporate Registry
+  company_name TEXT NOT NULL,
+  legal_name TEXT,
+  trade_name TEXT,
+  company_registration_number TEXT,
+  tin TEXT,
+  vat_number TEXT,
+  duns_number TEXT,
+  legal_structure TEXT,
   industry TEXT,
-  territory TEXT,
+  sub_industry TEXT,
+  incorporation_date DATE,
   annual_revenue NUMERIC(15, 2),
-  employee_count INTEGER,
-  logo TEXT,
-  owner_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  annual_revenue_currency TEXT DEFAULT 'USD',
+  employee_count_range TEXT,
+  website TEXT,
+  linkedin_url TEXT,
+
+  -- B2C Demographics & Contacts
+  salutation TEXT,
+  first_name TEXT,
+  middle_name TEXT,
+  last_name TEXT,
+  gender TEXT CHECK (gender IN ('Male', 'Female', 'Non-Binary', 'Other', 'Prefer Not to Say')),
+  date_of_birth DATE,
+  age_group TEXT CHECK (age_group IN ('Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+')),
+  national_id_number TEXT,
+  national_id_type TEXT,
+  nationality TEXT,
+  marital_status TEXT CHECK (marital_status IN ('Single', 'Married', 'Divorced', 'Widowed', 'Other')),
+  employment_status TEXT CHECK (employment_status IN ('Employed', 'Self-Employed', 'Business Owner', 'Student', 'Retired', 'Other')),
+  education_level TEXT,
+  job_title TEXT,
+  department TEXT,
+
+  -- Tax Exemption & Verification
+  tax_id TEXT,
+  tax_exempt BOOLEAN DEFAULT FALSE,
+  tax_exempt_certificate_number TEXT,
+  tax_exempt_reason TEXT,
+  kyc_status TEXT CHECK (kyc_status IN ('Unverified', 'Pending', 'Verified', 'Rejected')) DEFAULT 'Unverified',
+  kyc_verified_at TIMESTAMPTZ,
+
+  -- Contact Points
+  primary_email TEXT NOT NULL,
+  billing_email TEXT,
+  phone TEXT,
+  mobile_no TEXT,
+  whatsapp_number TEXT,
+  emergency_contact_name TEXT,
+  emergency_contact_phone TEXT,
+
+  -- Structured Billing Address
+  billing_address_line1 TEXT,
+  billing_address_line2 TEXT,
+  billing_city TEXT,
+  billing_state_province TEXT,
+  billing_postal_code TEXT,
+  billing_country TEXT DEFAULT 'United States',
+
+  -- Structured Shipping / Service Address
+  shipping_address_same_as_billing BOOLEAN DEFAULT TRUE,
+  shipping_address_line1 TEXT,
+  shipping_address_line2 TEXT,
+  shipping_city TEXT,
+  shipping_state_province TEXT,
+  shipping_postal_code TEXT,
+  shipping_country TEXT,
+  shipping_delivery_instructions TEXT,
+
+  -- Commercial Terms Defaults
+  default_currency TEXT NOT NULL DEFAULT 'USD',
+  default_payment_terms TEXT NOT NULL DEFAULT 'Net 30',
+  default_payment_method TEXT DEFAULT 'Bank Transfer',
+  credit_limit NUMERIC(15, 2) DEFAULT 0.00,
+  credit_hold BOOLEAN DEFAULT FALSE,
+  default_discount_percentage NUMERIC(5, 2) DEFAULT 0.00,
+  price_tier TEXT DEFAULT 'Standard',
+
+  -- Preferences & Consents
+  preferred_language TEXT DEFAULT 'en',
+  preferred_timezone TEXT DEFAULT 'UTC',
+  preferred_contact_method TEXT CHECK (preferred_contact_method IN ('Email', 'Phone', 'SMS', 'WhatsApp', 'Mail')) DEFAULT 'Email',
+  invoice_delivery_method TEXT CHECK (invoice_delivery_method IN ('Email', 'Client Portal', 'Postal Mail', 'Electronic Data Interchange (EDI)')) DEFAULT 'Email',
+  marketing_opt_in BOOLEAN DEFAULT FALSE,
+  marketing_opt_in_date TIMESTAMPTZ,
+  e_invoicing_consent BOOLEAN DEFAULT TRUE,
+  gdpr_data_processing_consent BOOLEAN DEFAULT TRUE,
+
+  -- Analytics & Attribution
+  customer_segment TEXT DEFAULT 'Standard',
+  clv_tier TEXT CHECK (clv_tier IN ('Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond')) DEFAULT 'Bronze',
+  territory TEXT,
+  acquisition_channel TEXT,
+  acquisition_date DATE,
+  churn_risk_level TEXT CHECK (churn_risk_level IN ('Low', 'Medium', 'High', 'Critical')) DEFAULT 'Low',
+  health_score TEXT CHECK (health_score IN ('Healthy', 'Neutral', 'At-Risk', 'Critical')) DEFAULT 'Healthy',
+  nps_score INTEGER CHECK (nps_score BETWEEN 0 AND 10),
+
+  -- Profile Completeness & Onboarding Tracking
+  is_profile_complete BOOLEAN DEFAULT FALSE,
+  profile_completion_percentage INTEGER DEFAULT 20,
+  onboarding_steps_completed JSONB DEFAULT '[]'::jsonb,
+
+  -- Audit & Metadata
+  internal_notes TEXT,
+  tags TEXT[] DEFAULT ARRAY[]::TEXT[],
+  custom_fields JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Backward-Compatibility View for legacy organizations references
+CREATE OR REPLACE VIEW public.organizations AS
+  SELECT
+    id,
+    company_name AS name,
+    website,
+    phone,
+    industry,
+    territory,
+    annual_revenue,
+    account_manager_id AS owner_id,
+    created_at,
+    updated_at
+  FROM public.customers;
 
 -- 4. CONTACTS
 CREATE TABLE IF NOT EXISTS public.contacts (
@@ -102,7 +220,8 @@ CREATE TABLE IF NOT EXISTS public.contacts (
   phone TEXT,
   mobile_no TEXT,
   job_title TEXT,
-  organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
+  customer_id UUID REFERENCES public.customers(id) ON DELETE CASCADE,
+  organization_id UUID REFERENCES public.customers(id) ON DELETE CASCADE,
   is_primary BOOLEAN DEFAULT FALSE,
   owner_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -125,7 +244,8 @@ CREATE TABLE IF NOT EXISTS public.leads (
   phone TEXT,
   job_title TEXT,
   organization TEXT,
-  organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
+  customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
+  organization_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'New', -- 'New', 'Contacted', 'Qualified', 'Lost'
   source TEXT, -- 'Website', 'Referral', 'Cold Call', 'LinkedIn', 'Social Media'
   territory TEXT,
@@ -146,7 +266,8 @@ CREATE TABLE IF NOT EXISTS public.deals (
   currency TEXT DEFAULT 'USD',
   status TEXT NOT NULL DEFAULT 'Qualification', -- 'Qualification', 'Demo', 'Proposal', 'Won', 'Lost'
   pipeline TEXT DEFAULT 'Standard',
-  organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
+  customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
+  organization_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
   contact_id UUID REFERENCES public.contacts(id) ON DELETE SET NULL,
   lead_id UUID REFERENCES public.leads(id) ON DELETE SET NULL,
   expected_close_date DATE,
@@ -274,128 +395,7 @@ CREATE INDEX IF NOT EXISTS idx_tasks_reference ON public.tasks(reference_doctype
 CREATE INDEX IF NOT EXISTS idx_notes_reference ON public.notes(reference_doctype, reference_id);
 CREATE INDEX IF NOT EXISTS idx_activities_reference ON public.activities(reference_doctype, reference_id);
 
--- 12. CUSTOMERS MASTER TABLE (Keyed 1:1 to profiles.id for role='Customer')
-CREATE TABLE IF NOT EXISTS public.customers (
-  id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-  customer_type TEXT NOT NULL CHECK (customer_type IN ('Business', 'Individual', 'Non-Profit', 'Government')) DEFAULT 'Business',
-  status TEXT NOT NULL CHECK (status IN ('Active', 'Inactive', 'Suspended', 'Prospect', 'Archived')) DEFAULT 'Active',
-  lifecycle_stage TEXT CHECK (lifecycle_stage IN ('Onboarding', 'Active', 'At-Risk', 'Churned', 'Advocate')) DEFAULT 'Onboarding',
-  organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
-  account_manager_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-
-  -- B2B Corporate Registry
-  company_name TEXT,
-  legal_name TEXT,
-  trade_name TEXT,
-  company_registration_number TEXT,
-  tin TEXT,
-  vat_number TEXT,
-  duns_number TEXT,
-  legal_structure TEXT,
-  industry TEXT,
-  sub_industry TEXT,
-  incorporation_date DATE,
-  annual_revenue NUMERIC(15, 2),
-  annual_revenue_currency TEXT DEFAULT 'USD',
-  employee_count_range TEXT,
-  website TEXT,
-  linkedin_url TEXT,
-
-  -- B2C Demographics & Analytics
-  salutation TEXT,
-  first_name TEXT,
-  middle_name TEXT,
-  last_name TEXT,
-  gender TEXT CHECK (gender IN ('Male', 'Female', 'Non-Binary', 'Other', 'Prefer Not to Say')),
-  date_of_birth DATE,
-  age_group TEXT CHECK (age_group IN ('Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+')),
-  national_id_number TEXT,
-  national_id_type TEXT,
-  nationality TEXT,
-  marital_status TEXT CHECK (marital_status IN ('Single', 'Married', 'Divorced', 'Widowed', 'Other')),
-  employment_status TEXT CHECK (employment_status IN ('Employed', 'Self-Employed', 'Business Owner', 'Student', 'Retired', 'Other')),
-  education_level TEXT,
-  job_title TEXT,
-  department TEXT,
-
-  -- Tax Exemption & Verification
-  tax_id TEXT,
-  tax_exempt BOOLEAN DEFAULT FALSE,
-  tax_exempt_certificate_number TEXT,
-  tax_exempt_reason TEXT,
-  kyc_status TEXT CHECK (kyc_status IN ('Unverified', 'Pending', 'Verified', 'Rejected')) DEFAULT 'Unverified',
-  kyc_verified_at TIMESTAMPTZ,
-
-  -- Contact Points
-  primary_email TEXT NOT NULL,
-  billing_email TEXT,
-  phone TEXT,
-  mobile_no TEXT,
-  whatsapp_number TEXT,
-  emergency_contact_name TEXT,
-  emergency_contact_phone TEXT,
-
-  -- Structured Billing Address
-  billing_address_line1 TEXT,
-  billing_address_line2 TEXT,
-  billing_city TEXT,
-  billing_state_province TEXT,
-  billing_postal_code TEXT,
-  billing_country TEXT DEFAULT 'United States',
-
-  -- Structured Shipping / Service Address
-  shipping_address_same_as_billing BOOLEAN DEFAULT TRUE,
-  shipping_address_line1 TEXT,
-  shipping_address_line2 TEXT,
-  shipping_city TEXT,
-  shipping_state_province TEXT,
-  shipping_postal_code TEXT,
-  shipping_country TEXT,
-  shipping_delivery_instructions TEXT,
-
-  -- Commercial Terms Defaults
-  default_currency TEXT NOT NULL DEFAULT 'USD',
-  default_payment_terms TEXT NOT NULL DEFAULT 'Net 30',
-  default_payment_method TEXT DEFAULT 'Bank Transfer',
-  credit_limit NUMERIC(15, 2) DEFAULT 0.00,
-  credit_hold BOOLEAN DEFAULT FALSE,
-  default_discount_percentage NUMERIC(5, 2) DEFAULT 0.00,
-  price_tier TEXT DEFAULT 'Standard',
-
-  -- Preferences & Consents
-  preferred_language TEXT DEFAULT 'en',
-  preferred_timezone TEXT DEFAULT 'UTC',
-  preferred_contact_method TEXT CHECK (preferred_contact_method IN ('Email', 'Phone', 'SMS', 'WhatsApp', 'Mail')) DEFAULT 'Email',
-  invoice_delivery_method TEXT CHECK (invoice_delivery_method IN ('Email', 'Client Portal', 'Postal Mail', 'Electronic Data Interchange (EDI)')) DEFAULT 'Email',
-  marketing_opt_in BOOLEAN DEFAULT FALSE,
-  marketing_opt_in_date TIMESTAMPTZ,
-  e_invoicing_consent BOOLEAN DEFAULT TRUE,
-  gdpr_data_processing_consent BOOLEAN DEFAULT TRUE,
-
-  -- Analytics & Attribution
-  customer_segment TEXT DEFAULT 'Standard',
-  clv_tier TEXT CHECK (clv_tier IN ('Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond')) DEFAULT 'Bronze',
-  territory TEXT,
-  acquisition_channel TEXT,
-  acquisition_date DATE,
-  churn_risk_level TEXT CHECK (churn_risk_level IN ('Low', 'Medium', 'High', 'Critical')) DEFAULT 'Low',
-  health_score TEXT CHECK (health_score IN ('Healthy', 'Neutral', 'At-Risk', 'Critical')) DEFAULT 'Healthy',
-  nps_score INTEGER CHECK (nps_score BETWEEN 0 AND 10),
-
-  -- Profile Completeness & Onboarding Tracking
-  is_profile_complete BOOLEAN DEFAULT FALSE,
-  profile_completion_percentage INTEGER DEFAULT 20,
-  onboarding_steps_completed JSONB DEFAULT '[]'::jsonb,
-
-  -- Audit & Metadata
-  internal_notes TEXT,
-  tags TEXT[] DEFAULT ARRAY[]::TEXT[],
-  custom_fields JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
--- 13. CLIENT CHANGE REQUESTS
+-- 12. CLIENT CHANGE REQUESTS
 CREATE TABLE IF NOT EXISTS public.client_change_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,

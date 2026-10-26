@@ -652,41 +652,39 @@ export const useBusinessStore = defineStore('business-store', () => {
   async function fetchClientsFromSupabase() {
     isFetchingClients.value = true
     try {
-      // 1. Fetch from customers table (portal & B2B master records)
+      // Fetch directly from customers master table with associated contacts
       const { data: customerData, error: customerErr } = await supabase
         .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      // 2. Fetch from organizations and associated contacts
-      const { data: orgData, error: orgErr } = await supabase
-        .from('organizations')
         .select('*, contacts(*)')
         .order('created_at', { ascending: false })
 
-      const combined = []
-      const processedIds = new Set()
-      const processedEmails = new Set()
+      if (!customerErr && customerData) {
+        customers.value = customerData.map((c) => {
+          const contactList = (c.contacts && c.contacts.length > 0)
+            ? c.contacts.map((ct) => ({
+                id: ct.id,
+                first_name: ct.first_name || '',
+                last_name: ct.last_name || '',
+                name: ct.full_name || `${ct.first_name} ${ct.last_name || ''}`.trim(),
+                email: ct.email || '',
+                phone: ct.phone || ct.mobile_no || '',
+                role: ct.job_title || 'Contact Person',
+                is_primary: ct.is_primary || false,
+              }))
+            : [
+                {
+                  id: `ct-${c.id}`,
+                  first_name: c.first_name || '',
+                  last_name: c.last_name || '',
+                  name: c.first_name ? `${c.first_name} ${c.last_name || ''}`.trim() : (c.primary_email ? c.primary_email.split('@')[0] : 'Primary Contact'),
+                  email: c.primary_email || c.billing_email || '',
+                  phone: c.phone || c.mobile_no || '',
+                  role: c.job_title || 'Primary Representative',
+                  is_primary: true,
+                },
+              ]
 
-      // Ingest Supabase customers
-      if (!customerErr && customerData && customerData.length > 0) {
-        customerData.forEach((c) => {
-          processedIds.add(c.id)
-          if (c.primary_email) processedEmails.add(c.primary_email.toLowerCase())
-          if (c.billing_email) processedEmails.add(c.billing_email.toLowerCase())
-
-          const contactPerson = {
-            id: `ct-${c.id}`,
-            first_name: c.first_name || '',
-            last_name: c.last_name || '',
-            name: c.first_name ? `${c.first_name} ${c.last_name || ''}`.trim() : (c.primary_email ? c.primary_email.split('@')[0] : 'Primary Contact'),
-            email: c.primary_email || c.billing_email || '',
-            phone: c.phone || c.mobile_no || '',
-            role: c.job_title || 'Primary Representative',
-            is_primary: true,
-          }
-
-          combined.push({
+          return {
             id: c.id,
             customer_type: c.customer_type || 'Business',
             status: c.status || 'Active',
@@ -716,82 +714,14 @@ export const useBusinessStore = defineStore('business-store', () => {
             default_payment_terms: c.default_payment_terms || 'Net 30',
             credit_limit: Number(c.credit_limit) || 25000.0,
             is_profile_complete: c.is_profile_complete ?? true,
-            contacts: [contactPerson],
+            contacts: contactList,
             created_at: c.created_at,
             updated_at: c.updated_at,
-          })
+          }
         })
+
+        saveStorage('customers', customers.value)
       }
-
-      // Ingest Supabase organizations & contacts
-      if (!orgErr && orgData && orgData.length > 0) {
-        orgData.forEach((org) => {
-          if (processedIds.has(org.id)) return
-
-          const primaryContact = (org.contacts || []).find((ct) => ct.is_primary) || (org.contacts || [])[0]
-          const contactEmail = primaryContact?.email || ''
-          if (contactEmail && processedEmails.has(contactEmail.toLowerCase())) return
-
-          const contactList = (org.contacts || []).map((ct) => ({
-            id: ct.id,
-            first_name: ct.first_name || '',
-            last_name: ct.last_name || '',
-            name: ct.full_name || `${ct.first_name} ${ct.last_name || ''}`.trim(),
-            email: ct.email || '',
-            phone: ct.phone || ct.mobile_no || '',
-            role: ct.job_title || 'Contact Person',
-            is_primary: ct.is_primary || false,
-          }))
-
-          combined.push({
-            id: org.id,
-            customer_type: 'Business',
-            status: 'Active',
-            lifecycle_stage: 'Active',
-            company_name: org.name,
-            legal_structure: 'Corporation',
-            company_registration_number: '',
-            tin: '',
-            vat_number: '',
-            industry: org.industry || 'Technology',
-            website: org.website || '',
-            first_name: primaryContact?.first_name || '',
-            last_name: primaryContact?.last_name || '',
-            job_title: primaryContact?.job_title || 'Primary Contact',
-            primary_email: primaryContact?.email || '',
-            billing_email: primaryContact?.email || '',
-            phone: org.phone || primaryContact?.phone || '',
-            mobile_no: primaryContact?.mobile_no || '',
-            national_id_number: '',
-            billing_address_line1: '',
-            billing_city: '',
-            billing_state_province: '',
-            billing_postal_code: '',
-            billing_country: 'United States',
-            default_currency: 'USD',
-            default_payment_terms: 'Net 30',
-            credit_limit: 25000.0,
-            is_profile_complete: true,
-            contacts: contactList.length > 0 ? contactList : [
-              {
-                id: `ct-${org.id}`,
-                first_name: 'Primary',
-                last_name: 'Contact',
-                name: 'Primary Contact',
-                email: primaryContact?.email || '',
-                phone: org.phone || '',
-                role: 'Representative',
-                is_primary: true,
-              }
-            ],
-            created_at: org.created_at,
-            updated_at: org.updated_at,
-          })
-        })
-      }
-
-      customers.value = combined
-      saveStorage('customers', customers.value)
     } catch (err) {
       console.warn('[Business] Could not fetch clients from Supabase:', err)
     } finally {
@@ -804,85 +734,41 @@ export const useBusinessStore = defineStore('business-store', () => {
     try {
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select('*, contacts(*)')
         .eq('id', customerId)
         .maybeSingle()
 
       if (!error && data) {
-        const idx = customers.value.findIndex((c) => c.id === data.id)
-        if (idx !== -1) {
-          customers.value[idx] = { ...customers.value[idx], ...data }
-        } else {
-          customers.value.unshift(data)
-        }
-        saveStorage('customers', customers.value)
-        return data
-      }
+        const contactList = (data.contacts && data.contacts.length > 0)
+          ? data.contacts.map((ct) => ({
+              id: ct.id,
+              first_name: ct.first_name || '',
+              last_name: ct.last_name || '',
+              name: ct.full_name || `${ct.first_name} ${ct.last_name || ''}`.trim(),
+              email: ct.email || '',
+              phone: ct.phone || ct.mobile_no || '',
+              role: ct.job_title || 'Contact Person',
+              is_primary: ct.is_primary || false,
+            }))
+          : [
+              {
+                id: `ct-${data.id}`,
+                first_name: data.first_name || '',
+                last_name: data.last_name || '',
+                name: data.first_name ? `${data.first_name} ${data.last_name || ''}`.trim() : (data.primary_email ? data.primary_email.split('@')[0] : 'Primary Contact'),
+                email: data.primary_email || data.billing_email || '',
+                phone: data.phone || data.mobile_no || '',
+                role: data.job_title || 'Primary Representative',
+                is_primary: true,
+              },
+            ]
 
-      // If not in customers, also check organizations table
-      const { data: org, error: orgErr } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('id', customerId)
-        .maybeSingle()
-
-      if (!orgErr && org) {
-        let contacts = []
-        try {
-          const { data: ctData } = await supabase
-            .from('contacts')
-            .select('*')
-            .eq('organization_id', org.id)
-          if (ctData) contacts = ctData
-        } catch {}
-
-        const primaryContact = contacts.find((ct) => ct.is_primary) || contacts[0]
         const clientObj = {
-          id: org.id,
-          customer_type: 'Business',
-          status: 'Active',
-          lifecycle_stage: 'Active',
-          company_name: org.name || org.company_name || 'Organization',
-          legal_structure: org.legal_structure || 'Corporation',
-          company_registration_number: org.company_registration_number || '',
-          tin: org.tin || org.tax_id || '',
-          vat_number: org.vat_number || '',
-          industry: org.industry || 'Technology',
-          website: org.website || '',
-          first_name: primaryContact?.first_name || '',
-          last_name: primaryContact?.last_name || '',
-          job_title: primaryContact?.job_title || 'Primary Contact',
-          primary_email: primaryContact?.email || org.email || '',
-          billing_email: primaryContact?.email || org.email || '',
-          phone: org.phone || primaryContact?.phone || '',
-          mobile_no: primaryContact?.mobile_no || '',
-          national_id_number: '',
-          billing_address_line1: org.address || org.billing_address_line1 || '',
-          billing_city: org.city || org.billing_city || '',
-          billing_state_province: org.state || org.billing_state_province || '',
-          billing_postal_code: org.postal_code || org.zip || '',
-          billing_country: org.country || 'United States',
-          default_currency: org.currency || 'USD',
-          default_payment_terms: org.payment_terms || 'Net 30',
-          credit_limit: Number(org.credit_limit) || 25000.0,
-          is_profile_complete: true,
-          contacts: contacts.length > 0 ? contacts : [
-            {
-              id: `ct-${org.id}`,
-              first_name: 'Primary',
-              last_name: 'Contact',
-              name: 'Primary Contact',
-              email: org.email || '',
-              phone: org.phone || '',
-              role: 'Representative',
-              is_primary: true,
-            }
-          ],
-          created_at: org.created_at,
-          updated_at: org.updated_at,
+          ...data,
+          contacts: contactList,
         }
 
-        const idx = customers.value.findIndex((c) => c.id === clientObj.id)
+        const idx = customers.value.findIndex((c) => c.id === data.id)
         if (idx !== -1) {
           customers.value[idx] = { ...customers.value[idx], ...clientObj }
         } else {
@@ -1163,64 +1049,57 @@ export const useBusinessStore = defineStore('business-store', () => {
     customers.value.unshift(newClient)
     saveStorage('customers', customers.value)
 
-    // 1. Sync to Supabase organizations table
+    // Sync to Supabase customers master table
     try {
-      const { data: orgData, error: orgErr } = await supabase
-        .from('organizations')
+      const { data: insertedCustomer } = await supabase
+        .from('customers')
         .insert({
-          name: newClient.company_name,
+          id: newClient.id.startsWith('usr-') || newClient.id.startsWith('cl-') ? undefined : newClient.id,
+          customer_type: newClient.customer_type,
+          status: newClient.status,
+          company_name: newClient.company_name,
+          legal_name: newClient.company_name,
+          company_registration_number: newClient.company_registration_number || null,
+          tin: newClient.tin || null,
+          vat_number: newClient.vat_number || null,
           industry: newClient.industry || null,
           website: newClient.website || null,
+          first_name: newClient.first_name || null,
+          last_name: newClient.last_name || null,
+          primary_email: newClient.primary_email || 'client@crestara.com',
           phone: newClient.phone || null,
+          billing_address_line1: newClient.billing_address_line1 || null,
+          billing_city: newClient.billing_city || null,
+          billing_postal_code: newClient.billing_postal_code || null,
+          billing_country: newClient.billing_country || 'United States',
+          default_currency: newClient.default_currency || 'USD',
+          default_payment_terms: newClient.default_payment_terms || 'Net 30',
+          credit_limit: newClient.credit_limit,
+          is_profile_complete: true,
         })
         .select()
         .single()
 
-      if (!orgErr && orgData) {
-        // Associate created Supabase org id
-        newClient.organization_id = orgData.id
+      const finalId = insertedCustomer?.id || newClient.id
+      if (insertedCustomer) {
+        newClient.id = insertedCustomer.id
+        saveStorage('customers', customers.value)
+      }
 
-        // 2. Insert primary contact into Supabase contacts table
-        if (newClient.first_name || newClient.primary_email) {
-          await supabase.from('contacts').insert({
-            organization_id: orgData.id,
-            first_name: newClient.first_name || 'Primary',
-            last_name: newClient.last_name || '',
-            email: newClient.primary_email || null,
-            phone: newClient.phone || null,
-            job_title: newClient.job_title || 'Primary Representative',
-            is_primary: true,
-          })
-        }
+      // Insert primary contact into contacts table if provided
+      if (newClient.first_name || newClient.primary_email) {
+        await supabase.from('contacts').insert({
+          customer_id: finalId,
+          first_name: newClient.first_name || 'Primary',
+          last_name: newClient.last_name || '',
+          email: newClient.primary_email || null,
+          phone: newClient.phone || null,
+          job_title: newClient.job_title || 'Primary Representative',
+          is_primary: true,
+        })
       }
     } catch (err) {
-      console.warn('[Business] Could not insert organization into Supabase:', err)
-    }
-
-    // 3. Sync to Supabase customers table if profile ID is valid
-    try {
-      await supabase.from('customers').insert({
-        id: newClient.id.startsWith('usr-') || newClient.id.startsWith('cl-') ? undefined : newClient.id,
-        customer_type: newClient.customer_type,
-        status: newClient.status,
-        company_name: newClient.company_name,
-        company_registration_number: newClient.company_registration_number || null,
-        tin: newClient.tin || null,
-        vat_number: newClient.vat_number || null,
-        industry: newClient.industry || null,
-        first_name: newClient.first_name || null,
-        last_name: newClient.last_name || null,
-        primary_email: newClient.primary_email || null,
-        phone: newClient.phone || null,
-        billing_address_line1: newClient.billing_address_line1 || null,
-        billing_city: newClient.billing_city || null,
-        billing_postal_code: newClient.billing_postal_code || null,
-        billing_country: newClient.billing_country || 'United States',
-        default_currency: newClient.default_currency || 'USD',
-        default_payment_terms: newClient.default_payment_terms || 'Net 30',
-      })
-    } catch (err) {
-      // Expected if non-auth ID
+      console.warn('[Business] Could not insert customer into Supabase:', err)
     }
 
     return newClient
@@ -1236,7 +1115,7 @@ export const useBusinessStore = defineStore('business-store', () => {
       }
       saveStorage('customers', customers.value)
 
-      // Sync to Supabase customers
+      // Sync directly to Supabase customers
       try {
         await supabase
           .from('customers')
@@ -1246,6 +1125,7 @@ export const useBusinessStore = defineStore('business-store', () => {
             tin: updatedData.tin,
             vat_number: updatedData.vat_number,
             industry: updatedData.industry,
+            website: updatedData.website,
             first_name: updatedData.first_name,
             last_name: updatedData.last_name,
             phone: updatedData.phone,
@@ -1258,23 +1138,8 @@ export const useBusinessStore = defineStore('business-store', () => {
             updated_at: new Date().toISOString(),
           })
           .eq('id', clientId)
-      } catch (err) {
-        // Ignore if not a customers table row
-      }
 
-      // Sync to Supabase organizations & contacts
-      try {
-        await supabase
-          .from('organizations')
-          .update({
-            name: updatedData.company_name,
-            industry: updatedData.industry,
-            website: updatedData.website,
-            phone: updatedData.phone,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', clientId)
-
+        // Sync primary contact in contacts table
         if (updatedData.first_name || updatedData.primary_email) {
           await supabase
             .from('contacts')
@@ -1285,11 +1150,11 @@ export const useBusinessStore = defineStore('business-store', () => {
               phone: updatedData.phone,
               job_title: updatedData.job_title,
             })
-            .eq('organization_id', clientId)
+            .eq('customer_id', clientId)
             .eq('is_primary', true)
         }
       } catch (err) {
-        console.warn('[Business] Could not update organization in Supabase:', err)
+        console.warn('[Business] Could not update customer in Supabase:', err)
       }
 
       return customers.value[idx]
@@ -1304,13 +1169,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     try {
       await supabase.from('customers').delete().eq('id', clientId)
     } catch (err) {
-      // ignore
-    }
-
-    try {
-      await supabase.from('organizations').delete().eq('id', clientId)
-    } catch (err) {
-      console.warn('[Business] Could not delete organization from Supabase:', err)
+      console.warn('[Business] Could not delete customer from Supabase:', err)
     }
   }
 
