@@ -1,0 +1,12 @@
+{
+  "name": "crestara-crm",
+  "private": true,
+  "type": "module",
+  "description": "Crestara CRM Frontend",
+  "scripts": {
+    "postinstall": "cd frontend && yarn install",
+    "dev": "cd frontend && yarn dev",
+    "build": "cd frontend && yarn build",
+    "test": "cd frontend && yarn test:run"
+  }
+}
