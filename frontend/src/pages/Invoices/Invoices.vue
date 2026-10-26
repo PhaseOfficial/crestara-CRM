@@ -22,13 +22,13 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
           <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-5">{{ __('Total Revenue') }}</span>
-          <div class="mt-2 text-2xl font-bold text-ink-gray-9">${{ formatNum(business.totalRevenue) }}</div>
+          <div class="mt-2 text-2xl font-bold text-ink-gray-9">{{ business.formatCurrency(business.totalRevenue) }}</div>
           <span class="text-xs text-ink-green-2 mt-1 block">{{ __('Settled via payment transactions') }}</span>
         </div>
 
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
           <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-5">{{ __('Outstanding Balance') }}</span>
-          <div class="mt-2 text-2xl font-bold text-ink-amber-3">${{ formatNum(business.totalOutstanding) }}</div>
+          <div class="mt-2 text-2xl font-bold text-ink-amber-3">{{ business.formatCurrency(business.totalOutstanding) }}</div>
           <span class="text-xs text-ink-gray-5 mt-1 block">{{ __('Pending payment collection') }}</span>
         </div>
 
@@ -106,9 +106,9 @@
                 </td>
                 <td class="py-4 px-6 text-ink-gray-6">{{ inv.issue_date }}</td>
                 <td class="py-4 px-6 text-ink-gray-6">{{ inv.due_date }}</td>
-                <td class="py-4 px-6 font-bold text-ink-gray-9">${{ formatNum(inv.total_amount) }}</td>
+                <td class="py-4 px-6 font-bold text-ink-gray-9">{{ business.formatCurrency(inv.total_amount, inv.currency) }}</td>
                 <td class="py-4 px-6 font-bold" :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'">
-                  ${{ formatNum(inv.balance_due) }}
+                  {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </td>
                 <td class="py-4 px-6">
                   <span
@@ -188,9 +188,9 @@
                   class="font-bold text-sm block"
                   :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'"
                 >
-                  ${{ formatNum(inv.balance_due) }}
+                  {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </span>
-                <span class="text-[10px] text-ink-gray-5">Total: ${{ formatNum(inv.total_amount) }}</span>
+                <span class="text-[10px] text-ink-gray-5">Total: {{ business.formatCurrency(inv.total_amount, inv.currency) }}</span>
               </div>
             </div>
 

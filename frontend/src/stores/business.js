@@ -282,15 +282,40 @@ export const useBusinessStore = defineStore('business-store', () => {
     return 'Administrator'
   }
 
+  const CURRENCY_SYMBOLS = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    CAD: 'CA$',
+    AUD: 'A$',
+    ZAR: 'R',
+    ZWG: 'ZiG ',
+  }
+
+  function getCurrencySymbol(cur) {
+    const code = cur || settings.value.currency || 'USD'
+    return CURRENCY_SYMBOLS[code] || settings.value.currency_symbol || '$'
+  }
+
   function formatCurrency(amount, cur) {
     const currencyCode = cur || settings.value.currency || 'USD'
+    const num = Number(amount || 0).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+
+    if (currencyCode === 'ZWG') {
+      return `ZiG ${num}`
+    }
+
     try {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currencyCode,
       }).format(Number(amount) || 0)
     } catch {
-      return `$${Number(amount || 0).toFixed(2)}`
+      const sym = CURRENCY_SYMBOLS[currencyCode] || settings.value.currency_symbol || `${currencyCode} `
+      return `${sym}${num}`
     }
   }
 
@@ -1313,6 +1338,8 @@ export const useBusinessStore = defineStore('business-store', () => {
     setRole,
     resolveUserRole,
     formatCurrency,
+    getCurrencySymbol,
+    CURRENCY_SYMBOLS,
     // Customer Master & Onboarding
     customers,
     currentCustomerRecord,

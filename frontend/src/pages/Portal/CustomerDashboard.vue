@@ -30,7 +30,7 @@
           <span class="lucide-wallet size-5 text-amber-500" />
         </div>
         <div class="mt-3 text-2xl font-bold text-ink-gray-9">
-          ${{ formatNum(customerBalance) }}
+          {{ business.formatCurrency(customerBalance) }}
         </div>
         <p class="text-xs text-ink-gray-4 mt-1">
           {{ customerBalance > 0 ? __('Payment pending') : __('All invoices settled') }}
@@ -43,7 +43,7 @@
           <span class="lucide-receipt size-5 text-blue-500" />
         </div>
         <div class="mt-3 text-2xl font-bold text-ink-gray-9">
-          ${{ formatNum(customerTotalPurchases) }}
+          {{ business.formatCurrency(customerTotalPurchases) }}
         </div>
         <p class="text-xs text-ink-gray-4 mt-1">
           {{ __('Across {0} invoices', [customerInvoices.length]) }}
@@ -114,10 +114,10 @@
                 {{ inv.due_date }}
               </td>
               <td class="py-4 px-6 font-medium text-ink-gray-9">
-                ${{ formatNum(inv.total_amount) }}
+                {{ business.formatCurrency(inv.total_amount, inv.currency) }}
               </td>
               <td class="py-4 px-6 font-medium" :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'">
-                ${{ formatNum(inv.balance_due) }}
+                {{ business.formatCurrency(inv.balance_due, inv.currency) }}
               </td>
               <td class="py-4 px-6">
                 <span

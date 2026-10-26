@@ -18,22 +18,22 @@
           </div>
           <div class="flex justify-between">
             <span class="text-ink-gray-5">{{ __('Total Amount:') }}</span>
-            <span class="font-medium text-ink-gray-9">${{ formatNum(invoice?.total_amount) }}</span>
+            <span class="font-medium text-ink-gray-9">{{ business.formatCurrency(invoice?.total_amount, invoice?.currency) }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-ink-gray-5">{{ __('Amount Already Paid:') }}</span>
-            <span class="font-medium text-ink-green-3">${{ formatNum(invoice?.amount_paid) }}</span>
+            <span class="font-medium text-ink-green-3">{{ business.formatCurrency(invoice?.amount_paid, invoice?.currency) }}</span>
           </div>
           <div class="flex justify-between pt-1 border-t border-outline-gray-1 font-bold text-sm">
             <span class="text-ink-gray-7">{{ __('Remaining Balance:') }}</span>
-            <span class="text-ink-amber-3">${{ formatNum(invoice?.balance_due) }}</span>
+            <span class="text-ink-amber-3">{{ business.formatCurrency(invoice?.balance_due, invoice?.currency) }}</span>
           </div>
         </div>
 
         <form class="space-y-4" @submit.prevent="submitPayment">
           <FormControl
             v-model="amount"
-            :label="__('Payment Amount ($)')"
+            :label="__('Payment Amount ({0})', [currencySymbol])"
             type="number"
             step="0.01"
             :max="invoice?.balance_due"
@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useBusinessStore } from '@/stores/business'
 import { Dialog, FormControl, Button } from 'frappe-ui'
 
@@ -101,6 +101,8 @@ const amount = ref(0)
 const paymentMethod = ref('Credit Card')
 const paymentDate = ref(new Date().toISOString().split('T')[0])
 const notes = ref('')
+
+const currencySymbol = computed(() => business.getCurrencySymbol(props.invoice?.currency))
 
 watch(
   () => props.invoice,

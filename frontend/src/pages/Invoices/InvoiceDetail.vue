@@ -93,6 +93,19 @@
                 <option value="Net 60">Net 60</option>
                 <option value="Due on Receipt">Due on Receipt</option>
               </select>
+              <span class="text-ink-gray-5 sm:text-right font-medium">{{ __('Currency:') }}</span>
+              <select
+                v-model="invoice.currency"
+                class="bg-surface-gray-1 rounded px-2 py-1 text-xs border border-outline-gray-2 text-ink-gray-9 focus:outline-none"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="CAD">CAD ($)</option>
+                <option value="AUD">AUD ($)</option>
+                <option value="ZAR">ZAR (R)</option>
+                <option value="ZWG">ZWG (ZiG)</option>
+              </select>
             </div>
           </div>
         </div>
@@ -133,7 +146,7 @@
             >
               <option value="">{{ __('+ Select product or service...') }}</option>
               <option v-for="prod in business.inventory" :key="prod.id" :value="prod.id">
-                {{ prod.name }} (${{ prod.unit_price }}) - {{ prod.type }}
+                {{ prod.name }} ({{ business.formatCurrency(prod.unit_price) }}) - {{ prod.type }}
               </option>
             </select>
           </div>
@@ -152,8 +165,8 @@
                 <tr>
                   <th class="py-3 px-4">{{ __('Item & Description') }}</th>
                   <th class="py-3 px-3 w-24 text-center">{{ __('Qty') }}</th>
-                  <th class="py-3 px-3 w-32 text-right">{{ __('Unit Price ($)') }}</th>
-                  <th class="py-3 px-4 w-32 text-right">{{ __('Amount ($)') }}</th>
+                  <th class="py-3 px-3 w-32 text-right">{{ __('Unit Price') }} ({{ currencySymbol }})</th>
+                  <th class="py-3 px-4 w-32 text-right">{{ __('Amount') }} ({{ currencySymbol }})</th>
                   <th class="py-3 px-2 w-10"></th>
                 </tr>
               </thead>
@@ -193,7 +206,7 @@
                     />
                   </td>
                   <td class="py-3 px-4 text-right font-bold text-ink-gray-9">
-                    ${{ formatNum(item.quantity * item.unit_price) }}
+                    {{ currencySymbol }}{{ formatNum(item.quantity * item.unit_price) }}
                   </td>
                   <td class="py-3 px-2 text-center">
                     <button
@@ -257,7 +270,7 @@
           <div class="w-full sm:w-80 space-y-2.5 text-sm">
             <div class="flex justify-between text-ink-gray-6">
               <span>{{ __('Subtotal:') }}</span>
-              <span class="font-medium text-ink-gray-9">${{ formatNum(invoice.subtotal) }}</span>
+              <span class="font-medium text-ink-gray-9">{{ currencySymbol }}{{ formatNum(invoice.subtotal) }}</span>
             </div>
 
             <div class="flex items-center justify-between text-ink-gray-6">
@@ -272,7 +285,7 @@
                   @input="recalculateTotals"
                 />
               </span>
-              <span class="text-ink-gray-7">-${{ formatNum(invoice.discount_amount) }}</span>
+              <span class="text-ink-gray-7">-{{ currencySymbol }}{{ formatNum(invoice.discount_amount) }}</span>
             </div>
 
             <div class="flex items-center justify-between text-ink-gray-6">
@@ -288,22 +301,22 @@
                   @input="recalculateTotals"
                 />
               </span>
-              <span class="text-ink-gray-7">+${{ formatNum(invoice.tax_amount) }}</span>
+              <span class="text-ink-gray-7">+{{ currencySymbol }}{{ formatNum(invoice.tax_amount) }}</span>
             </div>
 
             <div class="border-t border-outline-gray-1 pt-2 flex justify-between font-bold text-lg text-ink-gray-9">
               <span>{{ __('Grand Total:') }}</span>
-              <span>${{ formatNum(invoice.total_amount) }}</span>
+              <span>{{ currencySymbol }}{{ formatNum(invoice.total_amount) }}</span>
             </div>
 
             <div v-if="!isNew" class="flex justify-between text-ink-green-3 font-medium">
               <span>{{ __('Amount Paid:') }}</span>
-              <span>${{ formatNum(invoice.amount_paid) }}</span>
+              <span>{{ currencySymbol }}{{ formatNum(invoice.amount_paid) }}</span>
             </div>
 
             <div v-if="!isNew" class="flex justify-between font-bold text-base" :class="invoice.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'">
               <span>{{ __('Balance Due:') }}</span>
-              <span>${{ formatNum(invoice.balance_due) }}</span>
+              <span>{{ currencySymbol }}{{ formatNum(invoice.balance_due) }}</span>
             </div>
           </div>
         </div>
@@ -334,6 +347,7 @@ const business = useBusinessStore()
 const isNew = computed(() => route.params.invoiceId === 'new' || !route.params.invoiceId)
 const saving = ref(false)
 const showPaymentModal = ref(false)
+const currencySymbol = computed(() => business.getCurrencySymbol(invoice.currency))
 
 const invoice = reactive({
   id: '',
@@ -377,6 +391,9 @@ onMounted(async () => {
   }
 
   if (isNew.value) {
+    if (business.settings.currency) {
+      invoice.currency = business.settings.currency
+    }
     if (business.settings.tax_rate) {
       invoice.tax_rate = Number(business.settings.tax_rate)
     }

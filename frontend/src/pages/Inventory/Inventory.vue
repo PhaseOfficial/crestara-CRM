@@ -99,7 +99,7 @@
                   </span>
                 </td>
                 <td class="py-4 px-6 font-bold text-ink-gray-9">
-                  ${{ formatNum(item.unit_price) }}
+                  {{ business.formatCurrency(item.unit_price) }}
                 </td>
                 <td class="py-4 px-6">
                   <span v-if="!item.track_stock" class="text-xs text-ink-gray-4">
@@ -165,7 +165,7 @@
             <div class="grid grid-cols-2 gap-2 text-xs bg-surface-gray-1/60 p-2.5 rounded-lg items-center">
               <div>
                 <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Unit Price') }}</span>
-                <span class="font-bold text-sm text-ink-gray-9">${{ formatNum(item.unit_price) }}</span>
+                <span class="font-bold text-sm text-ink-gray-9">{{ business.formatCurrency(item.unit_price) }}</span>
               </div>
               <div class="text-right">
                 <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Stock Level') }}</span>

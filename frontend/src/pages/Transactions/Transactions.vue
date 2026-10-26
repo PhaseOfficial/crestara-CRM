@@ -12,7 +12,7 @@
       <template #right-header>
         <div class="text-xs text-ink-gray-5">
           {{ __('Total Settled:') }}
-          <strong class="text-sm font-bold text-ink-gray-9 ml-1">${{ formatNum(business.totalRevenue) }}</strong>
+          <strong class="text-sm font-bold text-ink-gray-9 ml-1">{{ business.formatCurrency(business.totalRevenue) }}</strong>
         </div>
       </template>
     </LayoutHeader>
@@ -79,7 +79,7 @@
                 <td class="py-4 px-6 text-ink-gray-6">{{ tx.payment_date }}</td>
                 <td class="py-4 px-6 text-ink-gray-7">{{ tx.payment_method }}</td>
                 <td class="py-4 px-6 font-bold text-ink-green-3">
-                  +${{ formatNum(tx.amount) }}
+                  +{{ business.formatCurrency(tx.amount, tx.currency) }}
                 </td>
                 <td class="py-4 px-6">
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-green-2 text-ink-green-7 border border-outline-green-2">
@@ -135,7 +135,7 @@
 
               <div class="text-right">
                 <span class="font-bold text-sm text-ink-green-3 block">
-                  +${{ formatNum(tx.amount) }}
+                  +{{ business.formatCurrency(tx.amount, tx.currency) }}
                 </span>
                 <span class="text-[10px] text-ink-gray-4">{{ tx.payment_method }}</span>
               </div>
@@ -192,7 +192,7 @@
             </div>
             <div class="flex justify-between pt-2 border-t border-outline-gray-1 text-sm font-bold">
               <span class="text-ink-gray-9">{{ __('Amount Received:') }}</span>
-              <span class="text-ink-green-3">${{ formatNum(activeTx.amount) }}</span>
+              <span class="text-ink-green-3">{{ business.formatCurrency(activeTx.amount, activeTx.currency) }}</span>
             </div>
           </div>
 

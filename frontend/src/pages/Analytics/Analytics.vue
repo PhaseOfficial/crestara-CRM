@@ -11,13 +11,13 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
           <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-5">{{ __('Gross Billed Sales') }}</span>
-          <div class="mt-2 text-2xl font-bold text-ink-gray-9">${{ formatNum(totalBilled) }}</div>
+          <div class="mt-2 text-2xl font-bold text-ink-gray-9">{{ business.formatCurrency(totalBilled) }}</div>
           <span class="text-xs text-ink-gray-5 mt-1 block">{{ __('All issued invoices') }}</span>
         </div>
 
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
           <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-5">{{ __('Collected Revenue') }}</span>
-          <div class="mt-2 text-2xl font-bold text-ink-green-3">${{ formatNum(business.totalRevenue) }}</div>
+          <div class="mt-2 text-2xl font-bold text-ink-green-3">{{ business.formatCurrency(business.totalRevenue) }}</div>
           <span class="text-xs text-ink-green-2 mt-1 block">{{ __('Net settled transactions') }}</span>
         </div>
 
@@ -31,7 +31,7 @@
 
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
           <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-5">{{ __('Projected Q4 Revenue') }}</span>
-          <div class="mt-2 text-2xl font-bold text-purple-500">${{ formatNum(projectedRevenue) }}</div>
+          <div class="mt-2 text-2xl font-bold text-purple-500">{{ business.formatCurrency(projectedRevenue) }}</div>
           <span class="text-xs text-purple-400 mt-1 block">{{ __('Based on active pipeline & deals') }}</span>
         </div>
       </div>
@@ -45,7 +45,7 @@
             <div v-for="stat in invoiceStatusDistribution" :key="stat.name" class="space-y-1">
               <div class="flex justify-between text-xs font-semibold">
                 <span class="text-ink-gray-7">{{ stat.name }} ({{ stat.count }})</span>
-                <span class="text-ink-gray-9">${{ formatNum(stat.amount) }} ({{ stat.percentage }}%)</span>
+                <span class="text-ink-gray-9">{{ business.formatCurrency(stat.amount) }} ({{ stat.percentage }}%)</span>
               </div>
               <div class="w-full bg-surface-gray-2 rounded-full h-2.5 overflow-hidden">
                 <div class="h-2.5 rounded-full" :class="stat.colorClass" :style="{ width: `${stat.percentage}%` }"></div>
@@ -61,7 +61,7 @@
             <div v-for="cat in categoryBreakdown" :key="cat.name" class="space-y-1">
               <div class="flex justify-between text-xs font-semibold">
                 <span class="text-ink-gray-7">{{ cat.name }}</span>
-                <span class="text-ink-gray-9">${{ formatNum(cat.amount) }} ({{ cat.percentage }}%)</span>
+                <span class="text-ink-gray-9">{{ business.formatCurrency(cat.amount) }} ({{ cat.percentage }}%)</span>
               </div>
               <div class="w-full bg-surface-gray-2 rounded-full h-2.5 overflow-hidden">
                 <div class="h-2.5 rounded-full bg-blue-500" :style="{ width: `${cat.percentage}%` }"></div>
@@ -77,16 +77,16 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div class="bg-surface-gray-1 rounded-xl p-4 border border-outline-gray-1">
             <span class="text-xs text-ink-gray-5">{{ __('Total Stock Value (Retail)') }}</span>
-            <div class="text-xl font-bold text-ink-gray-9 mt-1">${{ formatNum(totalInventoryRetail) }}</div>
+            <div class="text-xl font-bold text-ink-gray-9 mt-1">{{ business.formatCurrency(totalInventoryRetail) }}</div>
           </div>
           <div class="bg-surface-gray-1 rounded-xl p-4 border border-outline-gray-1">
             <span class="text-xs text-ink-gray-5">{{ __('Total Stock Cost') }}</span>
-            <div class="text-xl font-bold text-ink-gray-9 mt-1">${{ formatNum(totalInventoryCost) }}</div>
+            <div class="text-xl font-bold text-ink-gray-9 mt-1">{{ business.formatCurrency(totalInventoryCost) }}</div>
           </div>
           <div class="bg-surface-gray-1 rounded-xl p-4 border border-outline-gray-1">
             <span class="text-xs text-ink-gray-5">{{ __('Potential Gross Margin') }}</span>
             <div class="text-xl font-bold text-ink-green-3 mt-1">
-              ${{ formatNum(totalInventoryRetail - totalInventoryCost) }}
+              {{ business.formatCurrency(totalInventoryRetail - totalInventoryCost) }}
             </div>
           </div>
         </div>

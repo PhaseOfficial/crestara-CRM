@@ -205,6 +205,7 @@ function getNumberFormat(format = null) {
 }
 
 function getCurrencySymbol(currencyCode) {
+  if (currencyCode === 'ZWG') return 'ZiG'
   try {
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -217,8 +218,7 @@ function getCurrencySymbol(currencyCode) {
     const symbol = parts.find((part) => part.type === 'currency')
     return symbol ? symbol.value : null
   } catch {
-    console.error(`Invalid currency code: ${currencyCode}`)
-    return null
+    return currencyCode === 'ZWG' ? 'ZiG' : null
   }
 }
 

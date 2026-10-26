@@ -668,6 +668,8 @@
                     { label: 'GBP (£)', value: 'GBP' },
                     { label: 'CAD ($)', value: 'CAD' },
                     { label: 'AUD ($)', value: 'AUD' },
+                    { label: 'ZAR (R)', value: 'ZAR' },
+                    { label: 'ZWG (ZiG)', value: 'ZWG' },
                   ]"
                 />
                 <FormControl

@@ -37,10 +37,10 @@
               </td>
               <td class="py-4 px-6 text-ink-gray-6">{{ inv.issue_date }}</td>
               <td class="py-4 px-6 text-ink-gray-6">{{ inv.due_date }}</td>
-              <td class="py-4 px-6 font-semibold text-ink-gray-9">${{ formatNum(inv.total_amount) }}</td>
-              <td class="py-4 px-6 text-ink-green-3 font-semibold">${{ formatNum(inv.amount_paid) }}</td>
+              <td class="py-4 px-6 font-semibold text-ink-gray-9">{{ business.formatCurrency(inv.total_amount, inv.currency) }}</td>
+              <td class="py-4 px-6 text-ink-green-3 font-semibold">{{ business.formatCurrency(inv.amount_paid, inv.currency) }}</td>
               <td class="py-4 px-6 font-semibold" :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'">
-                ${{ formatNum(inv.balance_due) }}
+                {{ business.formatCurrency(inv.balance_due, inv.currency) }}
               </td>
               <td class="py-4 px-6">
                 <span
@@ -96,9 +96,9 @@
                 class="font-bold text-sm block"
                 :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'"
               >
-                ${{ formatNum(inv.balance_due) }}
+                {{ business.formatCurrency(inv.balance_due, inv.currency) }}
               </span>
-              <span class="text-[10px] text-ink-green-3">Paid: ${{ formatNum(inv.amount_paid) }}</span>
+              <span class="text-[10px] text-ink-green-3">Paid: {{ business.formatCurrency(inv.amount_paid, inv.currency) }}</span>
             </div>
           </div>
 
@@ -176,8 +176,8 @@
                     <p class="text-xs text-ink-gray-5 font-mono">{{ item.code }}</p>
                   </td>
                   <td class="py-3 px-4 text-center">{{ item.quantity }}</td>
-                  <td class="py-3 px-4 text-right">${{ formatNum(item.unit_price) }}</td>
-                  <td class="py-3 px-4 text-right font-medium">${{ formatNum(item.amount) }}</td>
+                  <td class="py-3 px-4 text-right">{{ business.formatCurrency(item.unit_price, selectedInvoice?.currency) }}</td>
+                  <td class="py-3 px-4 text-right font-medium">{{ business.formatCurrency(item.amount, selectedInvoice?.currency) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -188,27 +188,27 @@
             <div class="w-72 space-y-2 text-sm">
               <div class="flex justify-between text-ink-gray-6">
                 <span>{{ __('Subtotal:') }}</span>
-                <span>${{ formatNum(selectedInvoice.subtotal) }}</span>
+                <span>{{ business.formatCurrency(selectedInvoice.subtotal, selectedInvoice.currency) }}</span>
               </div>
               <div v-if="selectedInvoice.discount_amount > 0" class="flex justify-between text-ink-gray-6">
                 <span>{{ __('Discount ({0}%):', [selectedInvoice.discount_percentage]) }}</span>
-                <span>-${{ formatNum(selectedInvoice.discount_amount) }}</span>
+                <span>-{{ business.formatCurrency(selectedInvoice.discount_amount, selectedInvoice.currency) }}</span>
               </div>
               <div class="flex justify-between text-ink-gray-6">
                 <span>{{ __('Tax ({0}%):', [selectedInvoice.tax_rate]) }}</span>
-                <span>+${{ formatNum(selectedInvoice.tax_amount) }}</span>
+                <span>+{{ business.formatCurrency(selectedInvoice.tax_amount, selectedInvoice.currency) }}</span>
               </div>
               <div class="border-t border-outline-gray-1 pt-2 flex justify-between font-bold text-base text-ink-gray-9">
                 <span>{{ __('Total:') }}</span>
-                <span>${{ formatNum(selectedInvoice.total_amount) }}</span>
+                <span>{{ business.formatCurrency(selectedInvoice.total_amount, selectedInvoice.currency) }}</span>
               </div>
               <div class="flex justify-between text-ink-green-3 font-medium">
                 <span>{{ __('Amount Paid:') }}</span>
-                <span>${{ formatNum(selectedInvoice.amount_paid) }}</span>
+                <span>{{ business.formatCurrency(selectedInvoice.amount_paid, selectedInvoice.currency) }}</span>
               </div>
               <div class="flex justify-between font-bold" :class="selectedInvoice.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'">
                 <span>{{ __('Balance Due:') }}</span>
-                <span>${{ formatNum(selectedInvoice.balance_due) }}</span>
+                <span>{{ business.formatCurrency(selectedInvoice.balance_due, selectedInvoice.currency) }}</span>
               </div>
             </div>
           </div>

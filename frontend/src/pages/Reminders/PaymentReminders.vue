@@ -74,7 +74,7 @@
                 </td>
                 <td class="py-4 px-6 text-ink-gray-6">{{ rem.due_date }}</td>
                 <td class="py-4 px-6 font-bold" :class="rem.status === 'Overdue' ? 'text-ink-red-3' : 'text-ink-gray-9'">
-                  ${{ formatNum(rem.balance_due) }}
+                  {{ business.formatCurrency(rem.balance_due, rem.currency) }}
                 </td>
                 <td class="py-4 px-6 text-xs text-ink-gray-7">{{ rem.reminder_type }}</td>
                 <td class="py-4 px-6 text-xs text-ink-gray-5">{{ rem.last_sent_date || __('Never') }}</td>
@@ -134,7 +134,7 @@
               <div class="text-right">
                 <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Balance Due') }}</span>
                 <span class="font-bold text-sm" :class="rem.status === 'Overdue' ? 'text-ink-red-3' : 'text-ink-gray-9'">
-                  ${{ formatNum(rem.balance_due) }}
+                  {{ business.formatCurrency(rem.balance_due, rem.currency) }}
                 </span>
                 <span class="text-[10px] text-ink-gray-5 block mt-0.5">Last: {{ rem.last_sent_date || __('Never') }}</span>
               </div>

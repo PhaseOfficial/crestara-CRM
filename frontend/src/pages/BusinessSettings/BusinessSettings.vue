@@ -132,7 +132,7 @@
             v-model="form.currency"
             :label="__('Currency')"
             type="select"
-            :options="['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'ZAR']"
+            :options="['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'ZAR', 'ZWG']"
             required
           />
         </div>
@@ -517,6 +517,16 @@ watch(
     }
   },
   { immediate: true, deep: true }
+)
+
+// Automatically sync currency symbol when currency code changes
+watch(
+  () => form.currency,
+  (newCur) => {
+    if (newCur && business.CURRENCY_SYMBOLS?.[newCur]) {
+      form.currency_symbol = business.CURRENCY_SYMBOLS[newCur]
+    }
+  }
 )
 
 // Role filter for staff table: 'Staff' | 'All' | 'Administrator'

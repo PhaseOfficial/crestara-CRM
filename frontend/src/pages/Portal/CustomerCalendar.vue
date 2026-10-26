@@ -43,7 +43,7 @@
                 </div>
                 <p class="text-xs text-ink-gray-5 mt-1">{{ event.description }}</p>
                 <div class="mt-2 flex items-center gap-4 text-xs text-ink-gray-4">
-                  <span>{{ __('Amount:') }} <strong class="text-ink-gray-8">${{ formatNum(event.amount) }}</strong></span>
+                  <span>{{ __('Amount:') }} <strong class="text-ink-gray-8">{{ business.formatCurrency(event.amount) }}</strong></span>
                   <span>{{ __('Ref:') }} {{ event.ref }}</span>
                 </div>
               </div>
