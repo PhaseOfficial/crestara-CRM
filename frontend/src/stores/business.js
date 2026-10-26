@@ -3,20 +3,28 @@ import { ref, computed } from 'vue'
 import { supabase } from '@/utils/supabase'
 import { sessionStore } from './session'
 const defaultSettings = {
-  business_name: '',
-  business_email: '',
-  business_phone: '',
-  business_address: '',
-  tax_id: '',
+  business_name: 'Crestara CRM',
+  legal_name: 'Crestara Technologies Inc.',
+  business_email: 'billing@crestara.com',
+  business_phone: '+1 (555) 000-1234',
+  business_address: '100 Business Parkway, Suite 500, San Francisco, CA 94105',
+  tax_id: 'US-94-8829103',
+  website: 'https://crestara.com',
   currency: 'USD',
   currency_symbol: '$',
   invoice_prefix: 'INV-2026-',
-  next_invoice_number: 1001,
+  next_invoice_number: 1045,
   default_payment_terms: 30,
-  tax_rate: 0.0,
-  late_fee_percentage: 0.0,
+  tax_rate: 8.5,
+  late_fee_percentage: 2.0,
   logo_url: '',
-  notes_template: 'Thank you for your business.',
+  notes_template: 'Thank you for your business. Remittance is due within agreed terms.',
+  bank_name: '',
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_routing_iban: '',
+  swift_bic: '',
+  payment_instructions: '',
 }
 
 export const useBusinessStore = defineStore('business-store', () => {
@@ -148,6 +156,96 @@ export const useBusinessStore = defineStore('business-store', () => {
     }
   }
 
+  async function inviteStaffMember({ email, full_name, role }) {
+    if (!email) throw new Error('Email is required')
+    const cleanEmail = email.trim().toLowerCase()
+    const roleToAssign = role || 'Staff'
+    const nameToAssign = (full_name || email.split('@')[0]).trim()
+
+    // 1. Check if user already exists in profiles or users
+    const existingUser = users.value.find((u) => u.email?.toLowerCase() === cleanEmail)
+    if (existingUser) {
+      // Elevate their role directly
+      await updateUserRole(existingUser.id, roleToAssign)
+      existingUser.full_name = nameToAssign || existingUser.full_name
+      saveStorage('users', users.value)
+      return { user: existingUser, elevated: true }
+    }
+
+    // 2. Check if user is registered in customers table
+    const existingCustomer = customers.value.find(
+      (c) => (c.primary_email || c.billing_email || '').toLowerCase() === cleanEmail
+    )
+    if (existingCustomer && existingCustomer.id) {
+      // Elevate user role if a profile exists with this customer ID or email
+      await updateUserRole(existingCustomer.id, roleToAssign)
+    }
+
+    // 3. Option B: Pre-provision account via native Supabase Auth
+    let authUser = null
+    try {
+      // Temporary cryptographically random password for initial account setup
+      const tempPassword = crypto.randomUUID() + 'Cr!2026'
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: nameToAssign,
+            role: roleToAssign,
+          },
+        },
+      })
+
+      if (error) {
+        // If user already registered in Supabase auth, attempt role update on profiles
+        if (error.message?.toLowerCase().includes('already registered')) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', cleanEmail)
+            .maybeSingle()
+          if (profileData) {
+            await updateUserRole(profileData.id, roleToAssign)
+            return { user: profileData, elevated: true }
+          }
+        }
+        console.warn('[Business] Supabase auth signup notice:', error.message)
+      } else if (data?.user) {
+        authUser = data.user
+      }
+    } catch (authErr) {
+      console.warn('[Business] Supabase auth provision error, falling back locally:', authErr)
+    }
+
+    // Create local entry immediately so UI is updated without lag
+    const newStaff = {
+      id: authUser?.id || `usr-${Date.now()}`,
+      email: cleanEmail,
+      full_name: nameToAssign,
+      role: roleToAssign,
+      avatar: null,
+      created_at: new Date().toISOString(),
+    }
+
+    // Add to users if not already present
+    if (!users.value.some((u) => u.email?.toLowerCase() === cleanEmail)) {
+      users.value.push(newStaff)
+      saveStorage('users', users.value)
+    }
+
+    // If they were in customers, remove from customers so they transition out of client lists
+    if (existingCustomer) {
+      customers.value = customers.value.filter((c) => c.id !== existingCustomer.id)
+      saveStorage('customers', customers.value)
+    }
+
+    // Refresh profiles from Supabase to capture any trigger-created rows
+    fetchUsersFromSupabase().catch(() => {})
+
+    return { user: newStaff, elevated: false }
+  }
+
   function resolveUserRole(email) {
     if (!email) return currentRole.value || 'Administrator'
 
@@ -199,10 +297,33 @@ export const useBusinessStore = defineStore('business-store', () => {
   // ==========================================
   // INVOICE ACTIONS
   // ==========================================
-  function createInvoice(invoiceData) {
+  async function getNextInvoiceNumber() {
+    try {
+      const { data, error } = await supabase.rpc('get_next_invoice_number')
+      if (!error && data) {
+        const prefix = settings.value.invoice_prefix || 'INV-2026-'
+        const numPart = String(data).replace(prefix, '')
+        const parsedNum = parseInt(numPart, 10)
+        if (!isNaN(parsedNum)) {
+          settings.value.next_invoice_number = parsedNum + 1
+          saveStorage('settings', settings.value)
+        }
+        return String(data)
+      }
+    } catch (err) {
+      console.warn('[Business] Supabase RPC get_next_invoice_number error, falling back locally:', err)
+    }
+
     const nextNum = settings.value.next_invoice_number || 1045
     const prefix = settings.value.invoice_prefix || 'INV-2026-'
     const invoiceNumber = `${prefix}${nextNum}`
+    settings.value.next_invoice_number = nextNum + 1
+    saveStorage('settings', settings.value)
+    return invoiceNumber
+  }
+
+  async function createInvoice(invoiceData) {
+    const invoiceNumber = invoiceData.invoice_number || (await getNextInvoiceNumber())
 
     // Calculate line item totals
     const items = (invoiceData.items || []).map((item, idx) => ({
@@ -249,10 +370,6 @@ export const useBusinessStore = defineStore('business-store', () => {
 
     invoices.value.unshift(newInvoice)
     saveStorage('invoices', invoices.value)
-
-    // Increment invoice counter
-    settings.value.next_invoice_number = nextNum + 1
-    saveStorage('settings', settings.value)
 
     return newInvoice
   }
@@ -1200,9 +1317,81 @@ export const useBusinessStore = defineStore('business-store', () => {
   // ==========================================
   // SETTINGS & COMPUTED METRICS
   // ==========================================
-  function updateBusinessSettings(newSettings) {
+  const isFetchingSettings = ref(false)
+  const isSavingSettings = ref(false)
+
+  async function fetchBusinessSettingsFromSupabase() {
+    isFetchingSettings.value = true
+    try {
+      const { data, error } = await supabase
+        .from('business_settings')
+        .select('*')
+        .eq('id', 'default')
+        .maybeSingle()
+
+      if (!error && data) {
+        settings.value = {
+          ...defaultSettings,
+          ...settings.value,
+          ...data,
+        }
+        saveStorage('settings', settings.value)
+      }
+    } catch (err) {
+      console.warn('[Business] Could not fetch business_settings from Supabase:', err)
+    } finally {
+      isFetchingSettings.value = false
+    }
+  }
+
+  async function updateBusinessSettings(newSettings) {
+    isSavingSettings.value = true
+    // Update local reactive state and cache immediately
     settings.value = { ...settings.value, ...newSettings }
     saveStorage('settings', settings.value)
+
+    try {
+      const payload = {
+        id: 'default',
+        business_name: settings.value.business_name || 'Crestara CRM',
+        legal_name: settings.value.legal_name || 'Crestara Technologies Inc.',
+        business_email: settings.value.business_email || 'billing@crestara.com',
+        business_phone: settings.value.business_phone || '',
+        business_address: settings.value.business_address || '',
+        tax_id: settings.value.tax_id || '',
+        website: settings.value.website || '',
+        logo_url: settings.value.logo_url || '',
+        currency: settings.value.currency || 'USD',
+        currency_symbol: settings.value.currency_symbol || '$',
+        invoice_prefix: settings.value.invoice_prefix || 'INV-2026-',
+        next_invoice_number: Number(settings.value.next_invoice_number) || 1045,
+        default_payment_terms: Number(settings.value.default_payment_terms) || 30,
+        tax_rate: Number(settings.value.tax_rate) || 0,
+        late_fee_percentage: Number(settings.value.late_fee_percentage) || 0,
+        notes_template: settings.value.notes_template || '',
+        bank_name: settings.value.bank_name || '',
+        bank_account_name: settings.value.bank_account_name || '',
+        bank_account_number: settings.value.bank_account_number || '',
+        bank_routing_iban: settings.value.bank_routing_iban || '',
+        swift_bic: settings.value.swift_bic || '',
+        payment_instructions: settings.value.payment_instructions || '',
+        updated_at: new Date().toISOString(),
+      }
+
+      const { error } = await supabase
+        .from('business_settings')
+        .upsert(payload, { onConflict: 'id' })
+
+      if (error) {
+        console.warn('[Business] Error syncing business_settings to Supabase:', error.message)
+      }
+    } catch (err) {
+      console.warn('[Business] Supabase updateBusinessSettings exception:', err)
+    } finally {
+      isSavingSettings.value = false
+    }
+
+    return settings.value
   }
 
   const totalRevenue = computed(() => {
@@ -1233,6 +1422,7 @@ export const useBusinessStore = defineStore('business-store', () => {
 
   // Auto-fetch real backend data from Supabase
   try {
+    fetchBusinessSettingsFromSupabase()
     fetchUsersFromSupabase()
     fetchClientsFromSupabase()
     fetchChangeRequestsFromSupabase()
@@ -1242,6 +1432,10 @@ export const useBusinessStore = defineStore('business-store', () => {
 
   return {
     settings,
+    isFetchingSettings,
+    isSavingSettings,
+    fetchBusinessSettingsFromSupabase,
+    updateBusinessSettings,
     inventory,
     products: inventory,
     invoices,
@@ -1251,6 +1445,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     users,
     fetchUsersFromSupabase,
     updateUserRole,
+    inviteStaffMember,
     changeRequests,
     pendingChangeRequests,
     currentRole,
@@ -1280,6 +1475,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     updateClient,
     deleteClient,
     // Invoices
+    getNextInvoiceNumber,
     createInvoice,
     updateInvoice,
     cancelInvoice,
@@ -1291,8 +1487,6 @@ export const useBusinessStore = defineStore('business-store', () => {
     deleteProduct,
     // Reminders
     sendReminder,
-    // Settings
-    updateBusinessSettings,
     // Computed Metrics
     totalRevenue,
     totalOutstanding,

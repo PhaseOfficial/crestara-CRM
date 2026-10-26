@@ -57,9 +57,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormControl
             v-model="form.business_name"
-            :label="__('Company Legal Name')"
+            :label="__('Trade / Display Name')"
             type="text"
             required
+          />
+          <FormControl
+            v-model="form.legal_name"
+            :label="__('Company Legal Name')"
+            type="text"
+            placeholder="e.g. Crestara Technologies Inc."
           />
           <FormControl
             v-model="form.business_email"
@@ -78,6 +84,12 @@
             :label="__('Tax ID / VAT Number')"
             type="text"
             placeholder="e.g. US-94-8829103"
+          />
+          <FormControl
+            v-model="form.website"
+            :label="__('Company Website')"
+            type="url"
+            placeholder="https://crestara.com"
           />
         </div>
 
@@ -154,6 +166,62 @@
           type="textarea"
           rows="2"
         />
+      </div>
+
+      <!-- Bank Wire & Remittance Settlement Card -->
+      <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">
+            <span class="lucide-landmark size-4 text-ink-gray-5 dark:text-ink-gray-4" />
+            {{ __('Bank & Wire Remittance Settlement') }}
+          </h2>
+          <p class="text-xs text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">
+            {{ __('Banking, IBAN, and wire settlement instructions printed on customer invoices.') }}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormControl
+            v-model="form.bank_name"
+            :label="__('Bank / Financial Institution')"
+            type="text"
+            placeholder="e.g. JPMorgan Chase Bank, N.A."
+          />
+          <FormControl
+            v-model="form.bank_account_name"
+            :label="__('Account Holder Legal Name')"
+            type="text"
+            placeholder="e.g. Crestara Technologies Inc."
+          />
+          <FormControl
+            v-model="form.bank_account_number"
+            :label="__('Account Number / IBAN')"
+            type="text"
+            placeholder="e.g. US12CHAS00000012345678"
+          />
+          <FormControl
+            v-model="form.swift_bic"
+            :label="__('SWIFT / BIC Code')"
+            type="text"
+            placeholder="e.g. CHASUS33XXX"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormControl
+            v-model="form.bank_routing_iban"
+            :label="__('Routing / Sort Code (ABA / Clearing)')"
+            type="text"
+            placeholder="e.g. 021000021"
+          />
+          <FormControl
+            v-model="form.payment_instructions"
+            :label="__('Wire Instructions / Remittance Notes')"
+            type="textarea"
+            rows="2"
+            placeholder="e.g. Include invoice number in memo. Remitter is responsible for wire fees."
+          />
+        </div>
       </div>
 
       <!-- Staff Management & Role Permissions -->
@@ -418,17 +486,26 @@ const newMember = reactive({
 // Business Settings Form with fallback defaults
 const form = reactive({
   business_name: '',
+  legal_name: '',
   business_email: '',
   business_phone: '',
   business_address: '',
   tax_id: '',
+  website: '',
   currency: 'USD',
+  currency_symbol: '$',
   invoice_prefix: 'INV-2026-',
   next_invoice_number: 1045,
   default_payment_terms: 30,
   tax_rate: 8.5,
   late_fee_percentage: 2.0,
   notes_template: '',
+  bank_name: '',
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_routing_iban: '',
+  swift_bic: '',
+  payment_instructions: '',
   ...(business.settings || {}),
 })
 
@@ -518,8 +595,11 @@ function selectClientToUpgrade(email) {
   }
 }
 
-onMounted(() => {
-  business.fetchUsersFromSupabase()
+onMounted(async () => {
+  await Promise.all([
+    business.fetchBusinessSettingsFromSupabase(),
+    business.fetchUsersFromSupabase(),
+  ])
 })
 
 function onRoleChanged(user) {
@@ -529,56 +609,23 @@ function onRoleChanged(user) {
 async function addTeamMember() {
   if (!newMember.email || !newMember.full_name) return
 
-  const emailClean = newMember.email.trim().toLowerCase()
-  const matchedClient = existingClientAccount.value
+  try {
+    await business.inviteStaffMember({
+      email: newMember.email,
+      full_name: newMember.full_name,
+      role: newMember.role,
+    })
 
-  if (matchedClient) {
-    // UPGRADE EXISTING CLIENT TO STAFF / ADMIN
-    await business.updateUserRole(matchedClient.id, newMember.role)
-
-    // Update role in business.users
-    const idx = business.users.findIndex(
-      (u) => u.id === matchedClient.id || u.email?.toLowerCase() === emailClean
-    )
-    if (idx !== -1) {
-      business.users[idx].role = newMember.role
-      business.users[idx].full_name = newMember.full_name.trim()
-    } else {
-      business.users.push({
-        id: matchedClient.id,
-        email: matchedClient.email,
-        full_name: newMember.full_name.trim(),
-        role: newMember.role,
-        avatar: null,
-      })
-    }
-
-    // Prune from local business.customers so they transition out of client lists
-    business.customers = business.customers.filter((c) => c.id !== matchedClient.id)
-
-    localStorage.setItem('crestara_users', JSON.stringify(business.users))
-    localStorage.setItem('crestara_customers', JSON.stringify(business.customers))
-
-    // Switch view to their role so admin immediately sees them in the staff list
     selectedRoleFilter.value = newMember.role
     savedSuccess.value = true
     setTimeout(() => {
       savedSuccess.value = false
     }, 3000)
-  } else {
-    // Standard new staff invite
-    business.users.push({
-      id: `usr-${Date.now()}`,
-      email: newMember.email.trim(),
-      full_name: newMember.full_name.trim(),
-      role: newMember.role,
-      avatar: null,
-    })
-    localStorage.setItem('crestara_users', JSON.stringify(business.users))
-    selectedRoleFilter.value = newMember.role
+  } catch (err) {
+    console.error('Failed to add team member:', err)
+  } finally {
+    closeInviteModal()
   }
-
-  closeInviteModal()
 }
 
 function closeInviteModal() {
@@ -588,15 +635,18 @@ function closeInviteModal() {
   showInvite.value = false
 }
 
-function save() {
+async function save() {
   saving.value = true
-  setTimeout(() => {
-    business.updateBusinessSettings(form)
-    saving.value = false
+  try {
+    await business.updateBusinessSettings(form)
     savedSuccess.value = true
     setTimeout(() => {
       savedSuccess.value = false
     }, 3000)
-  }, 400)
+  } catch (err) {
+    console.error('Failed to save business settings:', err)
+  } finally {
+    saving.value = false
+  }
 }
 </script>

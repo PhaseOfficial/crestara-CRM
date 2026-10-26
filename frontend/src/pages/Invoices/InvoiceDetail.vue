@@ -213,14 +213,44 @@
         <!-- Totals & Summary Calculation -->
         <div class="flex flex-col sm:flex-row justify-between gap-6 pt-4 border-t border-outline-gray-1">
           <!-- Notes & Payment Terms -->
-          <div class="flex-1 space-y-2">
-            <label class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">{{ __('Notes / Instructions') }}</label>
-            <textarea
-              v-model="invoice.notes"
-              rows="3"
-              class="w-full bg-surface-gray-1 border border-outline-gray-2 rounded-lg p-3 text-xs text-ink-gray-8 focus:outline-none"
-              placeholder="Payment instructions or terms..."
-            />
+          <div class="flex-1 space-y-3">
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">{{ __('Notes / Instructions') }}</label>
+              <textarea
+                v-model="invoice.notes"
+                rows="3"
+                class="w-full bg-surface-gray-1 border border-outline-gray-2 rounded-lg p-3 text-xs text-ink-gray-8 focus:outline-none"
+                placeholder="Payment instructions or terms..."
+              />
+            </div>
+
+            <!-- Bank Wire Settlement Information Box -->
+            <div
+              v-if="business.settings.bank_name || business.settings.bank_account_number"
+              class="p-3 bg-surface-gray-1 dark:bg-surface-gray-2 rounded-lg border border-outline-gray-2 text-xs space-y-1"
+            >
+              <div class="font-bold text-ink-gray-9 flex items-center gap-1.5">
+                <span class="lucide-landmark size-3.5 text-ink-gray-5" />
+                {{ __('Remittance Settlement Details') }}
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-ink-gray-7 dark:text-ink-gray-6 pt-1">
+                <div v-if="business.settings.bank_name">
+                  <span class="font-medium text-ink-gray-5">{{ __('Bank:') }}</span> {{ business.settings.bank_name }}
+                </div>
+                <div v-if="business.settings.bank_account_name">
+                  <span class="font-medium text-ink-gray-5">{{ __('Account Name:') }}</span> {{ business.settings.bank_account_name }}
+                </div>
+                <div v-if="business.settings.bank_account_number">
+                  <span class="font-medium text-ink-gray-5">{{ __('Account / IBAN:') }}</span> {{ business.settings.bank_account_number }}
+                </div>
+                <div v-if="business.settings.swift_bic">
+                  <span class="font-medium text-ink-gray-5">{{ __('SWIFT / BIC:') }}</span> {{ business.settings.swift_bic }}
+                </div>
+              </div>
+              <div v-if="business.settings.payment_instructions" class="text-[11px] text-ink-gray-5 pt-1 italic">
+                {{ business.settings.payment_instructions }}
+              </div>
+            </div>
           </div>
 
           <!-- Financial Calculation Box -->
@@ -339,8 +369,25 @@ const invoice = reactive({
   notes: business.settings.notes_template || '',
 })
 
-onMounted(() => {
-  if (!isNew.value) {
+onMounted(async () => {
+  try {
+    await business.fetchBusinessSettingsFromSupabase()
+  } catch (e) {
+    // ignore
+  }
+
+  if (isNew.value) {
+    if (business.settings.tax_rate) {
+      invoice.tax_rate = Number(business.settings.tax_rate)
+    }
+    if (business.settings.default_payment_terms) {
+      invoice.payment_terms = `Net ${business.settings.default_payment_terms}`
+      invoice.due_date = new Date(Date.now() + Number(business.settings.default_payment_terms) * 86400000).toISOString().split('T')[0]
+    }
+    if (business.settings.notes_template && !invoice.notes) {
+      invoice.notes = business.settings.notes_template
+    }
+  } else {
     const existing = business.invoices.find((i) => i.id === route.params.invoiceId)
     if (existing) {
       Object.assign(invoice, JSON.parse(JSON.stringify(existing)))
@@ -400,7 +447,7 @@ function recalculateTotals() {
   invoice.balance_due = Number(Math.max(0, invoice.total_amount - (invoice.amount_paid || 0)).toFixed(2))
 }
 
-function saveInvoice() {
+async function saveInvoice() {
   if (!invoice.client_name) {
     alert('Please enter a client or company name')
     return
@@ -408,16 +455,19 @@ function saveInvoice() {
   saving.value = true
   recalculateTotals()
 
-  setTimeout(() => {
-    saving.value = false
+  try {
     if (isNew.value) {
-      const created = business.createInvoice(invoice)
+      const created = await business.createInvoice(invoice)
       router.replace({ path: `/invoices/${created.id}` })
     } else {
       business.updateInvoice(invoice.id, invoice)
       alert('Invoice updated successfully!')
     }
-  }, 400)
+  } catch (err) {
+    console.error('Failed to save invoice:', err)
+  } finally {
+    saving.value = false
+  }
 }
 
 function cancelCurrentInvoice() {
