@@ -804,11 +804,13 @@ async function handleTestEmail() {
   }
 }
 
+let isInitialSync = true
 watch(
   () => business.settings,
   (val) => {
-    if (val && typeof val === 'object') {
+    if (val && typeof val === 'object' && (isInitialSync || saving.value)) {
       Object.assign(form, val)
+      isInitialSync = false
     }
   },
   { immediate: true, deep: true }
@@ -905,6 +907,10 @@ onMounted(async () => {
     business.fetchBusinessSettingsFromSupabase(),
     business.fetchUsersFromSupabase(),
   ])
+  if (isInitialSync && business.settings) {
+    Object.assign(form, business.settings)
+    isInitialSync = false
+  }
 })
 
 function onRoleChanged(user) {

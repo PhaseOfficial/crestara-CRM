@@ -3,9 +3,10 @@ import autoTable from 'jspdf-autotable'
 import { DEFAULT_CRESTARA_LOGO_BASE64 } from './defaultLogo'
 
 /**
- * LaTeX-Inspired Vector PDF Generator & Clean Printer
- * Produces publication-grade, formal vector documents using booktabs rules,
- * Latin Modern / Times serif typography, and isolated print frames.
+ * High-End Vector PDF Generator & Clean Printer
+ * Produces publication-grade, modern vector documents mirroring the UI canvas design:
+ * clean sans-serif typography, soft rounded cards, Frappe UI / Tailwind slate palette,
+ * emerald settlement accents, and isolated print frames.
  */
 
 // Helper to format currency numbers
@@ -146,7 +147,7 @@ export async function preparePdfSettings(settings = {}) {
 }
 
 /**
- * Generates an official LaTeX-styled Invoice PDF using jsPDF + autoTable
+ * Generates an official vector Invoice PDF mirroring the Crestara CRM UI canvas.
  * @param {Object} invoice - Invoice record
  * @param {Object} settings - Business settings
  * @returns {jsPDF}
@@ -160,33 +161,28 @@ export function generateInvoicePdf(invoice, settings = {}) {
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const margin = 18 // 18mm standard formal margin
+  const margin = 15 // 15mm clean margin (mirrors max-w-4xl p-6 sm:p-8)
   const contentWidth = pageWidth - margin * 2
   const curSign = getCurrencySign(invoice.currency || settings.currency)
 
-  // Typography: Latin Modern / Times Roman serif aesthetic
-  doc.setFont('times', 'normal')
+  // Modern UI Typography: clean sans-serif
+  doc.setFont('helvetica', 'normal')
 
-  // Top Rule (LaTeX \toprule equivalent across page header)
-  doc.setDrawColor(30, 41, 59) // Slate-800
-  doc.setLineWidth(0.8)
-  doc.line(margin, margin, pageWidth - margin, margin)
+  let y = margin
 
-  let y = margin + 8
-
-  // --- Header Block: Two Columns ---
-  // Left Column: Business Entity Branding
+  // --- Top Row: Business Branding & Invoice Metadata ---
+  // Left Column: Business Branding
   const bizName = settings.business_name || 'Crestara CRM'
   let logoData = settings.logo_data_uri || (settings.logo_url && settings.logo_url.startsWith('data:image/') ? settings.logo_url : null)
   if (!logoData && (!settings.logo_url || settings.logo_url === '/crestara_logo.png' || settings.logo_url.includes('crestara_logo.png'))) {
     logoData = DEFAULT_CRESTARA_LOGO_BASE64
   }
 
+  let yBiz = y
   if (logoData) {
     try {
-      // Dynamic un-squished aspect ratio calculation (preserves original 909x243 / ~3.74:1)
       let logoWidth = 46
-      let logoHeight = 46 / (909 / 243) // 12.3mm
+      let logoHeight = 46 / (909 / 243)
       try {
         const props = doc.getImageProperties(logoData)
         if (props && props.width && props.height) {
@@ -215,322 +211,490 @@ export function generateInvoicePdf(invoice, settings = {}) {
       }
 
       doc.addImage(logoData, imgFormat, margin, y, logoWidth, logoHeight, undefined, 'FAST')
-      y += logoHeight + 3.5
+      yBiz += logoHeight + 3
     } catch (err) {
-      console.warn('Could not embed logo image in PDF:', err)
-      doc.setFont('times', 'bold')
+      doc.setFont('helvetica', 'bold')
       doc.setFontSize(16)
-      doc.setTextColor(15, 23, 42)
-      doc.text(bizName, margin, y)
-      y += 5
+      doc.setTextColor(15, 23, 42) // text-ink-gray-9
+      doc.text(bizName, margin, yBiz + 5)
+      yBiz += 7
     }
   } else {
-    doc.setFont('times', 'bold')
+    doc.setFont('helvetica', 'bold')
     doc.setFontSize(16)
     doc.setTextColor(15, 23, 42)
-    doc.text(bizName, margin, y)
-    y += 5
+    doc.text(bizName, margin, yBiz + 5)
+    yBiz += 7
   }
 
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(71, 85, 105) // Slate-600
-
+  // Legal name
   if (settings.legal_name && settings.legal_name !== bizName) {
-    doc.text(settings.legal_name, margin, y)
-    y += 4
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8.5)
+    doc.setTextColor(71, 85, 105) // text-ink-gray-7
+    doc.text(settings.legal_name, margin, yBiz)
+    yBiz += 3.8
   }
 
+  // Address
   if (settings.business_address) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(100, 116, 139) // text-ink-gray-6
     const addrLines = doc.splitTextToSize(settings.business_address, 85)
-    doc.text(addrLines, margin, y)
-    y += addrLines.length * 3.8
+    doc.text(addrLines, margin, yBiz)
+    yBiz += addrLines.length * 3.5
   }
 
+  // Contact details: Tax ID, phone, email
   const contactPieces = []
   if (settings.tax_id) contactPieces.push(`Tax ID: ${settings.tax_id}`)
-  if (settings.business_phone) contactPieces.push(`Tel: ${settings.business_phone}`)
+  if (settings.business_phone) contactPieces.push(settings.business_phone)
   if (settings.business_email) contactPieces.push(settings.business_email)
 
   if (contactPieces.length > 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(100, 116, 139)
     const contactText = doc.splitTextToSize(contactPieces.join('  •  '), 85)
-    doc.text(contactText, margin, y)
-    y += contactText.length * 3.8
+    doc.text(contactText, margin, yBiz)
+    yBiz += contactText.length * 3.4
   }
 
-  // Right Column: Invoice Metadata (Aligned Right)
-  let rightY = margin + 8
-  doc.setFont('times', 'bold')
-  doc.setFontSize(20)
+  // Right Column: Invoice Metadata (mirrors UI top right)
+  let rightY = y
+  const isPaid = invoice.status === 'Paid' || Number(invoice.balance_due) <= 0
+  const invNumberText = invoice.invoice_number || 'DRAFT INVOICE'
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(18)
   doc.setTextColor(15, 23, 42)
-  doc.text('INVOICE', pageWidth - margin, rightY, { align: 'right' })
+  doc.text(invNumberText, pageWidth - margin, rightY + 4, { align: 'right' })
+  rightY += 6.5
 
-  rightY += 6
-  doc.setFont('times', 'bold')
-  doc.setFontSize(10)
-  doc.setTextColor(51, 65, 85)
-  doc.text(invoice.invoice_number || 'INV-DRAFT', pageWidth - margin, rightY, { align: 'right' })
+  // Paid in Full Pill or Status Badge
+  if (isPaid) {
+    const badgeW = 30
+    const badgeH = 5.5
+    const badgeX = pageWidth - margin - badgeW
+    const badgeY = rightY
 
-  rightY += 5
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(100, 116, 139)
+    doc.setFillColor(236, 253, 245) // emerald-500/10 / surface-green-2
+    doc.setDrawColor(167, 243, 208) // emerald-500/40 / outline-green-2
+    doc.setLineWidth(0.3)
+    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, 'FD')
 
-  doc.text(`Issue Date: ${invoice.issue_date || '-'}`, pageWidth - margin, rightY, { align: 'right' })
-  rightY += 4.2
-  doc.text(`Due Date: ${invoice.due_date || '-'}`, pageWidth - margin, rightY, { align: 'right' })
-  rightY += 4.2
-  doc.text(`Terms: ${invoice.payment_terms || 'Net 30'}`, pageWidth - margin, rightY, { align: 'right' })
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7)
+    doc.setTextColor(21, 128, 61) // emerald-700
+    doc.text('PAID IN FULL', badgeX + badgeW / 2, badgeY + 3.8, { align: 'center' })
+    rightY += badgeH + 3.5
+  } else if (invoice.status) {
+    const statusText = String(invoice.status).toUpperCase()
+    const badgeW = Math.max(22, doc.getTextWidth(statusText) + 8)
+    const badgeH = 5.2
+    const badgeX = pageWidth - margin - badgeW
+    const badgeY = rightY
 
-  // Max Y between left and right
-  y = Math.max(y, rightY) + 6
+    doc.setFillColor(241, 245, 249)
+    doc.setDrawColor(203, 213, 225)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, 'FD')
 
-  // Horizontal separator below header
-  doc.setDrawColor(226, 232, 240) // Slate-200
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7)
+    doc.setTextColor(71, 85, 105)
+    doc.text(statusText, badgeX + badgeW / 2, badgeY + 3.6, { align: 'center' })
+    rightY += badgeH + 3.5
+  }
+
+  // Metadata Grid: Issue Date, Due Date, Terms, Currency
+  const metaItems = [
+    { label: 'Issue Date:', val: invoice.issue_date || '-' },
+    { label: 'Due Date:', val: invoice.due_date || '-' },
+    { label: 'Terms:', val: invoice.payment_terms || 'Net 30' },
+    { label: 'Currency:', val: invoice.currency || settings.currency || 'USD' },
+  ]
+
+  for (const item of metaItems) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(100, 116, 139)
+    doc.text(item.label, pageWidth - margin - 35, rightY, { align: 'right' })
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(15, 23, 42)
+    doc.text(item.val, pageWidth - margin, rightY, { align: 'right' })
+    rightY += 4
+  }
+
+  // Horizontal divider below header
+  y = Math.max(yBiz, rightY) + 5
+  doc.setDrawColor(226, 232, 240) // border-outline-gray-1
   doc.setLineWidth(0.3)
   doc.line(margin, y, pageWidth - margin, y)
-  y += 7
+  y += 5
 
-  // --- Bill To Section ---
-  doc.setFont('times', 'bold')
-  doc.setFontSize(8.5)
-  doc.setTextColor(100, 116, 139)
-  doc.text('BILLED TO', margin, y)
-
-  y += 4.5
-  doc.setFont('times', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(15, 23, 42)
-  doc.text(invoice.client_name || 'Valued Customer', margin, y)
-
-  y += 4.2
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(71, 85, 105)
-
+  // --- Bill To Section: Rounded Card (mirrors UI bg-surface-gray-1 p-5 rounded-xl border) ---
+  const clientLines = []
+  clientLines.push({ text: invoice.client_name || 'Valued Customer', font: 'bold', size: 10, color: [15, 23, 42] })
   if (invoice.contact_name && invoice.contact_name !== invoice.client_name) {
-    doc.text(`Attn: ${invoice.contact_name}`, margin, y)
-    y += 4
+    clientLines.push({ text: `Attn: ${invoice.contact_name}`, font: 'normal', size: 8, color: [71, 85, 105] })
   }
   if (invoice.client_email) {
-    doc.text(`Email: ${invoice.client_email}`, margin, y)
-    y += 4
+    clientLines.push({ text: invoice.client_email, font: 'normal', size: 8, color: [100, 116, 139] })
+  }
+  if (invoice.client_phone) {
+    clientLines.push({ text: `Tel: ${invoice.client_phone}`, font: 'normal', size: 8, color: [100, 116, 139] })
   }
 
-  // --- Official Watermark Stamp (if Paid) ---
-  const isPaid = invoice.status === 'Paid' || Number(invoice.balance_due) <= 0
-  if (isPaid) {
-    // Elegant bordered PAID IN FULL stamp in right column
-    const stampX = pageWidth - margin - 48
-    const stampY = y - 12
-    doc.setDrawColor(22, 101, 52) // Green-800
-    doc.setLineWidth(0.75)
-    doc.roundedRect(stampX, stampY, 48, 14, 1.5, 1.5, 'S')
+  const cardPad = 4
+  const cardH = 8 + (clientLines.length * 4) + 2
+  const cardW = contentWidth
 
-    // Inner dashed rule
-    doc.setDrawColor(187, 247, 208) // Green-200
-    doc.setLineWidth(0.3)
-    doc.roundedRect(stampX + 1, stampY + 1, 46, 12, 1, 1, 'S')
+  doc.setFillColor(248, 250, 252) // bg-surface-gray-1 (#F8FAFC)
+  doc.setDrawColor(226, 232, 240) // border-outline-gray-1 (#E2E8F0)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(margin, y, cardW, cardH, 2.5, 2.5, 'FD')
 
-    doc.setFont('times', 'bold')
-    doc.setFontSize(9.5)
-    doc.setTextColor(22, 101, 52)
-    doc.text('PAID IN FULL', stampX + 24, stampY + 8.5, { align: 'center' })
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7.5)
+  doc.setTextColor(100, 116, 139) // uppercase tracking-wider
+  doc.text('BILLED TO CLIENT', margin + cardPad, y + cardPad + 2.5)
+
+  let curLineY = y + cardPad + 7.5
+  for (const line of clientLines) {
+    doc.setFont('helvetica', line.font)
+    doc.setFontSize(line.size)
+    doc.setTextColor(line.color[0], line.color[1], line.color[2])
+    doc.text(line.text, margin + cardPad, curLineY)
+    curLineY += 4
   }
 
-  y += 6
+  y += cardH + 5
 
-  // --- LaTeX Booktabs Items Table ---
+  // --- Line Items Table: Modern UI Style with Header & Item SKU sub-row ---
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9.5)
+  doc.setTextColor(15, 23, 42)
+  doc.text('Line Items', margin, y)
+  y += 2.5
+
   const tableRows = (invoice.items || []).map((item, idx) => {
-    const desc = item.code ? `${item.name} (${item.code})` : (item.name || `Item ${idx + 1}`)
+    const desc = item.code ? `${item.name || 'Item'}\nSKU: ${item.code}` : (item.name || `Item ${idx + 1}`)
     return [
       desc,
       String(item.quantity || 1),
       `${curSign}${formatAmount(item.unit_price)}`,
-      `${curSign}${formatAmount(item.amount)}`,
+      `${curSign}${formatAmount(item.amount || (item.quantity * item.unit_price))}`,
     ]
   })
 
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [['Description', 'Qty', 'Unit Price', 'Amount']],
+    head: [['ITEM & DESCRIPTION', 'QTY', `UNIT PRICE (${curSign.trim()})`, `AMOUNT (${curSign.trim()})`]],
     body: tableRows.length ? tableRows : [['No items listed', '-', '-', '-']],
-    theme: 'plain', // Clean booktabs style without striped background
+    theme: 'plain',
     styles: {
-      font: 'times',
-      fontSize: 9,
-      textColor: [30, 41, 59],
-      cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
-      lineColor: [203, 213, 225],
-    },
-    headStyles: {
-      font: 'times',
-      fontStyle: 'bold',
+      font: 'helvetica',
       fontSize: 8.5,
       textColor: [15, 23, 42],
-      fillColor: false, // Pure LaTeX booktabs background
-      lineWidth: { top: 0.8, bottom: 0.4 }, // \toprule and \midrule
-      lineColor: [30, 41, 59],
+      cellPadding: { top: 3.2, bottom: 3.2, left: 3, right: 3 },
+      lineColor: [241, 245, 249],
+      lineWidth: { bottom: 0.3 },
+    },
+    headStyles: {
+      font: 'helvetica',
+      fontStyle: 'bold',
+      fontSize: 7.5,
+      textColor: [100, 116, 139],
+      fillColor: [248, 250, 252],
+      lineColor: [226, 232, 240],
+      lineWidth: { top: 0.3, bottom: 0.3 },
+      cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 },
     },
     columnStyles: {
       0: { cellWidth: 'auto' },
       1: { cellWidth: 20, halign: 'center' },
-      2: { cellWidth: 32, halign: 'right' },
-      3: { cellWidth: 35, halign: 'right' },
+      2: { cellWidth: 35, halign: 'right' },
+      3: { cellWidth: 35, halign: 'right', fontStyle: 'bold' },
     },
     didDrawPage: (data) => {
-      // Bottom rule (\bottomrule) after table body
       const finalY = data.cursor.y
-      doc.setDrawColor(30, 41, 59)
-      doc.setLineWidth(0.6)
+      doc.setDrawColor(226, 232, 240)
+      doc.setLineWidth(0.3)
       doc.line(margin, finalY, pageWidth - margin, finalY)
     },
   })
 
   let afterTableY = doc.lastAutoTable.finalY + 5
 
-  // --- Financial Summary & Bank Information ---
-  // Ensure enough room on current page, or add page
-  if (afterTableY > pageHeight - 65) {
+  // Page break check if remaining height is tight
+  if (afterTableY > pageHeight - 75) {
     doc.addPage()
-    afterTableY = margin
+    afterTableY = margin + 5
   }
 
-  const summaryWidth = 75
+  // --- Financial Summary & Remittance Section ---
+  const summaryWidth = 72
   const summaryX = pageWidth - margin - summaryWidth
+  const leftColWidth = summaryX - margin - 8
 
-  // Left side: Remittance Settlement Details & Notes
-  let notesY = afterTableY + 2
-  const leftColWidth = contentWidth - summaryWidth - 10
+  // Left Column: Notes & Remittance Settlement Details
+  let leftY = afterTableY + 2
+  if (invoice.notes) {
+    const noteLines = doc.splitTextToSize(invoice.notes, leftColWidth - 6)
+    const noteBoxH = Math.max(13, noteLines.length * 3.4 + 7)
+
+    doc.setFillColor(248, 250, 252)
+    doc.setDrawColor(226, 232, 240)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(margin, leftY, leftColWidth, noteBoxH, 2, 2, 'FD')
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7)
+    doc.setTextColor(100, 116, 139)
+    doc.text('NOTES / INSTRUCTIONS', margin + 3, leftY + 3.8)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(71, 85, 105)
+    doc.text(noteLines, margin + 3, leftY + 7.5)
+
+    leftY += noteBoxH + 4
+  }
 
   if (settings.bank_name || settings.bank_account_number) {
-    doc.setFont('times', 'bold')
-    doc.setFontSize(8.5)
-    doc.setTextColor(30, 41, 59)
-    doc.text('REMITTANCE INSTRUCTIONS', margin, notesY)
+    const remitLines = []
+    if (settings.bank_name) remitLines.push(`Bank: ${settings.bank_name}`)
+    if (settings.bank_account_name) remitLines.push(`Account Name: ${settings.bank_account_name}`)
+    if (settings.bank_account_number) remitLines.push(`Account / IBAN: ${settings.bank_account_number}`)
+    if (settings.swift_bic) remitLines.push(`SWIFT / BIC: ${settings.swift_bic}`)
 
-    notesY += 4
-    doc.setFont('times', 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(71, 85, 105)
-
-    if (settings.bank_name) {
-      doc.text(`Bank: ${settings.bank_name}`, margin, notesY)
-      notesY += 3.5
-    }
-    if (settings.bank_account_name) {
-      doc.text(`Account Name: ${settings.bank_account_name}`, margin, notesY)
-      notesY += 3.5
-    }
-    if (settings.bank_account_number) {
-      doc.text(`Account / IBAN: ${settings.bank_account_number}`, margin, notesY)
-      notesY += 3.5
-    }
-    if (settings.swift_bic) {
-      doc.text(`SWIFT / BIC: ${settings.swift_bic}`, margin, notesY)
-      notesY += 3.5
-    }
+    let remitBoxH = 7 + (remitLines.length * 3.5)
+    let instrLines = []
     if (settings.payment_instructions) {
-      const instrLines = doc.splitTextToSize(settings.payment_instructions, leftColWidth)
-      doc.text(instrLines, margin, notesY)
-      notesY += instrLines.length * 3.5
+      instrLines = doc.splitTextToSize(settings.payment_instructions, leftColWidth - 6)
+      remitBoxH += instrLines.length * 3.2 + 2
     }
-  }
 
-  if (invoice.notes) {
-    notesY += 2
-    doc.setFont('times', 'bold')
-    doc.setFontSize(8.5)
-    doc.setTextColor(30, 41, 59)
-    doc.text('NOTES', margin, notesY)
+    doc.setFillColor(248, 250, 252)
+    doc.setDrawColor(226, 232, 240)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(margin, leftY, leftColWidth, remitBoxH, 2, 2, 'FD')
 
-    notesY += 4
-    doc.setFont('times', 'normal')
-    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(15, 23, 42)
+    doc.text('Remittance Settlement Details', margin + 3, leftY + 4)
+
+    let rY = leftY + 7.5
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
     doc.setTextColor(71, 85, 105)
-    const noteLines = doc.splitTextToSize(invoice.notes, leftColWidth)
-    doc.text(noteLines, margin, notesY)
-    notesY += noteLines.length * 3.5
+    for (const rLine of remitLines) {
+      doc.text(rLine, margin + 3, rY)
+      rY += 3.5
+    }
+
+    if (instrLines.length > 0) {
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(7)
+      doc.setTextColor(100, 116, 139)
+      doc.text(instrLines, margin + 3, rY + 0.5)
+    }
+
+    leftY += remitBoxH + 4
   }
 
-  // Right side: Financial Calculations
+  // Right Column: Financial Calculation Box
   let calcY = afterTableY + 2
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(71, 85, 105)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  doc.setTextColor(100, 116, 139)
 
   // Subtotal
   doc.text('Subtotal:', summaryX, calcY)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(15, 23, 42)
   doc.text(`${curSign}${formatAmount(invoice.subtotal)}`, pageWidth - margin, calcY, { align: 'right' })
-  calcY += 5
+  calcY += 4.8
 
   // Discount
   if (Number(invoice.discount_percentage) > 0 || Number(invoice.discount_amount) > 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 116, 139)
     doc.text(`Discount (${invoice.discount_percentage || 0}%):`, summaryX, calcY)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(21, 128, 61) // text-ink-green-7
     doc.text(`-${curSign}${formatAmount(invoice.discount_amount)}`, pageWidth - margin, calcY, { align: 'right' })
-    calcY += 5
+    calcY += 4.8
   }
 
   // Tax
   if (Number(invoice.tax_rate) > 0 || Number(invoice.tax_amount) > 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 116, 139)
     doc.text(`Tax (${invoice.tax_rate || 0}%):`, summaryX, calcY)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(71, 85, 105)
     doc.text(`+${curSign}${formatAmount(invoice.tax_amount)}`, pageWidth - margin, calcY, { align: 'right' })
-    calcY += 5
+    calcY += 4.8
   }
 
-  // Divider above Total
-  doc.setDrawColor(203, 213, 225)
-  doc.setLineWidth(0.4)
+  // Divider above Grand Total
+  doc.setDrawColor(226, 232, 240)
+  doc.setLineWidth(0.3)
   doc.line(summaryX, calcY - 1, pageWidth - margin, calcY - 1)
-  calcY += 3
+  calcY += 3.5
 
-  // Grand Total (Emphasized)
-  doc.setFont('times', 'bold')
-  doc.setFontSize(11)
+  // Grand Total
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11.5)
   doc.setTextColor(15, 23, 42)
   doc.text('Grand Total:', summaryX, calcY)
   doc.text(`${curSign}${formatAmount(invoice.total_amount)}`, pageWidth - margin, calcY, { align: 'right' })
-  calcY += 6
+  calcY += 5.5
 
-  // Paid & Balance
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(22, 101, 52) // Green-800
+  // Amount Paid
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  doc.setTextColor(100, 116, 139)
   doc.text('Amount Paid:', summaryX, calcY)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(21, 128, 61)
   doc.text(`${curSign}${formatAmount(invoice.amount_paid)}`, pageWidth - margin, calcY, { align: 'right' })
-  calcY += 5
+  calcY += 4.8
 
+  // Balance Due
   const balanceDue = Number(invoice.balance_due || 0)
-  doc.setFont('times', 'bold')
-  doc.setTextColor(balanceDue > 0 ? 180 : 71, balanceDue > 0 ? 83 : 85, balanceDue > 0 ? 9 : 105)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9.5)
+  doc.setTextColor(71, 85, 105)
   doc.text('Balance Due:', summaryX, calcY)
+  doc.setTextColor(balanceDue > 0 ? 217 : 21, balanceDue > 0 ? 119 : 128, balanceDue > 0 ? 6 : 61) // amber-600 or emerald-700
   doc.text(`${curSign}${formatAmount(balanceDue)}`, pageWidth - margin, calcY, { align: 'right' })
+  calcY += 5.5
 
-  // Double underline below Balance Due (Classic LaTeX Accounting Rule)
-  calcY += 1.5
-  doc.setDrawColor(30, 41, 59)
-  doc.setLineWidth(0.4)
-  doc.line(summaryX, calcY, pageWidth - margin, calcY)
-  doc.line(summaryX, calcY + 0.6, pageWidth - margin, calcY + 0.6)
+  // Settled Box if Paid (mirrors UI settled box)
+  if (isPaid) {
+    doc.setFillColor(236, 253, 245)
+    doc.setDrawColor(167, 243, 208)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(summaryX, calcY, summaryWidth, 6.2, 1.5, 1.5, 'FD')
 
-  // --- Formal Footer (Bottom of Page) ---
-  const footerY = pageHeight - 12
-  doc.setDrawColor(226, 232, 240)
-  doc.setLineWidth(0.3)
-  doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(21, 128, 61)
+    doc.text('PAID IN FULL', summaryX + 3.5, calcY + 4.2)
+    doc.setFontSize(7)
+    doc.text('Settled', pageWidth - margin - 3.5, calcY + 4.2, { align: 'right' })
+    calcY += 9
+  }
 
-  doc.setFont('times', 'normal')
-  doc.setFontSize(7.5)
-  doc.setTextColor(148, 163, 184) // Slate-400
-  const legalLine = `${bizName}  •  ${settings.website || 'https://crestara.com'}  •  Generated electronically`
-  doc.text(legalLine, pageWidth / 2, footerY, { align: 'center' })
+  // --- Recorded Payments Table (if payments recorded) ---
+  let bottomSectionY = Math.max(leftY, calcY) + 3
+  if (invoice.payments && invoice.payments.length > 0) {
+    if (bottomSectionY > pageHeight - 45) {
+      doc.addPage()
+      bottomSectionY = margin + 5
+    }
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8.5)
+    doc.setTextColor(15, 23, 42)
+    doc.text(`Recorded Payments & Commercial Receipts (${invoice.payments.length})`, margin, bottomSectionY)
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(21, 128, 61)
+    doc.text(`Total Settled: ${curSign}${formatAmount(invoice.amount_paid)}`, pageWidth - margin, bottomSectionY, { align: 'right' })
+    bottomSectionY += 2.5
+
+    const paymentRows = invoice.payments.map((p) => [
+      p.receipt_number || p.transaction_ref || 'REC-SETTLED',
+      p.payment_date || '-',
+      p.payment_method || 'Electronic',
+      `${curSign}${formatAmount(p.amount)}`,
+      p.status || 'Settled',
+    ])
+
+    autoTable(doc, {
+      startY: bottomSectionY,
+      margin: { left: margin, right: margin },
+      head: [['RECEIPT #', 'DATE', 'METHOD', 'AMOUNT', 'STATUS']],
+      body: paymentRows,
+      theme: 'plain',
+      styles: {
+        font: 'helvetica',
+        fontSize: 7.5,
+        textColor: [15, 23, 42],
+        cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 },
+        lineColor: [241, 245, 249],
+        lineWidth: { bottom: 0.25 },
+      },
+      headStyles: {
+        font: 'helvetica',
+        fontStyle: 'bold',
+        fontSize: 7,
+        textColor: [100, 116, 139],
+        fillColor: [248, 250, 252],
+        lineColor: [226, 232, 240],
+        lineWidth: { top: 0.25, bottom: 0.25 },
+        cellPadding: { top: 2.5, bottom: 2.5, left: 2.5, right: 2.5 },
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold' },
+        3: { halign: 'right', fontStyle: 'bold', textColor: [21, 128, 61] },
+        4: { halign: 'center', textColor: [21, 128, 61], fontStyle: 'bold' },
+      },
+      didDrawPage: (data) => {
+        const finalY = data.cursor.y
+        doc.setDrawColor(226, 232, 240)
+        doc.setLineWidth(0.3)
+        doc.line(margin, finalY, pageWidth - margin, finalY)
+      },
+    })
+  }
+
+  // --- Invoice Bottom Footer (Small Font, exactly mirroring UI footer) ---
+  const totalPages = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    const footerDividerY = pageHeight - 13
+
+    doc.setDrawColor(226, 232, 240)
+    doc.setLineWidth(0.3)
+    doc.line(margin, footerDividerY, pageWidth - margin, footerDividerY)
+
+    // Footer Line 1: Business Name • Legal Name
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(71, 85, 105) // text-ink-gray-7
+    const footLine1 = `${bizName}${settings.legal_name && settings.legal_name !== bizName ? '  •  ' + settings.legal_name : ''}`
+    doc.text(footLine1, pageWidth / 2, footerDividerY + 4, { align: 'center' })
+
+    // Footer Line 2: Address • Tax ID • Phone
+    const footParts = []
+    if (settings.business_address) footParts.push(settings.business_address.replace(/\n/g, ', '))
+    if (settings.tax_id) footParts.push(`Tax ID: ${settings.tax_id}`)
+    if (settings.business_phone) footParts.push(settings.business_phone)
+
+    if (footParts.length > 0) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(100, 116, 139) // text-ink-gray-6
+      doc.text(footParts.join('  •  '), pageWidth / 2, footerDividerY + 7.5, { align: 'center' })
+    }
+  }
 
   return doc
 }
 
 /**
- * Generates an official LaTeX-styled Commercial Receipt PDF
+ * Generates an official Commercial Receipt PDF mirroring the UI CommercialReceiptModal design.
  * @param {Object} invoice - Invoice record
  * @param {Object} payment - Payment transaction record
  * @param {Object} settings - Business settings
@@ -545,31 +709,26 @@ export function generateReceiptPdf(invoice, payment, settings = {}) {
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const margin = 18
+  const margin = 15
   const contentWidth = pageWidth - margin * 2
   const curSign = getCurrencySign(payment.currency || invoice?.currency || settings.currency)
 
-  doc.setFont('times', 'normal')
+  doc.setFont('helvetica', 'normal')
 
-  // Top Rule
-  doc.setDrawColor(30, 41, 59)
-  doc.setLineWidth(0.8)
-  doc.line(margin, margin, pageWidth - margin, margin)
+  let y = margin
 
-  let y = margin + 8
-
-  // Left Column: Business Entity Branding
+  // Left Column: Business Branding
   const bizName = settings.business_name || 'Crestara CRM'
   let logoData = settings.logo_data_uri || (settings.logo_url && settings.logo_url.startsWith('data:image/') ? settings.logo_url : null)
   if (!logoData && (!settings.logo_url || settings.logo_url === '/crestara_logo.png' || settings.logo_url.includes('crestara_logo.png'))) {
     logoData = DEFAULT_CRESTARA_LOGO_BASE64
   }
 
+  let yBiz = y
   if (logoData) {
     try {
-      // Dynamic un-squished aspect ratio calculation (preserves original 909x243 / ~3.74:1)
       let logoWidth = 46
-      let logoHeight = 46 / (909 / 243) // 12.3mm
+      let logoHeight = 46 / (909 / 243)
       try {
         const props = doc.getImageProperties(logoData)
         if (props && props.width && props.height) {
@@ -598,115 +757,154 @@ export function generateReceiptPdf(invoice, payment, settings = {}) {
       }
 
       doc.addImage(logoData, imgFormat, margin, y, logoWidth, logoHeight, undefined, 'FAST')
-      y += logoHeight + 3.5
+      yBiz += logoHeight + 3
     } catch (err) {
-      console.warn('Could not embed logo image in Receipt PDF:', err)
-      doc.setFont('times', 'bold')
+      doc.setFont('helvetica', 'bold')
       doc.setFontSize(16)
       doc.setTextColor(15, 23, 42)
-      doc.text(bizName, margin, y)
-      y += 5
+      doc.text(bizName, margin, yBiz + 5)
+      yBiz += 7
     }
   } else {
-    doc.setFont('times', 'bold')
+    doc.setFont('helvetica', 'bold')
     doc.setFontSize(16)
     doc.setTextColor(15, 23, 42)
-    doc.text(bizName, margin, y)
-    y += 5
+    doc.text(bizName, margin, yBiz + 5)
+    yBiz += 7
   }
-
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(71, 85, 105)
 
   if (settings.legal_name && settings.legal_name !== bizName) {
-    doc.text(settings.legal_name, margin, y)
-    y += 4
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8.5)
+    doc.setTextColor(71, 85, 105)
+    doc.text(settings.legal_name, margin, yBiz)
+    yBiz += 3.8
   }
+
   if (settings.business_address) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(100, 116, 139)
     const addrLines = doc.splitTextToSize(settings.business_address, 85)
-    doc.text(addrLines, margin, y)
-    y += addrLines.length * 3.8
+    doc.text(addrLines, margin, yBiz)
+    yBiz += addrLines.length * 3.5
   }
+
   if (settings.tax_id) {
-    doc.text(`Tax ID / TIN: ${settings.tax_id}`, margin, y)
-    y += 4
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(100, 116, 139)
+    doc.text(`Tax ID / TIN: ${settings.tax_id}`, margin, yBiz)
+    yBiz += 3.8
   }
 
-  // Right Column: Receipt Metadata
-  let rightY = margin + 8
-  doc.setFont('times', 'bold')
-  doc.setFontSize(18)
-  doc.setTextColor(15, 23, 42)
-  doc.text('OFFICIAL RECEIPT', pageWidth - margin, rightY, { align: 'right' })
+  // Right Column: Official Receipt Metadata (mirrors UI)
+  let rightY = y
+  const badgeW = 28
+  const badgeH = 5.2
+  const badgeX = pageWidth - margin - badgeW
 
-  rightY += 6
-  doc.setFont('times', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(30, 41, 59)
+  doc.setFillColor(236, 253, 245)
+  doc.setDrawColor(167, 243, 208)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(badgeX, rightY, badgeW, badgeH, 1.5, 1.5, 'FD')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7)
+  doc.setTextColor(21, 128, 61)
+  doc.text('OFFICIAL RECEIPT', badgeX + badgeW / 2, rightY + 3.6, { align: 'center' })
+  rightY += badgeH + 3
+
   const recNumber = payment.receipt_number || payment.transaction_ref || 'REC-SETTLED'
-  doc.text(recNumber, pageWidth - margin, rightY, { align: 'right' })
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  doc.setTextColor(15, 23, 42)
+  doc.text(recNumber, pageWidth - margin, rightY + 4, { align: 'right' })
+  rightY += 7.5
 
-  rightY += 5
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
   doc.setTextColor(100, 116, 139)
-  doc.text(`Payment Date: ${payment.payment_date || new Date().toISOString().split('T')[0]}`, pageWidth - margin, rightY, { align: 'right' })
-  rightY += 4.2
-  doc.text(`Payment Method: ${payment.payment_method || 'Electronic Wire'}`, pageWidth - margin, rightY, { align: 'right' })
-  rightY += 4.2
-  doc.text(`Invoice Ref: ${invoice?.invoice_number || 'Direct Payment'}`, pageWidth - margin, rightY, { align: 'right' })
+  doc.text(`Date: ${payment.payment_date || new Date().toISOString().split('T')[0]}`, pageWidth - margin, rightY, { align: 'right' })
+  rightY += 4
 
-  y = Math.max(y, rightY) + 6
-
-  // Horizontal line
+  // Divider below header
+  y = Math.max(yBiz, rightY) + 5
   doc.setDrawColor(226, 232, 240)
   doc.setLineWidth(0.3)
   doc.line(margin, y, pageWidth - margin, y)
-  y += 7
+  y += 5
 
-  // Received From & Settlement Box
-  doc.setFont('times', 'bold')
-  doc.setFontSize(8.5)
+  // --- Received From & Settlement Reference Card (2 columns inside card) ---
+  const cardPad = 4
+  const cardW = contentWidth
+  const cardH = 26
+
+  doc.setFillColor(248, 250, 252)
+  doc.setDrawColor(226, 232, 240)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(margin, y, cardW, cardH, 2.5, 2.5, 'FD')
+
+  // Left side: Received From
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7.5)
   doc.setTextColor(100, 116, 139)
-  doc.text('RECEIVED FROM', margin, y)
+  doc.text('RECEIVED FROM', margin + cardPad, y + cardPad + 2.5)
 
-  y += 4.5
-  doc.setFont('times', 'bold')
-  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
-  doc.text(invoice?.client_name || payment.client_name || 'Valued Client', margin, y)
+  doc.text(invoice?.client_name || payment.client_name || 'Valued Customer', margin + cardPad, y + cardPad + 7)
 
-  y += 4.2
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(71, 85, 105)
+  let leftCardY = y + cardPad + 11
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.setTextColor(100, 116, 139)
   if (invoice?.client_email) {
-    doc.text(`Email: ${invoice.client_email}`, margin, y)
-    y += 4
+    doc.text(invoice.client_email, margin + cardPad, leftCardY)
+    leftCardY += 3.8
+  }
+  if (invoice?.contact_name) {
+    doc.text(`Attn: ${invoice.contact_name}`, margin + cardPad, leftCardY)
   }
 
-  // Official Verified Stamp
-  const stampX = pageWidth - margin - 52
-  const stampY = y - 12
-  doc.setDrawColor(21, 128, 61) // Green-700
-  doc.setLineWidth(0.8)
-  doc.roundedRect(stampX, stampY, 52, 16, 2, 2, 'S')
-  doc.setFont('times', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(21, 128, 61)
-  doc.text('OFFICIALLY SETTLED', stampX + 26, stampY + 6.5, { align: 'center' })
-  doc.setFont('times', 'normal')
-  doc.setFontSize(7)
+  // Right side: Settlement Reference
+  const rightColX = margin + (cardW / 2) + 2
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7.5)
   doc.setTextColor(100, 116, 139)
-  doc.text('ELECTRONIC AUDIT VERIFIED', stampX + 26, stampY + 11.5, { align: 'center' })
+  doc.text('SETTLEMENT REFERENCE', rightColX, y + cardPad + 2.5)
 
-  y += 8
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.setTextColor(100, 116, 139)
+  doc.text('Invoice Number:', rightColX, y + cardPad + 7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(15, 23, 42)
+  doc.text(invoice?.invoice_number || 'Direct Payment', margin + cardW - cardPad, y + cardPad + 7, { align: 'right' })
 
-  // Receipt Breakdown Table
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(100, 116, 139)
+  doc.text('Payment Method:', rightColX, y + cardPad + 11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(15, 23, 42)
+  doc.text(payment.payment_method || 'Electronic Transfer', margin + cardW - cardPad, y + cardPad + 11, { align: 'right' })
+
+  if (payment.transaction_ref && payment.transaction_ref !== recNumber) {
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 116, 139)
+    doc.text('Transaction Ref:', rightColX, y + cardPad + 15)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(15, 23, 42)
+    doc.text(payment.transaction_ref, margin + cardW - cardPad, y + cardPad + 15, { align: 'right' })
+  }
+
+  y += cardH + 5
+
+  // --- Settlement Breakdown Table ---
   const receiptRows = [
     [
-      `Payment towards Invoice ${invoice?.invoice_number || ''}`,
+      `Payment towards Invoice ${invoice?.invoice_number || ''}${payment.notes ? '\n' + payment.notes : ''}`,
       payment.payment_method || 'Electronic Transfer',
       payment.transaction_ref || recNumber,
       `${curSign}${formatAmount(payment.amount)}`,
@@ -716,124 +914,148 @@ export function generateReceiptPdf(invoice, payment, settings = {}) {
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [['Description', 'Payment Channel', 'Reference / Batch #', 'Amount Paid']],
+    head: [['DESCRIPTION', 'PAYMENT CHANNEL', 'REFERENCE / BATCH #', 'CREDITED AMOUNT']],
     body: receiptRows,
     theme: 'plain',
     styles: {
-      font: 'times',
-      fontSize: 9.5,
-      textColor: [30, 41, 59],
-      cellPadding: { top: 3.5, bottom: 3.5, left: 2, right: 2 },
-    },
-    headStyles: {
-      font: 'times',
-      fontStyle: 'bold',
+      font: 'helvetica',
       fontSize: 8.5,
       textColor: [15, 23, 42],
-      fillColor: false,
-      lineWidth: { top: 0.8, bottom: 0.4 },
-      lineColor: [30, 41, 59],
+      cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 },
+      lineColor: [241, 245, 249],
+      lineWidth: { bottom: 0.3 },
+    },
+    headStyles: {
+      font: 'helvetica',
+      fontStyle: 'bold',
+      fontSize: 7.5,
+      textColor: [100, 116, 139],
+      fillColor: [248, 250, 252],
+      lineColor: [226, 232, 240],
+      lineWidth: { top: 0.3, bottom: 0.3 },
+      cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 },
     },
     columnStyles: {
       0: { cellWidth: 'auto' },
       1: { cellWidth: 38 },
       2: { cellWidth: 42 },
-      3: { cellWidth: 35, halign: 'right' },
+      3: { cellWidth: 35, halign: 'right', fontStyle: 'bold', textColor: [21, 128, 61] },
     },
     didDrawPage: (data) => {
       const finalY = data.cursor.y
-      doc.setDrawColor(30, 41, 59)
-      doc.setLineWidth(0.6)
+      doc.setDrawColor(226, 232, 240)
+      doc.setLineWidth(0.3)
       doc.line(margin, finalY, pageWidth - margin, finalY)
     },
   })
 
   let afterTableY = doc.lastAutoTable.finalY + 6
 
-  // Invoice Ledger Reconciliation Block
-  const summaryWidth = 80
-  const summaryX = pageWidth - margin - summaryWidth
-
-  // Left side: Reference notes & Verification seal info
-  let notesY = afterTableY + 2
-  const leftColWidth = contentWidth - summaryWidth - 10
-
-  doc.setFont('times', 'bold')
-  doc.setFontSize(8.5)
-  doc.setTextColor(30, 41, 59)
-  doc.text('AUDIT & COMPLIANCE VERIFICATION', margin, notesY)
-
-  notesY += 4
-  doc.setFont('times', 'normal')
-  doc.setFontSize(8)
-  doc.setTextColor(71, 85, 105)
-  doc.text(`Receipt Reference: ${recNumber}`, margin, notesY)
-  notesY += 3.5
-  doc.text(`Recorded Date: ${payment.payment_date || new Date().toISOString().split('T')[0]}`, margin, notesY)
-  notesY += 3.5
-  if (payment.notes) {
-    const notesText = doc.splitTextToSize(`Notes: ${payment.notes}`, leftColWidth)
-    doc.text(notesText, margin, notesY)
-    notesY += notesText.length * 3.5
+  if (afterTableY > pageHeight - 65) {
+    doc.addPage()
+    afterTableY = margin + 5
   }
+
+  // --- Reconciliation & Audit Verified Seal ---
+  const summaryWidth = 75
+  const summaryX = pageWidth - margin - summaryWidth
+  const leftColWidth = summaryX - margin - 8
+
+  // Left side: Official Audit Verified Seal Card (mirrors UI)
+  const sealH = 18
+  doc.setFillColor(236, 253, 245)
+  doc.setDrawColor(167, 243, 208)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(margin, afterTableY, leftColWidth, sealH, 2, 2, 'FD')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8)
+  doc.setTextColor(21, 128, 61)
+  doc.text('AUDIT VERIFIED SETTLEMENT', margin + 4, afterTableY + 6)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(71, 85, 105)
+  doc.text('Authenticated commercial receipt recorded in ledger.', margin + 4, afterTableY + 10.5)
+  doc.setFontSize(7)
+  doc.setTextColor(100, 116, 139)
+  doc.text(`Receipt Reference: ${recNumber}`, margin + 4, afterTableY + 14.5)
 
   // Right side: Financial reconciliation
-  let calcY = afterTableY + 2
-  doc.setFont('times', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(71, 85, 105)
+  let calcY = afterTableY + 1
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  doc.setTextColor(100, 116, 139)
 
   if (invoice) {
-    doc.text('Original Invoice Total:', summaryX, calcY)
+    doc.text('Invoice Total:', summaryX, calcY)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(15, 23, 42)
     doc.text(`${curSign}${formatAmount(invoice.total_amount)}`, pageWidth - margin, calcY, { align: 'right' })
-    calcY += 5
+    calcY += 4.8
 
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 116, 139)
     doc.text('Total Paid Prior:', summaryX, calcY)
     const priorPaid = Math.max(0, (Number(invoice.amount_paid) || 0) - (Number(payment.amount) || 0))
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(15, 23, 42)
     doc.text(`${curSign}${formatAmount(priorPaid)}`, pageWidth - margin, calcY, { align: 'right' })
-    calcY += 5
+    calcY += 4.8
   }
 
-  doc.setDrawColor(203, 213, 225)
-  doc.setLineWidth(0.4)
+  doc.setDrawColor(226, 232, 240)
+  doc.setLineWidth(0.3)
   doc.line(summaryX, calcY - 1, pageWidth - margin, calcY - 1)
-  calcY += 3
+  calcY += 3.5
 
-  // Amount Paid in this Receipt
-  doc.setFont('times', 'bold')
-  doc.setFontSize(11)
+  // Amount Credited (Highlighted in Green)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10.5)
   doc.setTextColor(21, 128, 61)
   doc.text('Amount Credited:', summaryX, calcY)
   doc.text(`${curSign}${formatAmount(payment.amount)}`, pageWidth - margin, calcY, { align: 'right' })
-  calcY += 6
+  calcY += 5.5
 
-  // Remaining Balance on Invoice
+  // Remaining Balance Due
   if (invoice) {
-    doc.setFont('times', 'normal')
-    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8.5)
     doc.setTextColor(71, 85, 105)
     doc.text('Remaining Balance Due:', summaryX, calcY)
-    doc.text(`${curSign}${formatAmount(invoice.balance_due)}`, pageWidth - margin, calcY, { align: 'right' })
+    const remBal = Number(invoice.balance_due || 0)
+    doc.setTextColor(remBal > 0 ? 217 : 21, remBal > 0 ? 119 : 128, remBal > 0 ? 6 : 61)
+    doc.text(`${curSign}${formatAmount(remBal)}`, pageWidth - margin, calcY, { align: 'right' })
   }
 
-  // Classic LaTeX Double Underline
-  calcY += 1.5
-  doc.setDrawColor(30, 41, 59)
-  doc.setLineWidth(0.4)
-  doc.line(summaryX, calcY, pageWidth - margin, calcY)
-  doc.line(summaryX, calcY + 0.6, pageWidth - margin, calcY + 0.6)
+  // --- Receipt Footer ---
+  const totalPages = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    const footerDividerY = pageHeight - 13
 
-  // Footer
-  const footerY = pageHeight - 12
-  doc.setDrawColor(226, 232, 240)
-  doc.setLineWidth(0.3)
-  doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4)
+    doc.setDrawColor(226, 232, 240)
+    doc.setLineWidth(0.3)
+    doc.line(margin, footerDividerY, pageWidth - margin, footerDividerY)
 
-  doc.setFont('times', 'normal')
-  doc.setFontSize(7.5)
-  doc.setTextColor(148, 163, 184)
-  const legalLine = `${bizName}  •  Commercial Payment Receipt  •  Official Record`
-  doc.text(legalLine, pageWidth / 2, footerY, { align: 'center' })
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(71, 85, 105)
+    const footLine1 = `${bizName}${settings.legal_name && settings.legal_name !== bizName ? '  •  ' + settings.legal_name : ''}`
+    doc.text(footLine1, pageWidth / 2, footerDividerY + 4, { align: 'center' })
+
+    const footParts = []
+    if (settings.business_address) footParts.push(settings.business_address.replace(/\n/g, ', '))
+    if (settings.tax_id) footParts.push(`Tax ID: ${settings.tax_id}`)
+    if (settings.business_phone) footParts.push(settings.business_phone)
+
+    if (footParts.length > 0) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(100, 116, 139)
+      doc.text(footParts.join('  •  '), pageWidth / 2, footerDividerY + 7.5, { align: 'center' })
+    }
+  }
 
   return doc
 }

@@ -55,7 +55,14 @@ export const useBusinessStore = defineStore('business-store', () => {
 
   function saveStorage(key, value) {
     try {
-      localStorage.setItem(`crestara_${key}`, JSON.stringify(value))
+      let dataToSave = value
+      // Strip massive base64 image strings so localStorage quota is never exceeded
+      if (key === 'settings' && value && typeof value === 'object') {
+        dataToSave = { ...value }
+        delete dataToSave.logo_data_uri
+        delete dataToSave._resolved_logo_url
+      }
+      localStorage.setItem(`crestara_${key}`, JSON.stringify(dataToSave))
     } catch (e) {
       console.warn(`Could not save crestara_${key} to localStorage:`, e)
     }
@@ -1673,18 +1680,61 @@ export const useBusinessStore = defineStore('business-store', () => {
         .maybeSingle()
 
       if (!error && data) {
-        settings.value = {
-          ...defaultSettings,
-          ...settings.value,
-          ...data,
+        // Protect user's local settings: only adopt remote data if remote is newer or local has no updated_at
+        const localTime = settings.value?.updated_at ? new Date(settings.value.updated_at).getTime() : 0
+        const remoteTime = data.updated_at ? new Date(data.updated_at).getTime() : 0
+
+        if (!localTime || remoteTime >= localTime) {
+          // Merge remote data while preserving local-only custom properties
+          settings.value = {
+            ...defaultSettings,
+            ...settings.value,
+            ...data,
+          }
+          saveStorage('settings', settings.value)
+        } else {
+          // Local settings are newer: keep local settings and attempt background sync up to Supabase
+          console.info('[Business] Local settings are newer than remote. Preserving local settings.')
+          const syncPayload = {
+            id: 'default',
+            business_name: settings.value.business_name || 'Crestara CRM',
+            legal_name: settings.value.legal_name || 'Crestara Technologies Inc.',
+            business_email: settings.value.business_email || 'billing@crestara.com',
+            business_phone: settings.value.business_phone || '',
+            business_address: settings.value.business_address || '',
+            tax_id: settings.value.tax_id || '',
+            website: settings.value.website || '',
+            logo_url: settings.value.logo_url || '',
+            currency: settings.value.currency || 'USD',
+            currency_symbol: settings.value.currency_symbol || '$',
+            invoice_prefix: settings.value.invoice_prefix || 'INV-2026-',
+            next_invoice_number: Number(settings.value.next_invoice_number) || 1045,
+            default_payment_terms: Number(settings.value.default_payment_terms) || 30,
+            tax_rate: Number(settings.value.tax_rate) || 0,
+            late_fee_percentage: Number(settings.value.late_fee_percentage) || 0,
+            notes_template: settings.value.notes_template || '',
+            bank_name: settings.value.bank_name || '',
+            bank_account_name: settings.value.bank_account_name || '',
+            bank_account_number: settings.value.bank_account_number || '',
+            bank_routing_iban: settings.value.bank_routing_iban || '',
+            swift_bic: settings.value.swift_bic || '',
+            payment_instructions: settings.value.payment_instructions || '',
+            auto_deduct_inventory: Boolean(settings.value.auto_deduct_inventory),
+            allow_negative_stock: Boolean(settings.value.allow_negative_stock),
+            default_low_stock_threshold: Number(settings.value.default_low_stock_threshold) || 5,
+            updated_at: settings.value.updated_at,
+          }
+          supabase
+            .from('business_settings')
+            .upsert(syncPayload, { onConflict: 'id' })
+            .catch(() => {})
         }
-        saveStorage('settings', settings.value)
-        if (settings.value.logo_url) {
+
+        if (settings.value.logo_url && !settings.value.logo_data_uri) {
           loadImageAsBase64(settings.value.logo_url).then((b64) => {
             if (b64) {
               settings.value.logo_data_uri = b64
               settings.value._resolved_logo_url = settings.value.logo_url
-              saveStorage('settings', settings.value)
             }
           })
         }
@@ -1704,8 +1754,13 @@ export const useBusinessStore = defineStore('business-store', () => {
       settings.value._resolved_logo_url = null
     }
 
-    // Update local reactive state and cache immediately
-    settings.value = { ...settings.value, ...newSettings }
+    const nowIso = new Date().toISOString()
+    // Update local reactive state and cache immediately with new timestamp
+    settings.value = {
+      ...settings.value,
+      ...newSettings,
+      updated_at: nowIso,
+    }
     saveStorage('settings', settings.value)
 
     if (settings.value.logo_url) {
@@ -1713,16 +1768,15 @@ export const useBusinessStore = defineStore('business-store', () => {
         if (b64) {
           settings.value.logo_data_uri = b64
           settings.value._resolved_logo_url = settings.value.logo_url
-          saveStorage('settings', settings.value)
         }
       })
     } else {
       settings.value.logo_data_uri = null
       settings.value._resolved_logo_url = null
-      saveStorage('settings', settings.value)
     }
 
     try {
+      // Only include columns that exist in public.business_settings table
       const payload = {
         id: 'default',
         business_name: settings.value.business_name || 'Crestara CRM',
@@ -1750,16 +1804,7 @@ export const useBusinessStore = defineStore('business-store', () => {
         auto_deduct_inventory: Boolean(settings.value.auto_deduct_inventory),
         allow_negative_stock: Boolean(settings.value.allow_negative_stock),
         default_low_stock_threshold: Number(settings.value.default_low_stock_threshold) || 5,
-        receipt_prefix: settings.value.receipt_prefix || 'REC-2026-',
-        next_receipt_number: Number(settings.value.next_receipt_number) || 5001,
-        smtp_host: settings.value.smtp_host || '',
-        smtp_port: Number(settings.value.smtp_port) || 465,
-        smtp_user: settings.value.smtp_user || '',
-        smtp_pass: settings.value.smtp_pass || '',
-        smtp_secure: settings.value.smtp_secure || 'ssl',
-        from_email: settings.value.from_email || '',
-        from_name: settings.value.from_name || '',
-        updated_at: new Date().toISOString(),
+        updated_at: nowIso,
       }
 
       const { error } = await supabase
@@ -1767,7 +1812,7 @@ export const useBusinessStore = defineStore('business-store', () => {
         .upsert(payload, { onConflict: 'id' })
 
       if (error) {
-        console.warn('[Business] Error syncing business_settings to Supabase:', error.message)
+        console.warn('[Business] Supabase sync notice:', error.message)
       }
     } catch (err) {
       console.warn('[Business] Supabase updateBusinessSettings exception:', err)

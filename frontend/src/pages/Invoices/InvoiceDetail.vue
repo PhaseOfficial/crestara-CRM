@@ -7,13 +7,13 @@
           <router-link to="/invoices" class="p-1.5 rounded-md hover:bg-surface-gray-2 text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 transition-colors">
             <span class="lucide-arrow-left size-5" />
           </router-link>
-          <div>
+          <div class="flex items-center gap-2.5">
             <h1 class="text-lg font-bold text-ink-gray-9">
               {{ isNew ? __('New Invoice') : invoice.invoice_number }}
             </h1>
             <span
               v-if="!isNew"
-              class="text-xs px-2.5 py-0.5 rounded-full font-semibold border"
+              class="text-xs px-2.5 py-0.5 rounded-full font-semibold border shrink-0"
               :class="getStatusClass(invoice.status)"
             >
               {{ invoice.status }}
