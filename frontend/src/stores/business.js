@@ -156,7 +156,20 @@ export const useBusinessStore = defineStore('business-store', () => {
     }
   }
 
-  async function inviteStaffMember({ email, full_name, role }) {
+  async function updateUserAvatar(userId, avatarUrl) {
+    const u = users.value.find((item) => item.id === userId)
+    if (u) {
+      u.avatar = avatarUrl
+      saveStorage('users', users.value)
+    }
+    try {
+      await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', userId)
+    } catch (err) {
+      console.warn('[Business] Could not update profile avatar in Supabase:', err)
+    }
+  }
+
+  async function inviteStaffMember({ email, full_name, role, avatar_url }) {
     if (!email) throw new Error('Email is required')
     const cleanEmail = email.trim().toLowerCase()
     const roleToAssign = role || 'Staff'
@@ -168,6 +181,10 @@ export const useBusinessStore = defineStore('business-store', () => {
       // Elevate their role directly
       await updateUserRole(existingUser.id, roleToAssign)
       existingUser.full_name = nameToAssign || existingUser.full_name
+      if (avatar_url) {
+        existingUser.avatar = avatar_url
+        await updateUserAvatar(existingUser.id, avatar_url)
+      }
       saveStorage('users', users.value)
       return { user: existingUser, elevated: true }
     }
@@ -224,8 +241,12 @@ export const useBusinessStore = defineStore('business-store', () => {
       email: cleanEmail,
       full_name: nameToAssign,
       role: roleToAssign,
-      avatar: null,
+      avatar: avatar_url || null,
       created_at: new Date().toISOString(),
+    }
+
+    if (authUser?.id && avatar_url) {
+      updateUserAvatar(authUser.id, avatar_url).catch(() => {})
     }
 
     // Add to users if not already present
@@ -748,6 +769,8 @@ export const useBusinessStore = defineStore('business-store', () => {
       default_currency: 'USD',
       default_payment_terms: 'Net 30',
       credit_limit: 25000.0,
+      logo_url: user.logo_url || '',
+      avatar_url: user.avatar_url || user.avatar || '',
       is_profile_complete: false,
       profile_completion_percentage: 40,
     }
@@ -933,6 +956,8 @@ export const useBusinessStore = defineStore('business-store', () => {
             default_currency: c.default_currency || 'USD',
             default_payment_terms: c.default_payment_terms || 'Net 30',
             credit_limit: Number(c.credit_limit) || 25000.0,
+            logo_url: c.logo_url || '',
+            avatar_url: c.avatar_url || '',
             is_profile_complete: c.is_profile_complete ?? true,
             contacts: contactList,
             created_at: c.created_at,
@@ -1250,6 +1275,8 @@ export const useBusinessStore = defineStore('business-store', () => {
       default_currency: clientData.default_currency || 'USD',
       default_payment_terms: clientData.default_payment_terms || 'Net 30',
       credit_limit: Number(clientData.credit_limit) || 25000.0,
+      logo_url: clientData.logo_url || '',
+      avatar_url: clientData.avatar_url || '',
       is_profile_complete: true,
       profile_completion_percentage: 100,
       contacts: clientData.contacts || [
@@ -1295,6 +1322,8 @@ export const useBusinessStore = defineStore('business-store', () => {
           default_currency: newClient.default_currency || 'USD',
           default_payment_terms: newClient.default_payment_terms || 'Net 30',
           credit_limit: newClient.credit_limit,
+          logo_url: newClient.logo_url || null,
+          avatar_url: newClient.avatar_url || null,
           is_profile_complete: true,
         })
         .select()
@@ -1355,6 +1384,8 @@ export const useBusinessStore = defineStore('business-store', () => {
             billing_postal_code: updatedData.billing_postal_code,
             default_payment_terms: updatedData.default_payment_terms,
             status: updatedData.status,
+            logo_url: updatedData.logo_url !== undefined ? updatedData.logo_url : customers.value[idx]?.logo_url,
+            avatar_url: updatedData.avatar_url !== undefined ? updatedData.avatar_url : customers.value[idx]?.avatar_url,
             updated_at: new Date().toISOString(),
           })
           .eq('id', clientId)
@@ -1525,6 +1556,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     users,
     fetchUsersFromSupabase,
     updateUserRole,
+    updateUserAvatar,
     inviteStaffMember,
     changeRequests,
     pendingChangeRequests,
@@ -1538,6 +1570,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     CURRENCY_SYMBOLS,
     // Customer Master & Onboarding
     customers,
+    clients: customers,
     currentCustomerRecord,
     profileCompletion,
     customerOnboardingSteps,

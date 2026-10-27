@@ -2,7 +2,7 @@
   <Dropdown :options="dropdownItems" v-bind="$attrs">
     <template #default="{ open }">
       <button
-        class="flex h-12 items-center rounded-md py-2 duration-300 ease-in-out"
+        class="flex min-h-[52px] items-center rounded-md py-1.5 duration-300 ease-in-out"
         :class="
           isCollapsed
             ? 'w-auto px-0'
@@ -24,12 +24,21 @@
             <span class="text-base-medium font-semibold leading-none text-ink-gray-9 truncate">
               {{ __(brand.name || 'Crestara CRM') }}
             </span>
-            <span class="rounded bg-surface-gray-3 px-1 py-0.5 text-[10px] font-medium text-ink-gray-7">
+          </div>
+          <div class="mt-1 text-xs leading-none text-ink-gray-7 truncate">
+            {{ user.full_name || user.email || 'User' }}
+          </div>
+          <div class="mt-1 flex items-center">
+            <span
+              class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border"
+              :class="
+                business.currentRole === 'Administrator'
+                  ? 'bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-4 border-outline-purple-2'
+                  : 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-4 border-outline-blue-2'
+              "
+            >
               {{ business.currentRole }}
             </span>
-          </div>
-          <div class="mt-1 text-sm leading-none text-ink-gray-7 truncate">
-            {{ user.full_name || user.email || 'User' }}
           </div>
         </div>
         <div

@@ -8,9 +8,9 @@
           <div class="flex items-center gap-3">
             <router-link to="/portal" class="flex items-center gap-2">
               <img
-                src="/crestara_logo.png"
+                :src="business.settings?.logo_url || '/crestara_logo.png'"
                 alt="Crestara CRM"
-                class="h-8 w-auto object-contain"
+                class="h-8 w-auto max-w-[140px] object-contain rounded"
               />
             </router-link>
             <span

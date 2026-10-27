@@ -62,12 +62,20 @@
         <!-- Top Row: Business Branding & Invoice Metadata -->
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-outline-gray-1 pb-6">
           <div>
-            <div class="flex items-center gap-2">
-              <span class="lucide-building-2 size-7 text-ink-blue-7 dark:text-ink-blue-3" />
-              <span class="text-xl font-bold text-ink-gray-9">{{ business.settings.business_name || 'Crestara CRM' }}</span>
+            <div class="flex items-center gap-3">
+              <img
+                v-if="business.settings.logo_url"
+                :src="business.settings.logo_url"
+                alt="Logo"
+                class="h-12 w-auto max-w-[200px] object-contain rounded"
+              />
+              <div v-else class="flex items-center gap-2">
+                <span class="lucide-building-2 size-7 text-ink-blue-7 dark:text-ink-blue-3" />
+                <span class="text-xl font-bold text-ink-gray-9">{{ business.settings.business_name || 'Crestara CRM' }}</span>
+              </div>
             </div>
-            <p v-if="business.settings.legal_name" class="text-xs font-semibold text-ink-gray-7 mt-1">{{ business.settings.legal_name }}</p>
-            <p class="text-xs text-ink-gray-5 mt-1 whitespace-pre-line">{{ business.settings.business_address }}</p>
+            <p v-if="business.settings.legal_name" class="text-xs font-semibold text-ink-gray-7 mt-1.5">{{ business.settings.legal_name }}</p>
+            <p v-if="business.settings.business_address" class="text-xs text-ink-gray-5 mt-1 whitespace-pre-line">{{ business.settings.business_address }}</p>
             <div class="text-xs text-ink-gray-5 mt-1 space-x-3">
               <span v-if="business.settings.tax_id">{{ __('Tax ID:') }} {{ business.settings.tax_id }}</span>
               <span v-if="business.settings.business_phone">{{ business.settings.business_phone }}</span>
@@ -125,23 +133,180 @@
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">{{ __('Billed To Client') }}</h3>
               <!-- Client Picker Selector (Hidden on print) -->
-              <span v-if="isNew && business.clients?.length" class="text-[11px] text-ink-blue-7 dark:text-ink-blue-3 print:hidden">
+              <span v-if="isNew && availableClients.length" class="text-[11px] text-ink-blue-7 dark:text-ink-blue-3 print:hidden">
                 {{ __('Auto-fill from Clients') }}
               </span>
             </div>
 
-            <!-- Client Quick-Picker Dropdown -->
-            <div v-if="isNew" class="mb-2.5 print:hidden">
-              <select
-                v-model="selectedClientId"
-                class="w-full bg-surface-base rounded-md px-3 py-1.5 text-xs border border-outline-gray-2 text-ink-gray-9 font-medium focus:outline-none"
-                @change="onClientSelect"
+            <!-- Searchable Client Combobox / Dropdown (Hidden on print) -->
+            <div v-if="isNew" ref="clientDropdownRef" class="relative mb-3 print:hidden">
+              <!-- Selected Client Chip / Dropdown Trigger Button -->
+              <div
+                v-if="selectedClientObj"
+                class="flex items-center justify-between p-2.5 rounded-lg border border-outline-blue-2 bg-surface-blue-2/30 dark:bg-blue-950/20 text-xs text-ink-gray-9 transition-colors"
               >
-                <option value="">{{ __('+ Select from registered clients or enter below...') }}</option>
-                <option v-for="c in business.clients" :key="c.id" :value="c.id">
-                  {{ c.company_name }} ({{ c.billing_email || c.primary_email || __('No email') }})
-                </option>
-              </select>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="size-7 rounded-md bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-[11px] shrink-0 overflow-hidden">
+                    <img
+                      v-if="selectedClientObj.logo_url"
+                      :src="selectedClientObj.logo_url"
+                      :alt="selectedClientObj.company_name"
+                      class="size-full object-cover"
+                    />
+                    <span v-else>
+                      {{ (selectedClientObj.company_name || 'C').substring(0, 2).toUpperCase() }}
+                    </span>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="font-bold text-ink-gray-9 truncate flex items-center gap-1.5">
+                      <span>{{ selectedClientObj.company_name }}</span>
+                      <span class="px-1.5 py-0.2 rounded text-[10px] bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 font-semibold">
+                        {{ __('Selected') }}
+                      </span>
+                    </div>
+                    <div class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 truncate">
+                      {{ selectedClientObj.billing_email || selectedClientObj.primary_email || __('No email') }}
+                      <span v-if="selectedClientObj.default_currency"> • {{ selectedClientObj.default_currency }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1 shrink-0 ml-2">
+                  <button
+                    type="button"
+                    class="px-2 py-1 rounded text-[11px] font-semibold text-ink-blue-7 dark:text-ink-blue-3 hover:bg-surface-blue-2 transition-colors"
+                    @click="toggleClientDropdown"
+                  >
+                    {{ __('Change') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded text-ink-gray-5 hover:text-ink-red-7 hover:bg-surface-red-2 transition-colors"
+                    :title="__('Clear selected client')"
+                    @click="clearSelectedClient"
+                  >
+                    <span class="lucide-x size-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Default Unselected Trigger Button -->
+              <button
+                v-else
+                type="button"
+                class="w-full flex items-center justify-between bg-surface-base border border-outline-gray-2 rounded-lg px-3 py-2 text-xs text-ink-gray-7 hover:text-ink-gray-9 hover:border-outline-gray-3 transition-colors shadow-xs text-left"
+                @click="toggleClientDropdown"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="lucide-search size-3.5 text-ink-gray-5 shrink-0" />
+                  <span class="truncate">{{ __('Select client') }}</span>
+                </div>
+                <span
+                  class="lucide-chevron-down size-3.5 text-ink-gray-5 transition-transform duration-150"
+                  :class="clientDropdownOpen ? 'rotate-180' : ''"
+                />
+              </button>
+
+              <!-- Floating Dropdown Panel with Search Bar & Client List -->
+              <transition
+                enter-active-class="transition duration-150 ease-out"
+                enter-from-class="opacity-0 translate-y-1"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition duration-100 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+              >
+                <div
+                  v-if="clientDropdownOpen"
+                  class="absolute left-0 right-0 top-full mt-1.5 z-50 bg-surface-base border border-outline-gray-2 rounded-xl shadow-lg overflow-hidden flex flex-col max-h-72"
+                >
+                  <!-- Search Bar Header -->
+                  <div class="p-2 border-b border-outline-gray-1 bg-surface-gray-1/50 dark:bg-surface-gray-2/50">
+                    <div class="relative flex items-center">
+                      <span class="lucide-search size-3.5 text-ink-gray-5 absolute left-2.5 pointer-events-none" />
+                      <input
+                        ref="clientSearchInputRef"
+                        v-model="clientSearchQuery"
+                        type="text"
+                        :placeholder="__('Search client...')"
+                        class="w-full bg-surface-base border border-outline-gray-2 rounded-md pl-8 pr-7 py-1.5 text-xs text-ink-gray-9 placeholder:text-ink-gray-5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <button
+                        v-if="clientSearchQuery"
+                        type="button"
+                        class="absolute right-2 text-ink-gray-4 hover:text-ink-gray-7 p-0.5"
+                        @click="clientSearchQuery = ''"
+                      >
+                        <span class="lucide-x size-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Scrollable Client List -->
+                  <div class="overflow-y-auto divide-y divide-outline-gray-1/60 p-1 flex-1">
+                    <div
+                      v-for="c in filteredClients"
+                      :key="c.id"
+                      class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-gray-1 dark:hover:bg-surface-gray-2/70 cursor-pointer transition-colors"
+                      :class="selectedClientId === c.id ? 'bg-surface-blue-2/40' : ''"
+                      @click="selectClient(c)"
+                    >
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="size-8 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0 overflow-hidden">
+                          <img
+                            v-if="c.logo_url"
+                            :src="c.logo_url"
+                            :alt="c.company_name"
+                            class="size-full object-cover"
+                          />
+                          <span v-else>
+                            {{ (c.company_name || 'C').substring(0, 2).toUpperCase() }}
+                          </span>
+                        </div>
+                        <div class="min-w-0">
+                          <div class="font-semibold text-xs text-ink-gray-9 truncate">
+                            {{ c.company_name }}
+                          </div>
+                          <div class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 truncate">
+                            {{ c.first_name ? `${c.first_name} ${c.last_name || ''} • ` : '' }}{{ c.billing_email || c.primary_email || __('No email') }}
+                            <span v-if="c.tin || c.tax_id"> • TIN: {{ c.tin || c.tax_id }}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2 shrink-0 ml-2">
+                        <span class="text-[10px] font-semibold text-ink-gray-5">
+                          {{ c.default_currency || 'USD' }}
+                        </span>
+                        <span
+                          v-if="selectedClientId === c.id"
+                          class="lucide-check size-4 text-ink-blue-7 dark:text-ink-blue-3"
+                        />
+                      </div>
+                    </div>
+
+                    <!-- Empty Search State -->
+                    <div v-if="!filteredClients.length" class="p-6 text-center text-xs text-ink-gray-5 space-y-1">
+                      <div class="font-semibold text-ink-gray-7">{{ __('No registered clients found') }}</div>
+                      <p class="text-[11px] text-ink-gray-5">
+                        {{ clientSearchQuery ? __('No client matches "{0}".', [clientSearchQuery]) : __('No clients registered yet in the system.') }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Footer: Enter Manually -->
+                  <div class="p-2 border-t border-outline-gray-1 bg-surface-gray-1/30 dark:bg-surface-gray-2/30 flex items-center justify-between text-xs">
+                    <span class="text-[11px] text-ink-gray-5">{{ __('Total: {0} client(s)', [availableClients.length]) }}</span>
+                    <button
+                      type="button"
+                      class="text-[11px] font-semibold text-ink-blue-7 dark:text-ink-blue-3 hover:underline"
+                      @click="clearSelectedClient"
+                    >
+                      {{ __('Enter details manually below') }}
+                    </button>
+                  </div>
+                </div>
+              </transition>
             </div>
 
             <div class="space-y-2">
@@ -415,6 +580,21 @@
             </div>
           </div>
         </div>
+
+        <!-- Invoice Bottom Footer (Small Font) -->
+        <div class="pt-6 border-t border-outline-gray-1 text-center space-y-1 print:pt-4">
+          <p class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-3">
+            {{ business.settings.business_name || 'Crestara CRM' }}
+            <span v-if="business.settings.legal_name && business.settings.legal_name !== business.settings.business_name">
+              • {{ business.settings.legal_name }}
+            </span>
+          </p>
+          <p v-if="business.settings.business_address || business.settings.tax_id || business.settings.business_phone" class="text-[11px] text-ink-gray-5 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5">
+            <span v-if="business.settings.business_address">{{ business.settings.business_address.replace(/\n/g, ', ') }}</span>
+            <span v-if="business.settings.tax_id">• {{ __('Tax ID:') }} {{ business.settings.tax_id }}</span>
+            <span v-if="business.settings.business_phone">• {{ business.settings.business_phone }}</span>
+          </p>
+        </div>
       </div>
     </div>
 
@@ -428,7 +608,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBusinessStore } from '@/stores/business'
 import LayoutHeader from '@/components/LayoutHeader.vue'
@@ -443,6 +623,92 @@ const isNew = computed(() => route.params.invoiceId === 'new' || !route.params.i
 const saving = ref(false)
 const showPaymentModal = ref(false)
 const selectedClientId = ref('')
+
+// Searchable Client Dropdown State
+const clientDropdownOpen = ref(false)
+const clientSearchQuery = ref('')
+const clientDropdownRef = ref(null)
+const clientSearchInputRef = ref(null)
+
+const availableClients = computed(() => {
+  return business.customers || business.clients || []
+})
+
+const filteredClients = computed(() => {
+  const query = clientSearchQuery.value.trim().toLowerCase()
+  if (!query) return availableClients.value
+
+  return availableClients.value.filter((c) => {
+    const company = (c.company_name || c.legal_name || '').toLowerCase()
+    const contact = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase()
+    const email = (c.billing_email || c.primary_email || '').toLowerCase()
+    const tin = (c.tin || c.tax_id || '').toLowerCase()
+    const phone = (c.phone || c.mobile_no || '').toLowerCase()
+
+    return (
+      company.includes(query) ||
+      contact.includes(query) ||
+      email.includes(query) ||
+      tin.includes(query) ||
+      phone.includes(query)
+    )
+  })
+})
+
+const selectedClientObj = computed(() => {
+  if (!selectedClientId.value) return null
+  return availableClients.value.find((c) => c.id === selectedClientId.value) || null
+})
+
+function toggleClientDropdown() {
+  clientDropdownOpen.value = !clientDropdownOpen.value
+  if (clientDropdownOpen.value) {
+    clientSearchQuery.value = ''
+    setTimeout(() => {
+      clientSearchInputRef.value?.focus()
+    }, 50)
+  }
+}
+
+function selectClient(client) {
+  if (!client) {
+    clearSelectedClient()
+    return
+  }
+
+  selectedClientId.value = client.id
+  invoice.customer_id = client.id
+  invoice.client_name = client.company_name || client.legal_name || ''
+  invoice.client_email = client.billing_email || client.primary_email || ''
+  invoice.contact_name = client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : (client.job_title || '')
+
+  if (client.default_currency || client.currency || client.preferred_currency) {
+    invoice.currency = client.default_currency || client.currency || client.preferred_currency
+  }
+  if (client.default_payment_terms) {
+    invoice.payment_terms = client.default_payment_terms.startsWith('Net')
+      ? client.default_payment_terms
+      : `Net ${client.default_payment_terms}`
+    const days = parseInt(client.default_payment_terms.replace(/\D/g, ''), 10) || 30
+    invoice.due_date = new Date(Date.now() + days * 86400000).toISOString().split('T')[0]
+  }
+
+  clientDropdownOpen.value = false
+  clientSearchQuery.value = ''
+  recalculateTotals()
+}
+
+function clearSelectedClient() {
+  selectedClientId.value = ''
+  invoice.customer_id = null
+  clientDropdownOpen.value = false
+}
+
+function handleClickOutside(event) {
+  if (clientDropdownRef.value && !clientDropdownRef.value.contains(event.target)) {
+    clientDropdownOpen.value = false
+  }
+}
 
 const currencySymbol = computed(() => business.getCurrencySymbol(invoice.currency))
 
@@ -482,6 +748,8 @@ const invoice = reactive({
 })
 
 onMounted(async () => {
+  document.addEventListener('click', handleClickOutside)
+
   try {
     await business.fetchBusinessSettingsFromSupabase()
     await business.fetchClientsFromSupabase()
@@ -511,7 +779,7 @@ onMounted(async () => {
     } else if (route.query.customer) {
       invoice.client_name = route.query.customer
       if (route.query.email) invoice.client_email = route.query.email
-      const matched = business.clients?.find(
+      const matched = availableClients.value.find(
         (c) => c.company_name?.toLowerCase() === route.query.customer.toLowerCase()
       )
       if (matched) {
@@ -538,23 +806,29 @@ onMounted(async () => {
   }
 })
 
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 function onClientSelect() {
   if (!selectedClientId.value) return
-  const client = business.clients?.find((c) => c.id === selectedClientId.value)
+  const client = availableClients.value.find((c) => c.id === selectedClientId.value)
   if (!client) return
 
   invoice.customer_id = client.id
-  invoice.client_name = client.company_name
+  invoice.client_name = client.company_name || client.legal_name || ''
   invoice.client_email = client.billing_email || client.primary_email || ''
-  invoice.contact_name = client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : ''
+  invoice.contact_name = client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : (client.job_title || '')
 
-  if (client.preferred_currency || client.currency) {
-    invoice.currency = client.preferred_currency || client.currency
+  if (client.default_currency || client.preferred_currency || client.currency) {
+    invoice.currency = client.default_currency || client.preferred_currency || client.currency
   }
   if (client.default_payment_terms) {
     invoice.payment_terms = client.default_payment_terms.startsWith('Net')
       ? client.default_payment_terms
       : `Net ${client.default_payment_terms}`
+    const days = parseInt(client.default_payment_terms.replace(/\D/g, ''), 10) || 30
+    invoice.due_date = new Date(Date.now() + days * 86400000).toISOString().split('T')[0]
   }
   recalculateTotals()
 }

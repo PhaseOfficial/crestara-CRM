@@ -614,3 +614,50 @@ CREATE POLICY "Allow anon read invoices"
   TO anon
   USING (true);
 
+-- ============================================================================
+-- 16. SUPABASE STORAGE BUCKETS & MEDIA ASSETS
+-- ============================================================================
+-- 1. Create or update the 'crm-assets' public storage bucket
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'crm-assets',
+  'crm-assets',
+  true,
+  5242880, -- 5 MB limit
+  ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+
+-- 2. Storage Objects Row Level Security (RLS) Policies
+-- (Note: In Supabase, storage.objects has RLS enabled by default. Do not run ALTER TABLE storage.objects)
+DROP POLICY IF EXISTS "Public can view crm-assets" ON storage.objects;
+CREATE POLICY "Public can view crm-assets"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'crm-assets');
+
+DROP POLICY IF EXISTS "Authenticated users can upload crm-assets" ON storage.objects;
+CREATE POLICY "Authenticated users can upload crm-assets"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (bucket_id = 'crm-assets');
+
+DROP POLICY IF EXISTS "Authenticated users can update crm-assets" ON storage.objects;
+CREATE POLICY "Authenticated users can update crm-assets"
+  ON storage.objects FOR UPDATE
+  TO authenticated
+  USING (bucket_id = 'crm-assets');
+
+DROP POLICY IF EXISTS "Authenticated users can delete crm-assets" ON storage.objects;
+CREATE POLICY "Authenticated users can delete crm-assets"
+  ON storage.objects FOR DELETE
+  TO authenticated
+  USING (bucket_id = 'crm-assets');
+
+-- 3. Customer Master Table: Logo & Avatar Columns
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS logo_url TEXT DEFAULT '';
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT '';
+
+

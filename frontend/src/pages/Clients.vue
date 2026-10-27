@@ -104,8 +104,16 @@
                 <!-- Organization with Avatar & Subtitle -->
                 <td class="py-4 px-6">
                   <div class="flex items-center gap-3">
-                    <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0">
-                      {{ (c.company_name || 'C').substring(0, 2).toUpperCase() }}
+                    <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0 overflow-hidden">
+                      <img
+                        v-if="c.logo_url"
+                        :src="c.logo_url"
+                        :alt="c.company_name"
+                        class="size-full object-cover"
+                      />
+                      <span v-else>
+                        {{ (c.company_name || 'C').substring(0, 2).toUpperCase() }}
+                      </span>
                     </div>
                     <div>
                       <div class="font-semibold text-ink-gray-9 text-sm hover:text-ink-blue-7 dark:hover:text-ink-blue-3 transition-colors">
@@ -221,8 +229,16 @@
             <!-- Top Row: Avatar, Title, Status & Chevron -->
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-3 min-w-0">
-                <div class="size-10 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0">
-                  {{ (c.company_name || 'C').substring(0, 2).toUpperCase() }}
+                <div class="size-10 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0 overflow-hidden">
+                  <img
+                    v-if="c.logo_url"
+                    :src="c.logo_url"
+                    :alt="c.company_name"
+                    class="size-full object-cover"
+                  />
+                  <span v-else>
+                    {{ (c.company_name || 'C').substring(0, 2).toUpperCase() }}
+                  </span>
                 </div>
                 <div class="min-w-0">
                   <div class="font-bold text-ink-gray-9 text-sm truncate hover:text-ink-blue-7 dark:hover:text-ink-blue-3 transition-colors">
@@ -517,6 +533,17 @@
                 {{ __('1. Organization Legal Entity Details') }}
               </h4>
 
+              <div class="py-2">
+                <CrmImageUploader
+                  v-model="clientForm.logo_url"
+                  folder="clients"
+                  shape="rounded"
+                  size="md"
+                  :label="__('Client Organization Logo')"
+                  :fallback-text="(clientForm.company_name || 'C').substring(0, 2).toUpperCase()"
+                />
+              </div>
+
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormControl
                   v-model="clientForm.company_name"
@@ -785,6 +812,7 @@ import { Button, TextInput, Dialog, FormControl } from 'frappe-ui'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import { isMobileView } from '@/composables/settings'
 import { useBusinessStore } from '@/stores/business'
+import CrmImageUploader from '@/components/Common/CrmImageUploader.vue'
 
 const router = useRouter()
 const business = useBusinessStore()
@@ -835,6 +863,7 @@ const clientForm = reactive({
   default_currency: 'USD',
   default_payment_terms: 'Net 30',
   credit_limit: 25000,
+  logo_url: '',
 })
 
 const filteredClients = computed(() => {
@@ -877,6 +906,7 @@ function openAddClientModal() {
     default_currency: 'USD',
     default_payment_terms: 'Net 30',
     credit_limit: 25000,
+    logo_url: '',
   })
   showClientModal.value = true
 }
@@ -905,6 +935,7 @@ function openEditClientModal(c) {
     default_currency: c.default_currency || 'USD',
     default_payment_terms: c.default_payment_terms || 'Net 30',
     credit_limit: c.credit_limit || 25000,
+    logo_url: c.logo_url || '',
   })
   showClientModal.value = true
 }

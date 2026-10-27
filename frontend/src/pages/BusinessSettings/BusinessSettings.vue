@@ -54,6 +54,19 @@
           </p>
         </div>
 
+        <!-- Company CRM Logo Uploader -->
+        <div class="py-3 border-y border-outline-gray-1/60">
+          <CrmImageUploader
+            v-model="form.logo_url"
+            folder="company"
+            shape="rounded"
+            size="rect"
+            :label="__('Company CRM Logo')"
+            :description="__('Recommended: Transparent PNG, SVG, or WebP (max 5MB). Globally reflected on invoices, customer portal, app header, and sidebar.')"
+            fallback-text="CRM"
+          />
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormControl
             v-model="form.business_name"
@@ -283,7 +296,17 @@
               <tr v-for="user in filteredStaffUsers" :key="user.id" class="hover:bg-surface-gray-1 transition-colors">
                 <td class="py-3 px-4">
                   <div class="flex items-center gap-2.5">
-                    <Avatar size="sm" :label="user.full_name" :image="user.avatar" />
+                    <button
+                      type="button"
+                      class="relative group rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
+                      :title="__('Click to change avatar')"
+                      @click="openAvatarModal(user)"
+                    >
+                      <Avatar size="sm" :label="user.full_name" :image="user.avatar" />
+                      <span class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="lucide-camera size-3 text-white" />
+                      </span>
+                    </button>
                     <span class="font-semibold text-ink-gray-9">{{ user.full_name }}</span>
                   </div>
                 </td>
@@ -329,7 +352,17 @@
           >
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2.5 min-w-0">
-                <Avatar size="md" :label="user.full_name" :image="user.avatar" />
+                <button
+                  type="button"
+                  class="relative group rounded-full focus:outline-none shrink-0"
+                  :title="__('Click to change avatar')"
+                  @click="openAvatarModal(user)"
+                >
+                  <Avatar size="md" :label="user.full_name" :image="user.avatar" />
+                  <span class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="lucide-camera size-3.5 text-white" />
+                  </span>
+                </button>
                 <div class="min-w-0">
                   <div class="font-semibold text-ink-gray-9 text-sm truncate">{{ user.full_name }}</div>
                   <div class="text-xs text-ink-gray-7 dark:text-ink-gray-6 truncate">{{ user.email }}</div>
@@ -424,6 +457,16 @@
           </div>
 
           <div class="space-y-4">
+            <div class="flex justify-center pb-1">
+              <CrmImageUploader
+                v-model="newMember.avatar_url"
+                folder="avatars"
+                shape="circle"
+                size="md"
+                :label="__('Profile Avatar (Optional)')"
+                :fallback-text="newMember.full_name?.charAt(0) || 'U'"
+              />
+            </div>
             <FormControl
               v-model="newMember.email"
               :label="__('Email Address')"
@@ -461,6 +504,44 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Staff Avatar Management Modal -->
+    <Dialog v-model:open="showAvatarModal" :size="'sm'">
+      <template #body>
+        <div class="p-6 bg-surface-base text-ink-gray-9 space-y-4">
+          <div class="border-b border-outline-gray-1 pb-3">
+            <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">
+              <span class="lucide-camera size-4 text-ink-blue-7" />
+              {{ __('Update Staff Avatar') }}
+            </h2>
+            <p class="text-xs text-ink-gray-6 mt-0.5">
+              {{ selectedUserForAvatar?.full_name }} ({{ selectedUserForAvatar?.email }})
+            </p>
+          </div>
+
+          <div class="flex justify-center py-2">
+            <CrmImageUploader
+              v-model="tempAvatarUrl"
+              folder="avatars"
+              shape="circle"
+              size="lg"
+              :label="__('Upload Staff Photo')"
+              :fallback-text="selectedUserForAvatar?.full_name?.charAt(0) || 'U'"
+            />
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-outline-gray-1">
+            <Button variant="subtle" :label="__('Cancel')" @click="showAvatarModal = false" />
+            <Button
+              variant="solid"
+              :label="__('Save Avatar')"
+              :loading="savingAvatar"
+              @click="saveStaffAvatar"
+            />
+          </div>
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -470,6 +551,7 @@ import { useBusinessStore } from '@/stores/business'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import { isMobileView } from '@/composables/settings'
 import { FormControl, Button, Avatar, Dialog } from 'frappe-ui'
+import CrmImageUploader from '@/components/Common/CrmImageUploader.vue'
 
 const business = useBusinessStore()
 const saving = ref(false)
@@ -481,7 +563,37 @@ const newMember = reactive({
   full_name: '',
   email: '',
   role: 'Staff',
+  avatar_url: '',
 })
+
+// State for updating staff avatar
+const showAvatarModal = ref(false)
+const selectedUserForAvatar = ref(null)
+const tempAvatarUrl = ref('')
+const savingAvatar = ref(false)
+
+function openAvatarModal(user) {
+  selectedUserForAvatar.value = user
+  tempAvatarUrl.value = user?.avatar || ''
+  showAvatarModal.value = true
+}
+
+async function saveStaffAvatar() {
+  if (!selectedUserForAvatar.value) return
+  savingAvatar.value = true
+  try {
+    await business.updateUserAvatar(selectedUserForAvatar.value.id, tempAvatarUrl.value)
+    showAvatarModal.value = false
+    savedSuccess.value = true
+    setTimeout(() => {
+      savedSuccess.value = false
+    }, 3000)
+  } catch (err) {
+    console.error('Failed to update staff avatar:', err)
+  } finally {
+    savingAvatar.value = false
+  }
+}
 
 // Business Settings Form with fallback defaults
 const form = reactive({
@@ -492,6 +604,7 @@ const form = reactive({
   business_address: '',
   tax_id: '',
   website: '',
+  logo_url: '',
   currency: 'USD',
   currency_symbol: '$',
   invoice_prefix: 'INV-2026-',
@@ -624,6 +737,7 @@ async function addTeamMember() {
       email: newMember.email,
       full_name: newMember.full_name,
       role: newMember.role,
+      avatar_url: newMember.avatar_url || null,
     })
 
     selectedRoleFilter.value = newMember.role
@@ -642,6 +756,7 @@ function closeInviteModal() {
   newMember.full_name = ''
   newMember.email = ''
   newMember.role = 'Staff'
+  newMember.avatar_url = ''
   showInvite.value = false
 }
 

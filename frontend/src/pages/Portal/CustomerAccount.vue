@@ -65,6 +65,49 @@
         </div>
       </div>
 
+      <!-- Organization Logo & Representative Avatar Section -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-surface-gray-1 dark:bg-surface-gray-2/40 border border-outline-gray-1">
+        <div class="flex items-center gap-4">
+          <CrmImageUploader
+            v-model="customerLogo"
+            folder="clients"
+            shape="rounded"
+            size="lg"
+            :label="__('Organization Logo')"
+            :fallback-text="(customer.company_name || 'C').substring(0, 2).toUpperCase()"
+            @update:model-value="onLogoUpdated"
+          />
+          <div class="min-w-0">
+            <h3 class="text-sm font-bold text-ink-gray-9 truncate">
+              {{ customer.company_name || customer.legal_name || 'Corporate Logo' }}
+            </h3>
+            <p class="text-xs text-ink-gray-6 dark:text-ink-gray-5 mt-0.5">
+              {{ __('Upload your company logo for invoices and correspondence.') }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-outline-gray-1/80 pt-3 sm:pt-0 sm:pl-4">
+          <CrmImageUploader
+            v-model="clientAvatar"
+            folder="avatars"
+            shape="circle"
+            size="lg"
+            :label="__('Profile Avatar')"
+            :fallback-text="(clientProfile.full_name || 'U').charAt(0).toUpperCase()"
+            @update:model-value="onAvatarUpdated"
+          />
+          <div class="min-w-0">
+            <h3 class="text-sm font-bold text-ink-gray-9 truncate">
+              {{ clientProfile.full_name || 'Contact Avatar' }}
+            </h3>
+            <p class="text-xs text-ink-gray-6 dark:text-ink-gray-5 mt-0.5">
+              {{ __('Upload your personal profile photo for portal interactions.') }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <!-- Left: Legal Entity & Compliance -->
         <div class="space-y-4">
@@ -402,10 +445,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBusinessStore } from '@/stores/business'
 import { FormControl, Button, Dialog } from 'frappe-ui'
+import CrmImageUploader from '@/components/Common/CrmImageUploader.vue'
 
 const route = useRoute()
 const business = useBusinessStore()
@@ -419,6 +463,48 @@ const customer = computed(() => {
 const clientProfile = computed(() => {
   return business.currentUser || {}
 })
+
+const customerLogo = ref('')
+const clientAvatar = ref('')
+const logoSavedSuccess = ref(false)
+
+watch(
+  () => customer.value?.logo_url,
+  (val) => {
+    if (val !== undefined) customerLogo.value = val || ''
+  },
+  { immediate: true }
+)
+
+watch(
+  () => clientProfile.value?.avatar,
+  (val) => {
+    if (val !== undefined) clientAvatar.value = val || ''
+  },
+  { immediate: true }
+)
+
+async function onLogoUpdated(newUrl) {
+  customerLogo.value = newUrl
+  if (customer.value?.id) {
+    await business.updateClient(customer.value.id, { logo_url: newUrl })
+    logoSavedSuccess.value = true
+    setTimeout(() => {
+      logoSavedSuccess.value = false
+    }, 3000)
+  }
+}
+
+async function onAvatarUpdated(newUrl) {
+  clientAvatar.value = newUrl
+  if (clientProfile.value?.id) {
+    await business.updateUserAvatar(clientProfile.value.id, newUrl)
+    logoSavedSuccess.value = true
+    setTimeout(() => {
+      logoSavedSuccess.value = false
+    }, 3000)
+  }
+}
 
 const customerRequests = computed(() => {
   const email = clientProfile.value.email?.toLowerCase()

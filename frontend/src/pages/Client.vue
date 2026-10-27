@@ -53,8 +53,16 @@
             :tooltip="__('Back to Clients')"
             @click="router.push('/clients')"
           />
-          <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0">
-            {{ (client.company_name || 'C').substring(0, 2).toUpperCase() }}
+          <div class="size-10 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0 overflow-hidden">
+            <img
+              v-if="client.logo_url"
+              :src="client.logo_url"
+              :alt="client.company_name"
+              class="size-full object-cover"
+            />
+            <span v-else>
+              {{ (client.company_name || 'C').substring(0, 2).toUpperCase() }}
+            </span>
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-2">
@@ -503,6 +511,17 @@
               {{ __('1. Organization Legal Entity Details') }}
             </h4>
 
+            <div class="py-2">
+              <CrmImageUploader
+                v-model="clientForm.logo_url"
+                folder="clients"
+                shape="rounded"
+                size="md"
+                :label="__('Client Organization Logo')"
+                :fallback-text="(clientForm.company_name || 'C').substring(0, 2).toUpperCase()"
+              />
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormControl
                 v-model="clientForm.company_name"
@@ -758,6 +777,7 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import RecordPaymentModal from '@/components/Invoices/RecordPaymentModal.vue'
 import { isMobileView } from '@/composables/settings'
 import { useBusinessStore } from '@/stores/business'
+import CrmImageUploader from '@/components/Common/CrmImageUploader.vue'
 
 const props = defineProps({
   clientId: {
@@ -802,6 +822,7 @@ const clientForm = reactive({
   default_currency: 'USD',
   default_payment_terms: 'Net 30',
   credit_limit: 25000,
+  logo_url: '',
   status: 'Active',
 })
 
@@ -957,6 +978,7 @@ function openEditModal() {
     default_currency: c.default_currency || 'USD',
     default_payment_terms: c.default_payment_terms || 'Net 30',
     credit_limit: Number(c.credit_limit) || 25000,
+    logo_url: c.logo_url || '',
     status: c.status || 'Active',
   })
   showEditModal.value = true
