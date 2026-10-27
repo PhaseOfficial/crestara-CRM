@@ -333,18 +333,118 @@
           </div>
 
           <!-- Quick Fill from Inventory (Hidden on print) -->
-          <div class="print:hidden">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-ink-gray-5 mb-2">{{ __('Quick Fill from Inventory') }}</h3>
-            <p class="text-xs text-ink-gray-5 mb-2">{{ __('Select an item to inject into line items with local price overrides:') }}</p>
-            <select
-              class="w-full bg-surface-base rounded-md px-3 py-2 text-xs border border-outline-gray-2 text-ink-gray-9 focus:outline-none"
-              @change="addItemFromInventory($event.target.value); $event.target.value = ''"
-            >
-              <option value="">{{ __('+ Select product or service from catalog...') }}</option>
-              <option v-for="prod in business.inventory" :key="prod.id" :value="prod.id">
-                {{ prod.name }} ({{ business.formatCurrency(prod.unit_price) }}) - {{ prod.code }}
-              </option>
-            </select>
+          <div class="print:hidden space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">{{ __('Select item') }}</label>
+              <span class="text-[11px] text-ink-gray-5 font-medium">
+                {{ business.inventory.length }} {{ __('items') }}
+              </span>
+            </div>
+
+            <!-- Searchable Inventory Combobox -->
+            <div ref="inventoryDropdownRef" class="relative">
+              <div class="relative flex items-center">
+                <span class="lucide-search size-3.5 text-ink-gray-5 absolute left-3 pointer-events-none" />
+                <input
+                  ref="inventorySearchInputRef"
+                  v-model="inventorySearchQuery"
+                  type="text"
+                  :placeholder="__('Select item')"
+                  class="w-full bg-surface-base border border-outline-gray-2 rounded-lg pl-9 pr-8 py-2 text-xs text-ink-gray-9 placeholder:text-ink-gray-5 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                  @focus="inventoryDropdownOpen = true"
+                  @click="inventoryDropdownOpen = true"
+                />
+                <button
+                  v-if="inventorySearchQuery"
+                  type="button"
+                  class="absolute right-2.5 text-ink-gray-4 hover:text-ink-gray-7 p-0.5"
+                  @click="inventorySearchQuery = ''; inventoryDropdownOpen = true"
+                >
+                  <span class="lucide-x size-3.5" />
+                </button>
+              </div>
+
+              <!-- Floating Dropdown Panel with Search Results -->
+              <transition
+                enter-active-class="transition duration-150 ease-out"
+                enter-from-class="opacity-0 translate-y-1"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition duration-100 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+              >
+                <div
+                  v-if="inventoryDropdownOpen"
+                  class="absolute left-0 right-0 top-full mt-1.5 z-50 bg-surface-base border border-outline-gray-2 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-72"
+                >
+                  <div class="overflow-y-auto divide-y divide-outline-gray-1/60 p-1 flex-1">
+                    <div
+                      v-for="prod in filteredInventoryItems"
+                      :key="prod.id"
+                      class="flex items-center justify-between p-2.5 rounded-lg hover:bg-surface-gray-1 dark:hover:bg-surface-gray-2/70 cursor-pointer transition-colors group"
+                      @click="selectInventoryItem(prod)"
+                    >
+                      <!-- Item Image Thumbnail & Details -->
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="size-8 rounded-lg overflow-hidden shrink-0 border border-outline-gray-2 bg-surface-gray-2 flex items-center justify-center font-bold text-ink-gray-6 text-xs">
+                          <img
+                            v-if="prod.image_url"
+                            :src="prod.image_url"
+                            :alt="prod.name"
+                            class="size-full object-cover"
+                          />
+                          <span v-else>
+                            {{ (prod.name || 'P').substring(0, 2).toUpperCase() }}
+                          </span>
+                        </div>
+                        <div class="min-w-0">
+                          <div class="font-semibold text-xs text-ink-gray-9 truncate flex items-center gap-1.5">
+                            <span>{{ prod.name }}</span>
+                            <span class="font-mono text-[10px] text-ink-gray-5 font-normal">({{ prod.code }})</span>
+                          </div>
+                          <div class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 truncate flex items-center gap-1.5 mt-0.5">
+                            <span class="px-1.5 py-0.2 rounded text-[10px] bg-surface-gray-2 font-medium">
+                              {{ prod.category }}
+                            </span>
+                            <span
+                              v-if="prod.type === 'Service' || !prod.track_stock"
+                              class="px-1.5 py-0.2 rounded text-[10px] bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-3 font-medium"
+                            >
+                              {{ __('Service') }}
+                            </span>
+                            <span
+                              v-else
+                              class="px-1.5 py-0.2 rounded text-[10px] font-medium"
+                              :class="prod.quantity_in_stock <= prod.low_stock_threshold ? 'bg-surface-red-2 text-ink-red-7' : 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4'"
+                            >
+                              {{ prod.quantity_in_stock }} {{ __('in stock') }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Price & Add Action -->
+                      <div class="flex items-center gap-2.5 shrink-0 ml-3">
+                        <span class="font-mono font-bold text-xs text-ink-gray-9">
+                          {{ currencySymbol }}{{ formatNum(prod.unit_price) }}
+                        </span>
+                        <span class="text-[11px] font-bold text-ink-blue-7 dark:text-ink-blue-3 group-hover:underline inline-flex items-center gap-0.5">
+                          <span class="lucide-plus size-3" />
+                          {{ __('Add') }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Empty Results State -->
+                    <div v-if="!filteredInventoryItems.length" class="py-8 text-center text-ink-gray-4">
+                      <span class="lucide-package-open size-6 text-ink-gray-4 mx-auto block mb-1.5" />
+                      <p class="text-xs font-semibold text-ink-gray-7">{{ __('No matching products or services') }}</p>
+                      <p class="text-[11px] mt-0.5">{{ __('Try searching with another keyword or code.') }}</p>
+                    </div>
+                  </div>
+                </div>
+              </transition>
+            </div>
           </div>
         </div>
 
@@ -370,18 +470,25 @@
               <tbody class="divide-y divide-outline-gray-1">
                 <tr v-for="(item, idx) in invoice.items" :key="item.id || idx">
                   <td class="py-3 px-4">
-                    <input
-                      v-model="item.name"
-                      type="text"
-                      :placeholder="__('Item title')"
-                      class="w-full bg-transparent font-medium text-ink-gray-9 focus:outline-none print:border-none"
-                    />
-                    <input
-                      v-model="item.code"
-                      type="text"
-                      :placeholder="__('Item code/SKU')"
-                      class="w-full bg-transparent text-xs text-ink-gray-5 font-mono focus:outline-none mt-0.5 print:border-none"
-                    />
+                    <div class="flex items-start gap-2.5">
+                      <div v-if="item.image_url" class="size-8 rounded overflow-hidden shrink-0 border border-outline-gray-2 bg-surface-gray-2 mt-0.5 print:hidden">
+                        <img :src="item.image_url" :alt="item.name" class="size-full object-cover" />
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <input
+                          v-model="item.name"
+                          type="text"
+                          :placeholder="__('Item title')"
+                          class="w-full bg-transparent font-medium text-ink-gray-9 focus:outline-none print:border-none"
+                        />
+                        <input
+                          v-model="item.code"
+                          type="text"
+                          :placeholder="__('Item code/SKU')"
+                          class="w-full bg-transparent text-xs text-ink-gray-5 font-mono focus:outline-none mt-0.5 print:border-none"
+                        />
+                      </div>
+                    </div>
                   </td>
                   <td class="py-3 px-3">
                     <input
@@ -427,23 +534,28 @@
               class="bg-surface-gray-1 dark:bg-surface-gray-2/40 border border-outline-gray-1 rounded-xl p-3.5 space-y-2.5"
             >
               <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 space-y-1">
-                  <input
-                    v-model="item.name"
-                    type="text"
-                    :placeholder="__('Item title')"
-                    class="w-full bg-surface-base rounded px-2 py-1 text-sm font-semibold text-ink-gray-9 border border-outline-gray-2 focus:outline-none"
-                  />
-                  <input
-                    v-model="item.code"
-                    type="text"
-                    :placeholder="__('SKU / Code')"
-                    class="w-full bg-surface-base rounded px-2 py-0.5 text-xs text-ink-gray-5 font-mono border border-outline-gray-2 focus:outline-none"
-                  />
+                <div class="flex items-start gap-2 flex-1 min-w-0">
+                  <div v-if="item.image_url" class="size-8 rounded overflow-hidden shrink-0 border border-outline-gray-2 bg-surface-gray-2 mt-0.5">
+                    <img :src="item.image_url" :alt="item.name" class="size-full object-cover" />
+                  </div>
+                  <div class="flex-1 min-w-0 space-y-1">
+                    <input
+                      v-model="item.name"
+                      type="text"
+                      :placeholder="__('Item title')"
+                      class="w-full bg-surface-base rounded px-2 py-1 text-sm font-semibold text-ink-gray-9 border border-outline-gray-2 focus:outline-none"
+                    />
+                    <input
+                      v-model="item.code"
+                      type="text"
+                      :placeholder="__('SKU / Code')"
+                      class="w-full bg-surface-base rounded px-2 py-0.5 text-xs text-ink-gray-5 font-mono border border-outline-gray-2 focus:outline-none"
+                    />
+                  </div>
                 </div>
                 <button
                   v-if="invoice.items.length > 1"
-                  class="p-1.5 rounded text-ink-gray-4 hover:text-red-600"
+                  class="p-1.5 rounded text-ink-gray-4 hover:text-red-600 shrink-0"
                   @click="removeItem(idx)"
                 >
                   <span class="lucide-trash-2 size-4" />
@@ -704,9 +816,54 @@ function clearSelectedClient() {
   clientDropdownOpen.value = false
 }
 
+// Searchable Inventory Dropdown State
+const inventoryDropdownOpen = ref(false)
+const inventorySearchQuery = ref('')
+const inventoryDropdownRef = ref(null)
+const inventorySearchInputRef = ref(null)
+
+const filteredInventoryItems = computed(() => {
+  const query = inventorySearchQuery.value.trim().toLowerCase()
+  const list = business.inventory || []
+  if (!query) return list
+
+  return list.filter((item) => {
+    const name = (item.name || '').toLowerCase()
+    const code = (item.code || '').toLowerCase()
+    const category = (item.category || '').toLowerCase()
+    const description = (item.description || '').toLowerCase()
+    return (
+      name.includes(query) ||
+      code.includes(query) ||
+      category.includes(query) ||
+      description.includes(query)
+    )
+  })
+})
+
+function selectInventoryItem(prod) {
+  if (!prod) return
+  invoice.items.push({
+    id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    product_id: prod.id,
+    code: prod.code,
+    name: prod.name,
+    image_url: prod.image_url || '',
+    quantity: 1,
+    unit_price: Number(prod.unit_price) || 0,
+    amount: Number(prod.unit_price) || 0,
+  })
+  recalculateTotals()
+  inventorySearchQuery.value = ''
+  inventoryDropdownOpen.value = false
+}
+
 function handleClickOutside(event) {
   if (clientDropdownRef.value && !clientDropdownRef.value.contains(event.target)) {
     clientDropdownOpen.value = false
+  }
+  if (inventoryDropdownRef.value && !inventoryDropdownRef.value.contains(event.target)) {
+    inventoryDropdownOpen.value = false
   }
 }
 
@@ -835,17 +992,7 @@ function onClientSelect() {
 
 function addItemFromInventory(productId) {
   const prod = business.inventory.find((p) => p.id === productId)
-  if (!prod) return
-  invoice.items.push({
-    id: `item-${Date.now()}`,
-    product_id: prod.id,
-    code: prod.code,
-    name: prod.name,
-    quantity: 1,
-    unit_price: Number(prod.unit_price) || 0,
-    amount: Number(prod.unit_price) || 0,
-  })
-  recalculateTotals()
+  if (prod) selectInventoryItem(prod)
 }
 
 function addCustomItem() {

@@ -52,7 +52,7 @@ export function sanitizeFileName(originalName = 'image.png') {
 /**
  * Uploads an image file to Supabase Storage bucket 'crm-assets'
  * @param {File} file
- * @param {'company' | 'avatars' | 'clients'} folder
+ * @param {'company' | 'avatars' | 'clients' | 'inventory'} folder
  * @param {string} [customName]
  * @returns {Promise<{ success: boolean, url: string | null, path: string | null, error: string | null }>}
  */

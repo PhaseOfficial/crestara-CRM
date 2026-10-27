@@ -25,6 +25,10 @@ const defaultSettings = {
   bank_routing_iban: '',
   swift_bic: '',
   payment_instructions: '',
+  // Inventory & Stock Management Defaults
+  auto_deduct_inventory: false,
+  allow_negative_stock: false,
+  default_low_stock_threshold: 5,
 }
 
 export const useBusinessStore = defineStore('business-store', () => {
@@ -475,6 +479,23 @@ export const useBusinessStore = defineStore('business-store', () => {
     return invoices.value
   }
 
+  function deductInvoiceStock(items) {
+    if (!settings.value.auto_deduct_inventory || !Array.isArray(items)) return
+    for (const line of items) {
+      if (!line.product_id && !line.code) continue
+      const prod = inventory.value.find((p) => (line.product_id && p.id === line.product_id) || (line.code && p.code === line.code))
+      // Only tracked physical products have inventory. Services never hold stock.
+      if (prod && prod.type === 'Product' && prod.track_stock) {
+        const qtySold = Number(line.quantity) || 1
+        const currentQty = Number(prod.quantity_in_stock) || 0
+        const newQty = settings.value.allow_negative_stock
+          ? currentQty - qtySold
+          : Math.max(0, currentQty - qtySold)
+        updateProduct(prod.id, { quantity_in_stock: newQty }).catch(() => {})
+      }
+    }
+  }
+
   async function createInvoice(invoiceData) {
     const invoiceNumber = invoiceData.invoice_number || (await getNextInvoiceNumber())
 
@@ -545,14 +566,25 @@ export const useBusinessStore = defineStore('business-store', () => {
     invoices.value.unshift(newInvoice)
     saveStorage('invoices', invoices.value)
 
+    // Conditionally deduct stock if enabled in business settings
+    if (['Issued', 'Paid'].includes(newInvoice.status)) {
+      deductInvoiceStock(newInvoice.items)
+    }
+
     return newInvoice
   }
 
   async function updateInvoice(id, updatedFields) {
     const idx = invoices.value.findIndex((inv) => inv.id === id)
     if (idx !== -1) {
+      const prevStatus = invoices.value[idx].status
       invoices.value[idx] = { ...invoices.value[idx], ...updatedFields }
       saveStorage('invoices', invoices.value)
+
+      // Deduct stock if transitioned into Issued or Paid
+      if (updatedFields.status && ['Issued', 'Paid'].includes(updatedFields.status) && !['Issued', 'Paid'].includes(prevStatus)) {
+        deductInvoiceStock(invoices.value[idx].items)
+      }
 
       try {
         await supabase
@@ -678,42 +710,171 @@ export const useBusinessStore = defineStore('business-store', () => {
   }
 
   // ==========================================
-  // INVENTORY ACTIONS
+  // INVENTORY & SERVICES ACTIONS (SUPABASE PERSISTENCE)
   // ==========================================
-  function addProduct(productData) {
-    const newProd = {
-      id: `prod-${Date.now()}`,
+  const isFetchingInventory = ref(false)
+
+  async function fetchInventoryFromSupabase() {
+    isFetchingInventory.value = true
+    try {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*')
+        .order('name', { ascending: true })
+
+      if (error) {
+        console.warn('[Business] Supabase fetchInventory error:', error.message)
+        return inventory.value
+      }
+
+      if (data && data.length > 0) {
+        inventory.value = data.map((item) => ({
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          description: item.description || '',
+          category: item.category || 'General',
+          type: item.type || 'Product',
+          unit_price: Number(item.unit_price) || 0,
+          cost_price: Number(item.cost_price) || 0,
+          track_stock: item.type !== 'Service' && Boolean(item.track_stock),
+          quantity_in_stock: item.type === 'Service' ? 0 : Number(item.quantity_in_stock) || 0,
+          low_stock_threshold: item.type === 'Service' ? 0 : Number(item.low_stock_threshold ?? 5),
+          image_url: item.image_url || '',
+          status: item.status || 'Active',
+          barcode: item.barcode || '',
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        }))
+        saveStorage('inventory', inventory.value)
+      }
+    } catch (err) {
+      console.warn('[Business] Supabase fetchInventory exception:', err)
+    } finally {
+      isFetchingInventory.value = false
+    }
+    return inventory.value
+  }
+
+  async function addProduct(productData) {
+    const isService = productData.type === 'Service'
+    const payload = {
       code: productData.code || `PRD-${Math.floor(100 + Math.random() * 900)}`,
       name: productData.name,
       description: productData.description || '',
       category: productData.category || 'General',
-      type: productData.type || 'Product', // 'Product' | 'Service'
+      type: productData.type || 'Product',
       unit_price: Number(productData.unit_price) || 0,
       cost_price: Number(productData.cost_price) || 0,
-      quantity_in_stock: productData.type === 'Service' ? 0 : Number(productData.quantity_in_stock) || 0,
-      low_stock_threshold: productData.type === 'Service' ? null : Number(productData.low_stock_threshold) || 5,
-      track_stock: productData.type !== 'Service' && Boolean(productData.track_stock),
+      quantity_in_stock: isService ? 0 : Number(productData.quantity_in_stock) || 0,
+      low_stock_threshold: isService ? 0 : Number(productData.low_stock_threshold ?? settings.value.default_low_stock_threshold ?? 5),
+      track_stock: !isService && Boolean(productData.track_stock),
+      image_url: productData.image_url || '',
       status: productData.status || 'Active',
+      barcode: productData.barcode || '',
     }
 
-    inventory.value.unshift(newProd)
+    let createdId = `prod-${Date.now()}`
+    try {
+      const { data, error } = await supabase
+        .from('inventory')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (!error && data) {
+        createdId = data.id
+      } else if (error) {
+        console.warn('[Business] Supabase insert inventory error:', error.message)
+      }
+    } catch (err) {
+      console.warn('[Business] Supabase insert inventory exception:', err)
+    }
+
+    const itemRecord = {
+      id: createdId,
+      ...payload,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    inventory.value.unshift(itemRecord)
     saveStorage('inventory', inventory.value)
-    return newProd
+    return itemRecord
   }
 
-  function updateProduct(id, fields) {
+  async function updateProduct(id, fields) {
     const idx = inventory.value.findIndex((p) => p.id === id)
-    if (idx !== -1) {
-      inventory.value[idx] = { ...inventory.value[idx], ...fields }
-      saveStorage('inventory', inventory.value)
-      return inventory.value[idx]
+    if (idx === -1) return null
+
+    const targetType = fields.type !== undefined ? fields.type : inventory.value[idx].type
+    const isService = targetType === 'Service'
+
+    const updated = {
+      ...inventory.value[idx],
+      ...fields,
+      type: targetType,
+      unit_price: fields.unit_price !== undefined ? Number(fields.unit_price) : inventory.value[idx].unit_price,
+      cost_price: fields.cost_price !== undefined ? Number(fields.cost_price) : inventory.value[idx].cost_price,
+      quantity_in_stock: isService ? 0 : (fields.quantity_in_stock !== undefined ? Number(fields.quantity_in_stock) : inventory.value[idx].quantity_in_stock),
+      low_stock_threshold: isService ? 0 : (fields.low_stock_threshold !== undefined ? Number(fields.low_stock_threshold) : inventory.value[idx].low_stock_threshold),
+      track_stock: isService ? false : (fields.track_stock !== undefined ? Boolean(fields.track_stock) : inventory.value[idx].track_stock),
+      image_url: fields.image_url !== undefined ? fields.image_url : inventory.value[idx].image_url,
+      updated_at: new Date().toISOString(),
     }
-    return null
+
+    inventory.value[idx] = updated
+    saveStorage('inventory', inventory.value)
+
+    try {
+      const payload = {
+        name: updated.name,
+        code: updated.code,
+        description: updated.description,
+        category: updated.category,
+        type: updated.type,
+        unit_price: updated.unit_price,
+        cost_price: updated.cost_price,
+        track_stock: updated.track_stock,
+        quantity_in_stock: updated.quantity_in_stock,
+        low_stock_threshold: updated.low_stock_threshold,
+        image_url: updated.image_url,
+        status: updated.status,
+        barcode: updated.barcode,
+        updated_at: updated.updated_at,
+      }
+      await supabase.from('inventory').update(payload).eq('id', id)
+    } catch (err) {
+      console.warn('[Business] Supabase update inventory exception:', err)
+    }
+
+    return updated
   }
 
-  function deleteProduct(id) {
+  async function deleteProduct(id) {
     inventory.value = inventory.value.filter((p) => p.id !== id)
     saveStorage('inventory', inventory.value)
+
+    try {
+      await supabase.from('inventory').delete().eq('id', id)
+    } catch (err) {
+      console.warn('[Business] Supabase delete inventory exception:', err)
+    }
+  }
+
+  async function adjustStock(id, delta) {
+    const idx = inventory.value.findIndex((p) => p.id === id)
+    if (idx === -1) return null
+    const item = inventory.value[idx]
+    if (!item.track_stock || item.type === 'Service') return item
+
+    const currentQty = Number(item.quantity_in_stock) || 0
+    const change = Number(delta) || 0
+    const newQty = settings.value.allow_negative_stock
+      ? currentQty + change
+      : Math.max(0, currentQty + change)
+
+    return await updateProduct(id, { quantity_in_stock: newQty })
   }
 
   // ==========================================
@@ -1485,6 +1646,9 @@ export const useBusinessStore = defineStore('business-store', () => {
         bank_routing_iban: settings.value.bank_routing_iban || '',
         swift_bic: settings.value.swift_bic || '',
         payment_instructions: settings.value.payment_instructions || '',
+        auto_deduct_inventory: Boolean(settings.value.auto_deduct_inventory),
+        allow_negative_stock: Boolean(settings.value.allow_negative_stock),
+        default_low_stock_threshold: Number(settings.value.default_low_stock_threshold) || 5,
         updated_at: new Date().toISOString(),
       }
 
@@ -1537,6 +1701,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     fetchClientsFromSupabase()
     fetchChangeRequestsFromSupabase()
     fetchInvoicesFromSupabase()
+    fetchInventoryFromSupabase()
   } catch (e) {
     // ignore
   }
@@ -1598,9 +1763,12 @@ export const useBusinessStore = defineStore('business-store', () => {
     deleteInvoice,
     recordPayment,
     // Inventory
+    isFetchingInventory,
+    fetchInventoryFromSupabase,
     addProduct,
     updateProduct,
     deleteProduct,
+    adjustStock,
     // Reminders
     sendReminder,
     // Computed Metrics

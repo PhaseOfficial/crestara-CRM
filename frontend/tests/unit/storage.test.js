@@ -49,4 +49,11 @@ describe('storage utility functions', () => {
     }
     expect(validateImageFile(validFile).valid).toBe(true)
   })
+
+  it('constructs correct storage paths for inventory folder', () => {
+    const folder = 'inventory'
+    const clean = sanitizeFileName('Product 48-Port Switch.png')
+    const path = `${folder}/${clean}`
+    expect(path).toBe('inventory/product-48-port-switch.png')
+  })
 })

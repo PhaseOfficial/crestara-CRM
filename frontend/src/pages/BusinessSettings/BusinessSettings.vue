@@ -237,6 +237,68 @@
         </div>
       </div>
 
+      <!-- Inventory & Stock Management Settings -->
+      <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">
+            <span class="lucide-package-check size-4 text-ink-gray-5 dark:text-ink-gray-4" />
+            {{ __('Inventory & Stock Management Settings') }}
+          </h2>
+          <p class="text-xs text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">
+            {{ __('Define automated stock decrements on invoicing and default physical inventory thresholds. Services and non-tracked items are exempt.') }}
+          </p>
+        </div>
+
+        <div class="space-y-4 pt-1">
+          <!-- Auto-Deduct Inventory Switch -->
+          <div class="flex items-start justify-between gap-4 p-3 rounded-lg border border-outline-gray-2 bg-surface-gray-1/50 dark:bg-surface-gray-2/30">
+            <div class="space-y-0.5">
+              <label class="text-xs font-bold text-ink-gray-9 cursor-pointer flex items-center gap-2" for="auto-deduct-checkbox">
+                <span>{{ __('Automatically deduct stock on invoice issuance') }}</span>
+              </label>
+              <p class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4">
+                {{ __('When enabled, issuing or marking an invoice as paid automatically decrements the quantity in stock for physical products. (Note: Most items like services and retainers never track stock and are unaffected).') }}
+              </p>
+            </div>
+            <input
+              id="auto-deduct-checkbox"
+              v-model="form.auto_deduct_inventory"
+              type="checkbox"
+              class="mt-1 size-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+            />
+          </div>
+
+          <!-- Allow Negative Stock Switch -->
+          <div class="flex items-start justify-between gap-4 p-3 rounded-lg border border-outline-gray-2 bg-surface-gray-1/50 dark:bg-surface-gray-2/30">
+            <div class="space-y-0.5">
+              <label class="text-xs font-bold text-ink-gray-9 cursor-pointer flex items-center gap-2" for="negative-stock-checkbox">
+                <span>{{ __('Allow sales with negative stock') }}</span>
+              </label>
+              <p class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4">
+                {{ __('Permit invoicing physical tracked products even when available on-hand stock is 0 units.') }}
+              </p>
+            </div>
+            <input
+              id="negative-stock-checkbox"
+              v-model="form.allow_negative_stock"
+              type="checkbox"
+              class="mt-1 size-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+            />
+          </div>
+
+          <!-- Default Low Stock Threshold -->
+          <div class="max-w-xs">
+            <FormControl
+              v-model.number="form.default_low_stock_threshold"
+              :label="__('Default Low-Stock Alert Threshold')"
+              type="number"
+              min="0"
+              :description="__('Default minimum stock level before triggering warning badges on products.')"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- Staff Management & Role Permissions -->
       <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -619,6 +681,9 @@ const form = reactive({
   bank_routing_iban: '',
   swift_bic: '',
   payment_instructions: '',
+  auto_deduct_inventory: false,
+  allow_negative_stock: false,
+  default_low_stock_threshold: 5,
   ...(business.settings || {}),
 })
 
