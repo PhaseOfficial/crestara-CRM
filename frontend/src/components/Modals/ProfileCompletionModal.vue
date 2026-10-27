@@ -7,12 +7,12 @@
     }"
   >
     <template #body-content>
-      <div class="space-y-5 text-ink-gray-8">
+      <div class="space-y-5 text-ink-gray-9">
         <!-- Banner alert -->
-        <div class="flex items-start gap-3 bg-surface-amber-2 border border-outline-amber-2 p-3.5 rounded-xl text-ink-amber-7">
+        <div class="flex items-start gap-3 bg-surface-amber-2 border border-outline-amber-2 p-3.5 rounded-xl text-ink-amber-8 dark:text-amber-300">
           <span class="lucide-alert-triangle size-5 shrink-0 mt-0.5" />
           <div class="text-xs space-y-1">
-            <h4 class="font-bold text-sm text-ink-amber-8">
+            <h4 class="font-bold text-sm text-ink-amber-8 dark:text-amber-200">
               {{ __('Please Complete Your Profile Details') }}
             </h4>
             <p class="leading-relaxed opacity-95">
@@ -22,14 +22,14 @@
         </div>
 
         <!-- Progress bar -->
-        <div class="bg-surface-gray-2 p-4 rounded-xl border border-outline-gray-1 space-y-2">
+        <div class="bg-surface-gray-2 dark:bg-surface-gray-1 p-4 rounded-xl border border-outline-gray-1 space-y-2">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-ink-gray-9">{{ __('Profile Completeness') }}</span>
-            <span class="font-bold font-mono text-ink-blue-7">{{ business.profileCompletion.percentage }}%</span>
+            <span class="font-bold font-mono text-ink-blue-7 dark:text-ink-blue-3">{{ business.profileCompletion.percentage }}%</span>
           </div>
-          <div class="w-full bg-surface-gray-3 h-2 rounded-full overflow-hidden">
+          <div class="w-full bg-surface-gray-3 dark:bg-surface-gray-2 h-2 rounded-full overflow-hidden">
             <div
-              class="h-full bg-surface-blue-5 transition-all duration-500 rounded-full"
+              class="h-full bg-surface-blue-5 dark:bg-surface-blue-4 transition-all duration-500 rounded-full"
               :style="{ width: `${business.profileCompletion.percentage}%` }"
             />
           </div>
@@ -37,20 +37,20 @@
 
         <!-- Missing Information Checklist -->
         <div class="space-y-2">
-          <h5 class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">
+          <h5 class="text-xs font-bold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">
             {{ __('Information Needed') }} ({{ business.profileCompletion.missing.length }})
           </h5>
-          <div class="divide-y divide-outline-gray-1 border border-outline-gray-1 rounded-lg overflow-hidden bg-surface-base">
+          <div class="divide-y divide-outline-gray-1 border border-outline-gray-1 rounded-xl overflow-hidden bg-surface-base">
             <div
               v-for="item in business.profileCompletion.missing"
               :key="item.key"
-              class="flex items-center justify-between p-3 text-xs hover:bg-surface-gray-1"
+              class="flex items-center justify-between p-3 text-xs hover:bg-surface-gray-1 transition-colors"
             >
               <div class="flex items-center gap-2">
-                <span class="lucide-circle-alert size-4 text-ink-amber-6 shrink-0" />
+                <span class="lucide-circle-alert size-4 text-ink-amber-8 dark:text-amber-400 shrink-0" />
                 <span class="font-semibold text-ink-gray-9">{{ item.label }}</span>
               </div>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-amber-2 text-ink-amber-7 border border-outline-amber-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2">
                 {{ __('Required') }}
               </span>
             </div>
@@ -61,10 +61,10 @@
               class="flex items-center justify-between p-3 text-xs bg-surface-gray-1/40 opacity-75"
             >
               <div class="flex items-center gap-2">
-                <span class="lucide-check-circle-2 size-4 text-ink-green-6 shrink-0" />
-                <span class="text-ink-gray-6 line-through">{{ item.label }}</span>
+                <span class="lucide-check-circle-2 size-4 text-ink-green-7 dark:text-ink-green-4 shrink-0" />
+                <span class="text-ink-gray-7 dark:text-ink-gray-5 line-through">{{ item.label }}</span>
               </div>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-green-2 text-ink-green-7 border border-outline-green-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2">
                 {{ __('Completed') }}
               </span>
             </div>

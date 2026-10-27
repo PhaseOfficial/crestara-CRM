@@ -8,13 +8,13 @@
       :key="item.key"
       type="button"
       class="relative flex flex-1 flex-col items-center justify-center py-1 px-1 transition-colors min-h-[48px] focus:outline-none"
-      :class="isItemActive(item) ? 'text-ink-blue-7 dark:text-ink-blue-3 font-semibold' : 'text-ink-gray-5 hover:text-ink-gray-8'"
+      :class="isItemActive(item) ? 'text-ink-blue-7 dark:text-ink-blue-3 font-semibold' : 'text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 dark:hover:text-ink-gray-2'"
       @click="handleNavigate(item)"
     >
       <!-- Active Top Accent Pill -->
       <span
         v-if="isItemActive(item)"
-        class="absolute top-0 w-6 h-0.5 rounded-full bg-surface-blue-6"
+        class="absolute top-0 w-6 h-0.5 rounded-full bg-surface-blue-6 dark:bg-surface-blue-4"
       />
 
       <div class="relative grid place-items-center">
