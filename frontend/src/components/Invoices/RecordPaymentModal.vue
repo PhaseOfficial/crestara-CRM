@@ -48,6 +48,7 @@
             :options="[
               'Credit Card',
               'Bank Wire Transfer',
+              'EcoCash / Mobile Money',
               'Stripe',
               'PayPal',
               'Cash / Check',

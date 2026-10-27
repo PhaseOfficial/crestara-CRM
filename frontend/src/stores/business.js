@@ -347,6 +347,113 @@ export const useBusinessStore = defineStore('business-store', () => {
     return invoiceNumber
   }
 
+  // ==========================================
+  // INVOICES & PAYMENTS (SUPABASE 1-TABLE MODEL)
+  // ==========================================
+  async function fetchInvoicesFromSupabase() {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.warn('[Business] Supabase fetchInvoices error:', error)
+        return invoices.value
+      }
+
+      if (data && data.length > 0) {
+        invoices.value = data.map((inv) => ({
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          customer_id: inv.customer_id,
+          client_name: inv.client_name,
+          client_email: inv.client_email || '',
+          contact_name: inv.contact_name || '',
+          status: inv.status,
+          issue_date: inv.issue_date,
+          due_date: inv.due_date,
+          payment_terms: inv.payment_terms || 'Net 30',
+          currency: inv.currency || 'USD',
+          tax_rate: Number(inv.tax_rate) || 0,
+          discount_percentage: Number(inv.discount_percentage) || 0,
+          subtotal: Number(inv.subtotal) || 0,
+          discount_amount: Number(inv.discount_amount) || 0,
+          tax_amount: Number(inv.tax_amount) || 0,
+          total_amount: Number(inv.total_amount) || 0,
+          amount_paid: Number(inv.amount_paid) || 0,
+          balance_due: Number(inv.balance_due) || 0,
+          items: Array.isArray(inv.items) ? inv.items : [],
+          payments: Array.isArray(inv.payments) ? inv.payments : [],
+          notes: inv.notes || '',
+          created_at: inv.created_at,
+          updated_at: inv.updated_at,
+        }))
+        saveStorage('invoices', invoices.value)
+
+        // Sync embedded payments into transactions list for seamless ledger view
+        const allInvoicePayments = []
+        invoices.value.forEach((inv) => {
+          if (Array.isArray(inv.payments)) {
+            inv.payments.forEach((p) => {
+              allInvoicePayments.push({
+                id: p.id || `tx-${inv.id}`,
+                transaction_ref: p.transaction_ref || `TXN-${inv.invoice_number}`,
+                invoice_number: inv.invoice_number,
+                invoice_id: inv.id,
+                client_name: inv.client_name,
+                amount: Number(p.amount) || 0,
+                currency: p.currency || inv.currency || 'USD',
+                payment_method: p.payment_method || 'Credit Card',
+                payment_date: p.payment_date || inv.issue_date,
+                status: p.status || 'Settled',
+                notes: p.notes || '',
+              })
+            })
+          }
+        })
+        if (allInvoicePayments.length > 0) {
+          transactions.value = allInvoicePayments
+          saveStorage('transactions', transactions.value)
+        }
+      } else if (invoices.value.length > 0) {
+        // Auto-seed existing cached/mock invoices to Supabase if Supabase table is empty
+        for (const localInv of invoices.value) {
+          try {
+            await supabase.from('invoices').insert({
+              invoice_number: localInv.invoice_number,
+              customer_id: localInv.customer_id || null,
+              client_name: localInv.client_name || 'Client',
+              client_email: localInv.client_email || '',
+              contact_name: localInv.contact_name || '',
+              status: localInv.status || 'Issued',
+              issue_date: localInv.issue_date || new Date().toISOString().split('T')[0],
+              due_date: localInv.due_date || new Date().toISOString().split('T')[0],
+              payment_terms: localInv.payment_terms || 'Net 30',
+              currency: localInv.currency || 'USD',
+              tax_rate: Number(localInv.tax_rate) || 0,
+              discount_percentage: Number(localInv.discount_percentage) || 0,
+              subtotal: Number(localInv.subtotal) || 0,
+              discount_amount: Number(localInv.discount_amount) || 0,
+              tax_amount: Number(localInv.tax_amount) || 0,
+              total_amount: Number(localInv.total_amount) || 0,
+              amount_paid: Number(localInv.amount_paid) || 0,
+              balance_due: Number(localInv.balance_due) || 0,
+              items: localInv.items || [],
+              payments: localInv.payments || [],
+              notes: localInv.notes || '',
+            })
+          } catch (e) {
+            // ignore duplicates
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Business] Could not load invoices from Supabase:', err)
+    }
+    return invoices.value
+  }
+
   async function createInvoice(invoiceData) {
     const invoiceNumber = invoiceData.invoice_number || (await getNextInvoiceNumber())
 
@@ -369,18 +476,23 @@ export const useBusinessStore = defineStore('business-store', () => {
     const taxAmount = (taxableAmount * taxRate) / 100
     const totalAmount = Number((taxableAmount + taxAmount).toFixed(2))
 
-    const newInvoice = {
-      id: `inv-${Date.now()}`,
+    // Per-invoice currency selection priority:
+    // 1. invoiceData.currency (explicit user selection)
+    // 2. settings.value.currency (company base currency)
+    // 3. Fallback to 'USD'
+    const invoiceCurrency = invoiceData.currency || settings.value.currency || 'USD'
+
+    const payload = {
       invoice_number: invoiceNumber,
+      customer_id: invoiceData.customer_id || null,
       client_name: invoiceData.client_name || 'Client',
       client_email: invoiceData.client_email || '',
       contact_name: invoiceData.contact_name || invoiceData.client_name || '',
-      organization_name: invoiceData.organization_name || '',
       status: invoiceData.status || 'Issued',
       issue_date: invoiceData.issue_date || new Date().toISOString().split('T')[0],
       due_date: invoiceData.due_date || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
       payment_terms: invoiceData.payment_terms || 'Net 30',
-      currency: settings.value.currency || 'USD',
+      currency: invoiceCurrency,
       tax_rate: taxRate,
       discount_percentage: discountPercentage,
       subtotal: Number(subtotal.toFixed(2)),
@@ -390,7 +502,23 @@ export const useBusinessStore = defineStore('business-store', () => {
       amount_paid: 0.0,
       balance_due: totalAmount,
       items,
+      payments: [],
       notes: invoiceData.notes || settings.value.notes_template || '',
+    }
+
+    let createdId = `inv-${Date.now()}`
+    try {
+      const { data, error } = await supabase.from('invoices').insert(payload).select().single()
+      if (data && !error) {
+        createdId = data.id
+      }
+    } catch (err) {
+      console.warn('[Business] Could not insert invoice into Supabase:', err)
+    }
+
+    const newInvoice = {
+      id: createdId,
+      ...payload,
     }
 
     invoices.value.unshift(newInvoice)
@@ -399,31 +527,77 @@ export const useBusinessStore = defineStore('business-store', () => {
     return newInvoice
   }
 
-  function updateInvoice(id, updatedFields) {
+  async function updateInvoice(id, updatedFields) {
     const idx = invoices.value.findIndex((inv) => inv.id === id)
     if (idx !== -1) {
       invoices.value[idx] = { ...invoices.value[idx], ...updatedFields }
       saveStorage('invoices', invoices.value)
+
+      try {
+        await supabase
+          .from('invoices')
+          .update({
+            client_name: invoices.value[idx].client_name,
+            client_email: invoices.value[idx].client_email,
+            contact_name: invoices.value[idx].contact_name,
+            customer_id: invoices.value[idx].customer_id || null,
+            status: invoices.value[idx].status,
+            issue_date: invoices.value[idx].issue_date,
+            due_date: invoices.value[idx].due_date,
+            payment_terms: invoices.value[idx].payment_terms,
+            currency: invoices.value[idx].currency,
+            tax_rate: invoices.value[idx].tax_rate,
+            discount_percentage: invoices.value[idx].discount_percentage,
+            subtotal: invoices.value[idx].subtotal,
+            discount_amount: invoices.value[idx].discount_amount,
+            tax_amount: invoices.value[idx].tax_amount,
+            total_amount: invoices.value[idx].total_amount,
+            amount_paid: invoices.value[idx].amount_paid,
+            balance_due: invoices.value[idx].balance_due,
+            items: invoices.value[idx].items,
+            payments: invoices.value[idx].payments,
+            notes: invoices.value[idx].notes,
+          })
+          .eq('id', id)
+      } catch (err) {
+        console.warn('[Business] Could not update invoice in Supabase:', err)
+      }
+
       return invoices.value[idx]
     }
     return null
   }
 
-  function cancelInvoice(id) {
+  async function cancelInvoice(id) {
     const inv = invoices.value.find((i) => i.id === id)
     if (inv) {
       inv.status = 'Cancelled'
       inv.balance_due = 0.0
       saveStorage('invoices', invoices.value)
+
+      try {
+        await supabase
+          .from('invoices')
+          .update({ status: 'Cancelled', balance_due: 0.0 })
+          .eq('id', id)
+      } catch (err) {
+        console.warn('[Business] Could not cancel invoice in Supabase:', err)
+      }
     }
   }
 
-  function deleteInvoice(id) {
+  async function deleteInvoice(id) {
     invoices.value = invoices.value.filter((i) => i.id !== id)
     saveStorage('invoices', invoices.value)
+
+    try {
+      await supabase.from('invoices').delete().eq('id', id)
+    } catch (err) {
+      console.warn('[Business] Could not delete invoice from Supabase:', err)
+    }
   }
 
-  function recordPayment(invoiceId, { amount, payment_method, notes, payment_date }) {
+  async function recordPayment(invoiceId, { amount, payment_method, notes, payment_date }) {
     const inv = invoices.value.find((i) => i.id === invoiceId)
     if (!inv) throw new Error('Invoice not found')
 
@@ -439,24 +613,45 @@ export const useBusinessStore = defineStore('business-store', () => {
       inv.status = 'Partially paid'
     }
 
-    // Record corresponding transaction
+    if (!Array.isArray(inv.payments)) {
+      inv.payments = []
+    }
+
+    // Record corresponding transaction payload
     const newTx = {
-      id: `tx-${Date.now()}`,
-      transaction_ref: `TXN-2026-${Math.floor(100 + Math.random() * 900)}`,
+      id: `pay-${Date.now()}`,
+      transaction_ref: `TXN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       invoice_number: inv.invoice_number,
       invoice_id: inv.id,
       client_name: inv.client_name,
       amount: payAmount,
-      currency: inv.currency,
+      currency: inv.currency, // Inherits the invoice's specific currency
       payment_method: payment_method || 'Credit Card',
       payment_date: payment_date || new Date().toISOString().split('T')[0],
       status: 'Settled',
       notes: notes || `Payment recorded against ${inv.invoice_number}`,
     }
 
+    inv.payments.unshift(newTx)
     transactions.value.unshift(newTx)
+
     saveStorage('transactions', transactions.value)
     saveStorage('invoices', invoices.value)
+
+    // Persist payment to Supabase
+    try {
+      await supabase
+        .from('invoices')
+        .update({
+          amount_paid: inv.amount_paid,
+          balance_due: inv.balance_due,
+          status: inv.status,
+          payments: inv.payments,
+        })
+        .eq('id', inv.id)
+    } catch (err) {
+      console.warn('[Business] Could not persist payment to Supabase:', err)
+    }
 
     return { invoice: inv, transaction: newTx }
   }
@@ -1310,6 +1505,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     fetchUsersFromSupabase()
     fetchClientsFromSupabase()
     fetchChangeRequestsFromSupabase()
+    fetchInvoicesFromSupabase()
   } catch (e) {
     // ignore
   }
@@ -1361,6 +1557,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     updateClient,
     deleteClient,
     // Invoices
+    fetchInvoicesFromSupabase,
     getNextInvoiceNumber,
     createInvoice,
     updateInvoice,

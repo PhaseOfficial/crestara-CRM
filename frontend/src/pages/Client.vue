@@ -77,7 +77,7 @@
 
       <template #right-header>
         <div class="flex items-center gap-1.5 sm:gap-2">
-          <router-link :to="`/invoices/new?customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`">
+          <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`">
             <Button
               variant="subtle"
               iconLeft="plus"
@@ -304,7 +304,7 @@
             <span class="text-xs px-2 py-0.5 rounded-full bg-surface-gray-2 dark:bg-surface-gray-1 text-ink-gray-8 dark:text-ink-gray-6 font-semibold">
               {{ clientInvoices.length }} {{ __('Invoices') }}
             </span>
-            <router-link :to="`/invoices/new?customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`">
+            <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`">
               <Button size="sm" variant="subtle" iconLeft="plus" :label="__('New Invoice')" />
             </router-link>
           </div>
@@ -336,9 +336,9 @@
                 </td>
                 <td class="py-3 px-4 text-ink-gray-7 dark:text-ink-gray-6">{{ inv.issue_date }}</td>
                 <td class="py-3 px-4 text-ink-gray-7 dark:text-ink-gray-6">{{ inv.due_date }}</td>
-                <td class="py-3 px-4 font-mono font-semibold text-ink-gray-9">${{ Number(inv.total_amount).toLocaleString() }}</td>
+                <td class="py-3 px-4 font-mono font-semibold text-ink-gray-9">{{ business.formatCurrency(inv.total_amount, inv.currency) }}</td>
                 <td class="py-3 px-4 font-mono font-semibold" :class="Number(inv.balance_due) > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'">
-                  ${{ Number(inv.balance_due).toLocaleString() }}
+                  {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </td>
                 <td class="py-3 px-4">
                   <span
@@ -373,7 +373,7 @@
                   <span class="lucide-receipt size-8 text-ink-gray-4 mx-auto block mb-2" />
                   <p class="text-sm font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('No invoices issued to this client yet.') }}</p>
                   <p class="text-xs text-ink-gray-6 dark:text-ink-gray-5">{{ __('Generate commercial invoices to track receivables and billing.') }}</p>
-                  <router-link :to="`/invoices/new?customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`" class="inline-block pt-2">
+                  <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`" class="inline-block pt-2">
                     <Button variant="solid" size="sm" iconLeft="plus" :label="__('Issue First Invoice')" />
                   </router-link>
                 </td>
@@ -417,9 +417,9 @@
                   class="font-bold font-mono text-sm block"
                   :class="Number(inv.balance_due) > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
                 >
-                  ${{ Number(inv.balance_due).toLocaleString() }}
+                  {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </span>
-                <span class="text-[10px] text-ink-gray-6 dark:text-ink-gray-5">Total: ${{ Number(inv.total_amount).toLocaleString() }}</span>
+                <span class="text-[10px] text-ink-gray-6 dark:text-ink-gray-5">Total: {{ business.formatCurrency(inv.total_amount, inv.currency) }}</span>
               </div>
             </div>
 
@@ -446,7 +446,7 @@
           <div v-if="!clientInvoices.length" class="p-8 text-center text-ink-gray-6 dark:text-ink-gray-5 space-y-2">
             <span class="lucide-receipt size-8 text-ink-gray-4 mx-auto block mb-2" />
             <p class="text-sm font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('No invoices issued to this client yet.') }}</p>
-            <router-link :to="`/invoices/new?customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`" class="inline-block pt-2">
+            <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`" class="inline-block pt-2">
               <Button variant="solid" size="sm" iconLeft="plus" :label="__('Issue First Invoice')" />
             </router-link>
           </div>
