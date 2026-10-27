@@ -4,6 +4,7 @@ import {
   sanitizeFileName,
   ALLOWED_IMAGE_TYPES,
   MAX_FILE_SIZE_BYTES,
+  uploadPdfAsset,
 } from '@/utils/storage'
 
 describe('storage utility functions', () => {
@@ -55,5 +56,11 @@ describe('storage utility functions', () => {
     const clean = sanitizeFileName('Product 48-Port Switch.png')
     const path = `${folder}/${clean}`
     expect(path).toBe('inventory/product-48-port-switch.png')
+  })
+
+  it('uploadPdfAsset returns error when null blob is provided', async () => {
+    const res = await uploadPdfAsset(null, 'invoice.pdf')
+    expect(res.success).toBe(false)
+    expect(res.error).toContain('No PDF')
   })
 })

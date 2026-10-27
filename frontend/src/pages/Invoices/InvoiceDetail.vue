@@ -29,9 +29,8 @@
             v-if="!isNew && invoice.balance_due > 0 && invoice.status !== 'Cancelled'"
             variant="solid"
             theme="green"
-            :label="isMobileView ? '' : __('Mark as Paid')"
+            icon="check-check"
             :tooltip="__('Mark as Paid in Full')"
-            iconLeft="check-check"
             @click="handleMarkAsPaid"
           />
 
@@ -39,9 +38,8 @@
           <Button
             v-if="!isNew && invoice.balance_due > 0 && invoice.status !== 'Cancelled'"
             variant="outline"
-            :label="isMobileView ? '' : __('Record Payment')"
+            icon="credit-card"
             :tooltip="__('Record Payment')"
-            iconLeft="credit-card"
             @click="showPaymentModal = true"
           />
 
@@ -50,9 +48,8 @@
             v-if="!isNew && (invoice.status === 'Paid' || invoice.balance_due <= 0) && invoice.payments && invoice.payments.length > 0"
             variant="solid"
             theme="green"
-            :label="isMobileView ? '' : __('View Receipt')"
+            icon="file-text"
             :tooltip="__('View Official Commercial Receipt')"
-            iconLeft="file-text"
             @click="openReceiptModal(invoice.payments[0])"
           />
 
@@ -60,50 +57,47 @@
           <Button
             v-if="!isNew"
             variant="outline"
-            :label="isMobileView ? '' : __('Preview & Print')"
+            icon="printer"
             :tooltip="__('Preview & Print Document')"
-            iconLeft="printer"
             @click="showPreviewModal = true"
           />
 
-          <!-- Download PDF -->
+          <!-- Send to WhatsApp -->
           <Button
             v-if="!isNew"
             variant="outline"
-            :label="isMobileView ? '' : __('Download PDF')"
-            :tooltip="__('Download Vector PDF')"
-            iconLeft="download"
-            @click="downloadPdfDirect"
-          />
+            :tooltip="invoice.status === 'Paid' ? __('Send Official Receipt to WhatsApp') : __('Send Invoice PDF to WhatsApp')"
+            @click="openWhatsAppModal"
+          >
+            <template #icon>
+              <WhatsAppIcon class="size-4 text-emerald-600 dark:text-emerald-400" />
+            </template>
+          </Button>
 
           <!-- Email Invoice / Receipt -->
           <Button
             v-if="!isNew"
             variant="outline"
-            :label="isMobileView ? '' : (invoice.status === 'Paid' ? __('Email Receipt') : __('Email Invoice'))"
+            icon="mail"
             :tooltip="invoice.status === 'Paid' ? __('Email Official Receipt') : __('Email Invoice to Client')"
-            iconLeft="mail"
             @click="openInvoiceEmailModal"
           />
 
           <!-- Cancel Invoice -->
           <Button
             v-if="!isNew && invoice.status !== 'Cancelled' && invoice.status !== 'Paid'"
-            size="sm"
             variant="outline"
             theme="red"
-            :label="isMobileView ? '' : __('Cancel')"
+            icon="x-circle"
             :tooltip="__('Cancel Invoice')"
-            iconLeft="x-circle"
             @click="cancelCurrentInvoice"
           />
 
           <!-- Save Changes / Create & Issue -->
           <Button
             variant="solid"
-            :label="isNew ? __('Create & Issue') : (isMobileView ? '' : __('Save Changes'))"
+            icon="save"
             :tooltip="isNew ? __('Create & Issue Invoice') : __('Save Invoice Changes')"
-            iconLeft="save"
             :loading="saving"
             @click="saveInvoice"
           />
@@ -906,6 +900,14 @@
       :payment="activePayment"
       :isReceipt="emailModalIsReceipt"
     />
+
+    <!-- WhatsApp Invoice / Receipt Modal -->
+    <WhatsAppInvoiceModal
+      v-model="showWhatsAppModal"
+      :invoice="invoice"
+      :payment="activePayment"
+      :isReceipt="whatsappModalIsReceipt"
+    />
   </div>
 </template>
 
@@ -919,6 +921,8 @@ import RecordPaymentModal from '@/components/Invoices/RecordPaymentModal.vue'
 import DocumentPreviewModal from '@/components/Common/DocumentPreviewModal.vue'
 import CommercialReceiptModal from '@/components/Common/CommercialReceiptModal.vue'
 import EmailInvoiceModal from '@/components/Invoices/EmailInvoiceModal.vue'
+import WhatsAppInvoiceModal from '@/components/Invoices/WhatsAppInvoiceModal.vue'
+import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import {
   generateInvoicePdf,
   generateReceiptPdf,
@@ -939,8 +943,10 @@ const showPaymentModal = ref(false)
 const showPreviewModal = ref(false)
 const showReceiptModal = ref(false)
 const showEmailModal = ref(false)
+const showWhatsAppModal = ref(false)
 const previewIsReceipt = ref(false)
 const emailModalIsReceipt = ref(false)
+const whatsappModalIsReceipt = ref(false)
 const activePayment = ref(null)
 const selectedClientId = ref('')
 
@@ -1000,6 +1006,7 @@ function selectClient(client) {
   invoice.customer_id = client.id
   invoice.client_name = client.company_name || client.legal_name || ''
   invoice.client_email = client.billing_email || client.primary_email || ''
+  invoice.client_phone = client.phone || client.mobile_no || ''
   invoice.contact_name = client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : (client.job_title || '')
 
   if (client.default_currency || client.currency || client.preferred_currency) {
@@ -1184,6 +1191,7 @@ function onClientSelect() {
   invoice.customer_id = client.id
   invoice.client_name = client.company_name || client.legal_name || ''
   invoice.client_email = client.billing_email || client.primary_email || ''
+  invoice.client_phone = client.phone || client.mobile_no || ''
   invoice.contact_name = client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : (client.job_title || '')
 
   if (client.default_currency || client.preferred_currency || client.currency) {
@@ -1325,6 +1333,16 @@ async function downloadReceipt(pay) {
 function openInvoiceEmailModal() {
   emailModalIsReceipt.value = false
   showEmailModal.value = true
+}
+
+function openWhatsAppModal() {
+  whatsappModalIsReceipt.value = Boolean(
+    invoice.status === 'Paid' && invoice.payments && invoice.payments.length > 0
+  )
+  if (whatsappModalIsReceipt.value) {
+    activePayment.value = invoice.payments[0]
+  }
+  showWhatsAppModal.value = true
 }
 
 function onEmailRequested({ payment, isReceipt }) {
