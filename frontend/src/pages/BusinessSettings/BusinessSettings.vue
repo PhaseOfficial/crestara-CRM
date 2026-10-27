@@ -64,6 +64,7 @@
             :label="__('Company CRM Logo')"
             :description="__('Recommended: Transparent PNG, SVG, or WebP (max 5MB). Globally reflected on invoices, customer portal, app header, and sidebar.')"
             fallback-text="CRM"
+            @dataUri="onLogoDataUri"
           />
         </div>
 
@@ -126,7 +127,7 @@
           </p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <FormControl
             v-model="form.invoice_prefix"
             :label="__('Invoice Prefix')"
@@ -136,11 +137,28 @@
           />
           <FormControl
             v-model.number="form.next_invoice_number"
-            :label="__('Next Sequence Number')"
+            :label="__('Next Invoice Sequence')"
             type="number"
             min="1"
             required
           />
+          <FormControl
+            v-model="form.receipt_prefix"
+            :label="__('Receipt Prefix')"
+            type="text"
+            placeholder="REC-2026-"
+            required
+          />
+          <FormControl
+            v-model.number="form.next_receipt_number"
+            :label="__('Next Receipt Sequence')"
+            type="number"
+            min="1"
+            required
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <FormControl
             v-model="form.currency"
             :label="__('Currency')"
@@ -148,9 +166,6 @@
             :options="['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'ZAR', 'ZWG']"
             required
           />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormControl
             v-model.number="form.default_payment_terms"
             :label="__('Default Terms (Days)')"
@@ -296,6 +311,67 @@
               :description="__('Default minimum stock level before triggering warning badges on products.')"
             />
           </div>
+        </div>
+      </div>
+
+      <!-- cPanel Server-Side Email Delivery Configuration -->
+      <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">
+              <span class="lucide-mail size-4 text-ink-gray-5 dark:text-ink-gray-4" />
+              {{ __('Email Delivery & cPanel Webmail Integration') }}
+            </h2>
+            <p class="text-xs text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">
+              {{ __('Automated invoice & commercial receipt dispatch with vector PDF attachments via cPanel.') }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              iconLeft="send"
+              :label="__('Test Email Delivery')"
+              :loading="testingEmail"
+              @click="handleTestEmail"
+            />
+          </div>
+        </div>
+
+        <!-- Security & Server Notice -->
+        <div class="p-3.5 rounded-xl bg-surface-blue-2/60 dark:bg-blue-950/40 border border-outline-blue-2 dark:border-blue-800/50 text-xs text-ink-blue-7 dark:text-blue-200 flex items-start gap-2.5">
+          <span class="lucide-shield-check size-4 shrink-0 mt-0.5 text-ink-blue-6 dark:text-blue-400" />
+          <div class="space-y-1">
+            <p class="font-semibold">{{ __('Server-Side Security Enabled') }}</p>
+            <p class="text-[11px] opacity-90">
+              {{ __('Sensitive SMTP credentials and email server options are managed securely on your cPanel server in /api/send_email.php. Passwords are never sent across or stored in the browser.') }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Test Feedback Banner -->
+        <div
+          v-if="testResult"
+          class="p-3 rounded-xl text-xs flex items-center gap-2 border"
+          :class="testResult.success ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-red-2 text-ink-red-7 border-outline-red-2'"
+        >
+          <span :class="testResult.success ? 'lucide-check-circle size-4' : 'lucide-alert-circle size-4'" />
+          <span class="font-medium">{{ testResult.message }}</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormControl
+            v-model="form.from_name"
+            :label="__('Default Sender Name (From Name)')"
+            type="text"
+            placeholder="Crestara Billing Accounts"
+          />
+          <FormControl
+            v-model="form.from_email"
+            :label="__('Default Sender Email (From Email)')"
+            type="email"
+            placeholder="billing@crestara.com"
+          />
         </div>
       </div>
 
@@ -614,6 +690,8 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import { isMobileView } from '@/composables/settings'
 import { FormControl, Button, Avatar, Dialog } from 'frappe-ui'
 import CrmImageUploader from '@/components/Common/CrmImageUploader.vue'
+import { sendTestEmail } from '@/utils/mailer'
+import { loadImageAsBase64 } from '@/utils/pdfGenerator'
 
 const business = useBusinessStore()
 const saving = ref(false)
@@ -667,10 +745,13 @@ const form = reactive({
   tax_id: '',
   website: '',
   logo_url: '',
+  logo_data_uri: '',
   currency: 'USD',
   currency_symbol: '$',
   invoice_prefix: 'INV-2026-',
   next_invoice_number: 1045,
+  receipt_prefix: 'REC-2026-',
+  next_receipt_number: 5001,
   default_payment_terms: 30,
   tax_rate: 8.5,
   late_fee_percentage: 2.0,
@@ -684,8 +765,44 @@ const form = reactive({
   auto_deduct_inventory: false,
   allow_negative_stock: false,
   default_low_stock_threshold: 5,
+  from_email: '',
+  from_name: '',
   ...(business.settings || {}),
 })
+
+const testingEmail = ref(false)
+const testResult = ref(null)
+
+async function handleTestEmail() {
+  const targetEmail = prompt('Enter recipient email address to send test dispatch:', form.business_email || form.from_email || '')
+  if (!targetEmail) return
+
+  testingEmail.value = true
+  testResult.value = null
+
+  try {
+    // Persist current settings first
+    await business.updateBusinessSettings(form)
+    await sendTestEmail({
+      recipientEmail: targetEmail.trim(),
+      businessSettings: form,
+    })
+    testResult.value = {
+      success: true,
+      message: `Test email successfully dispatched to ${targetEmail} via cPanel mailer!`,
+    }
+  } catch (err) {
+    testResult.value = {
+      success: false,
+      message: err.message || 'Failed to dispatch test email. Please verify cPanel SMTP credentials or server logs.',
+    }
+  } finally {
+    testingEmail.value = false
+    setTimeout(() => {
+      testResult.value = null
+    }, 8000)
+  }
+}
 
 watch(
   () => business.settings,
@@ -825,9 +942,27 @@ function closeInviteModal() {
   showInvite.value = false
 }
 
+function onLogoDataUri(dataUri) {
+  form.logo_data_uri = dataUri
+  business.settings.logo_data_uri = dataUri
+  business.settings._resolved_logo_url = form.logo_url || dataUri
+}
+
 async function save() {
   saving.value = true
   try {
+    if (form.logo_url && !form.logo_data_uri) {
+      try {
+        const b64 = await loadImageAsBase64(form.logo_url)
+        if (b64) {
+          form.logo_data_uri = b64
+          business.settings.logo_data_uri = b64
+          business.settings._resolved_logo_url = form.logo_url
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
     await business.updateBusinessSettings(form)
     savedSuccess.value = true
     setTimeout(() => {

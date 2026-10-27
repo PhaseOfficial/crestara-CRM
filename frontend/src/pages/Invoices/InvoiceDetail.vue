@@ -4,7 +4,7 @@
     <LayoutHeader class="print:hidden">
       <template #left-header>
         <div class="flex items-center gap-3">
-          <router-link to="/invoices" class="p-1.5 rounded-md hover:bg-surface-gray-2 text-ink-gray-6">
+          <router-link to="/invoices" class="p-1.5 rounded-md hover:bg-surface-gray-2 text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 transition-colors">
             <span class="lucide-arrow-left size-5" />
           </router-link>
           <div>
@@ -23,32 +23,87 @@
       </template>
 
       <template #right-header>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <!-- 1-Click Mark as Paid -->
           <Button
             v-if="!isNew && invoice.balance_due > 0 && invoice.status !== 'Cancelled'"
             variant="solid"
-            :label="__('Record Payment')"
+            theme="green"
+            :label="isMobileView ? '' : __('Mark as Paid')"
+            :tooltip="__('Mark as Paid in Full')"
+            iconLeft="check-check"
+            @click="handleMarkAsPaid"
+          />
+
+          <!-- Record Payment (Partial / Detailed) -->
+          <Button
+            v-if="!isNew && invoice.balance_due > 0 && invoice.status !== 'Cancelled'"
+            variant="outline"
+            :label="isMobileView ? '' : __('Record Payment')"
+            :tooltip="__('Record Payment')"
             iconLeft="credit-card"
             @click="showPaymentModal = true"
           />
+
+          <!-- View Receipt when settled -->
+          <Button
+            v-if="!isNew && (invoice.status === 'Paid' || invoice.balance_due <= 0) && invoice.payments && invoice.payments.length > 0"
+            variant="solid"
+            theme="green"
+            :label="isMobileView ? '' : __('View Receipt')"
+            :tooltip="__('View Official Commercial Receipt')"
+            iconLeft="file-text"
+            @click="openReceiptModal(invoice.payments[0])"
+          />
+
+          <!-- Preview & Print -->
           <Button
             v-if="!isNew"
             variant="outline"
-            :label="__('Print / PDF')"
+            :label="isMobileView ? '' : __('Preview & Print')"
+            :tooltip="__('Preview & Print Document')"
             iconLeft="printer"
-            @click="printInvoice"
+            @click="showPreviewModal = true"
           />
+
+          <!-- Download PDF -->
+          <Button
+            v-if="!isNew"
+            variant="outline"
+            :label="isMobileView ? '' : __('Download PDF')"
+            :tooltip="__('Download Vector PDF')"
+            iconLeft="download"
+            @click="downloadPdfDirect"
+          />
+
+          <!-- Email Invoice / Receipt -->
+          <Button
+            v-if="!isNew"
+            variant="outline"
+            :label="isMobileView ? '' : (invoice.status === 'Paid' ? __('Email Receipt') : __('Email Invoice'))"
+            :tooltip="invoice.status === 'Paid' ? __('Email Official Receipt') : __('Email Invoice to Client')"
+            iconLeft="mail"
+            @click="openInvoiceEmailModal"
+          />
+
+          <!-- Cancel Invoice -->
           <Button
             v-if="!isNew && invoice.status !== 'Cancelled' && invoice.status !== 'Paid'"
             size="sm"
             variant="outline"
             theme="red"
-            :label="__('Cancel Invoice')"
+            :label="isMobileView ? '' : __('Cancel')"
+            :tooltip="__('Cancel Invoice')"
+            iconLeft="x-circle"
             @click="cancelCurrentInvoice"
           />
+
+          <!-- Save Changes / Create & Issue -->
           <Button
             variant="solid"
-            :label="isNew ? __('Create & Issue') : __('Save Changes')"
+            :label="isNew ? __('Create & Issue') : (isMobileView ? '' : __('Save Changes'))"
+            :tooltip="isNew ? __('Create & Issue Invoice') : __('Save Invoice Changes')"
+            iconLeft="save"
             :loading="saving"
             @click="saveInvoice"
           />
@@ -74,32 +129,41 @@
                 <span class="text-xl font-bold text-ink-gray-9">{{ business.settings.business_name || 'Crestara CRM' }}</span>
               </div>
             </div>
-            <p v-if="business.settings.legal_name" class="text-xs font-semibold text-ink-gray-7 mt-1.5">{{ business.settings.legal_name }}</p>
-            <p v-if="business.settings.business_address" class="text-xs text-ink-gray-5 mt-1 whitespace-pre-line">{{ business.settings.business_address }}</p>
-            <div class="text-xs text-ink-gray-5 mt-1 space-x-3">
+            <p v-if="business.settings.legal_name" class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 mt-1.5">{{ business.settings.legal_name }}</p>
+            <p v-if="business.settings.business_address" class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 whitespace-pre-line">{{ business.settings.business_address }}</p>
+            <div class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 space-x-3">
               <span v-if="business.settings.tax_id">{{ __('Tax ID:') }} {{ business.settings.tax_id }}</span>
               <span v-if="business.settings.business_phone">{{ business.settings.business_phone }}</span>
             </div>
           </div>
 
           <div class="space-y-3 sm:text-right min-w-[260px]">
-            <h2 class="text-2xl font-bold text-ink-gray-9 tracking-tight font-mono">
-              {{ isNew ? __('DRAFT INVOICE') : invoice.invoice_number }}
-            </h2>
+            <div class="flex items-center sm:justify-end gap-2.5">
+              <h2 class="text-2xl font-bold text-ink-gray-9 tracking-tight font-mono">
+                {{ isNew ? __('DRAFT INVOICE') : invoice.invoice_number }}
+              </h2>
+              <div
+                v-if="!isNew && (invoice.status === 'Paid' || invoice.balance_due <= 0)"
+                class="paid-in-full-pill inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 font-bold text-xs uppercase tracking-wider shadow-sm"
+              >
+                <span class="lucide-check-circle-2 size-3.5 text-emerald-600" />
+                <span>{{ __('PAID IN FULL') }}</span>
+              </div>
+            </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
-              <span class="text-ink-gray-5 sm:text-right font-medium self-center">{{ __('Issue Date:') }}</span>
+              <span class="text-ink-gray-6 dark:text-ink-gray-4 sm:text-right font-medium self-center">{{ __('Issue Date:') }}</span>
               <input
                 v-model="invoice.issue_date"
                 type="date"
                 class="bg-surface-gray-1 dark:bg-surface-gray-2 rounded px-2 py-1 text-xs border border-outline-gray-2 text-ink-gray-9 focus:outline-none print:border-none"
               />
-              <span class="text-ink-gray-5 sm:text-right font-medium self-center">{{ __('Due Date:') }}</span>
+              <span class="text-ink-gray-6 dark:text-ink-gray-4 sm:text-right font-medium self-center">{{ __('Due Date:') }}</span>
               <input
                 v-model="invoice.due_date"
                 type="date"
                 class="bg-surface-gray-1 dark:bg-surface-gray-2 rounded px-2 py-1 text-xs border border-outline-gray-2 text-ink-gray-9 focus:outline-none print:border-none"
               />
-              <span class="text-ink-gray-5 sm:text-right font-medium self-center">{{ __('Terms:') }}</span>
+              <span class="text-ink-gray-6 dark:text-ink-gray-4 sm:text-right font-medium self-center">{{ __('Terms:') }}</span>
               <select
                 v-model="invoice.payment_terms"
                 class="bg-surface-gray-1 dark:bg-surface-gray-2 rounded px-2 py-1 text-xs border border-outline-gray-2 text-ink-gray-9 focus:outline-none print:border-none"
@@ -109,10 +173,10 @@
                 <option value="Net 60">Net 60</option>
                 <option value="Due on Receipt">Due on Receipt</option>
               </select>
-              <span class="text-ink-gray-5 sm:text-right font-medium self-center">{{ __('Currency:') }}</span>
+              <span class="text-ink-gray-6 dark:text-ink-gray-4 sm:text-right font-medium self-center">{{ __('Currency:') }}</span>
               <select
                 v-model="invoice.currency"
-                class="bg-surface-base font-bold text-xs text-ink-gray-9 border border-outline-gray-2 rounded px-2 py-1 focus:outline-none ring-1 ring-blue-500/20 print:border-none"
+                class="bg-surface-base dark:bg-surface-gray-2 font-bold text-xs text-ink-gray-9 border border-outline-gray-2 rounded px-2 py-1 focus:outline-none ring-1 ring-blue-500/20 print:border-none"
                 @change="recalculateTotals"
               >
                 <option value="USD">USD ($)</option>
@@ -131,7 +195,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-surface-gray-1 dark:bg-surface-gray-2/40 p-5 rounded-xl border border-outline-gray-1 print:bg-transparent print:border-none print:p-0">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">{{ __('Billed To Client') }}</h3>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Billed To Client') }}</h3>
               <!-- Client Picker Selector (Hidden on print) -->
               <span v-if="isNew && availableClients.length" class="text-[11px] text-ink-blue-7 dark:text-ink-blue-3 print:hidden">
                 {{ __('Auto-fill from Clients') }}
@@ -181,7 +245,7 @@
                   </button>
                   <button
                     type="button"
-                    class="p-1 rounded text-ink-gray-5 hover:text-ink-red-7 hover:bg-surface-red-2 transition-colors"
+                    class="p-1 rounded text-ink-gray-5 dark:text-ink-gray-4 hover:text-ink-red-7 dark:hover:text-ink-red-4 hover:bg-surface-red-2 transition-colors"
                     :title="__('Clear selected client')"
                     @click="clearSelectedClient"
                   >
@@ -194,15 +258,15 @@
               <button
                 v-else
                 type="button"
-                class="w-full flex items-center justify-between bg-surface-base border border-outline-gray-2 rounded-lg px-3 py-2 text-xs text-ink-gray-7 hover:text-ink-gray-9 hover:border-outline-gray-3 transition-colors shadow-xs text-left"
+                class="w-full flex items-center justify-between bg-surface-base border border-outline-gray-2 rounded-lg px-3 py-2 text-xs text-ink-gray-7 dark:text-ink-gray-6 hover:text-ink-gray-9 hover:border-outline-gray-3 transition-colors shadow-xs text-left"
                 @click="toggleClientDropdown"
               >
                 <div class="flex items-center gap-2 min-w-0">
-                  <span class="lucide-search size-3.5 text-ink-gray-5 shrink-0" />
+                  <span class="lucide-search size-3.5 text-ink-gray-5 dark:text-ink-gray-4 shrink-0" />
                   <span class="truncate">{{ __('Select client') }}</span>
                 </div>
                 <span
-                  class="lucide-chevron-down size-3.5 text-ink-gray-5 transition-transform duration-150"
+                  class="lucide-chevron-down size-3.5 text-ink-gray-5 dark:text-ink-gray-4 transition-transform duration-150"
                   :class="clientDropdownOpen ? 'rotate-180' : ''"
                 />
               </button>
@@ -223,18 +287,18 @@
                   <!-- Search Bar Header -->
                   <div class="p-2 border-b border-outline-gray-1 bg-surface-gray-1/50 dark:bg-surface-gray-2/50">
                     <div class="relative flex items-center">
-                      <span class="lucide-search size-3.5 text-ink-gray-5 absolute left-2.5 pointer-events-none" />
+                      <span class="lucide-search size-3.5 text-ink-gray-5 dark:text-ink-gray-4 absolute left-2.5 pointer-events-none" />
                       <input
                         ref="clientSearchInputRef"
                         v-model="clientSearchQuery"
                         type="text"
                         :placeholder="__('Search client...')"
-                        class="w-full bg-surface-base border border-outline-gray-2 rounded-md pl-8 pr-7 py-1.5 text-xs text-ink-gray-9 placeholder:text-ink-gray-5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        class="w-full bg-surface-base border border-outline-gray-2 rounded-md pl-8 pr-7 py-1.5 text-xs text-ink-gray-9 placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                       <button
                         v-if="clientSearchQuery"
                         type="button"
-                        class="absolute right-2 text-ink-gray-4 hover:text-ink-gray-7 p-0.5"
+                        class="absolute right-2 text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-gray-7 dark:hover:text-ink-gray-2 p-0.5"
                         @click="clientSearchQuery = ''"
                       >
                         <span class="lucide-x size-3" />
@@ -275,7 +339,7 @@
                       </div>
 
                       <div class="flex items-center gap-2 shrink-0 ml-2">
-                        <span class="text-[10px] font-semibold text-ink-gray-5">
+                        <span class="text-[10px] font-semibold text-ink-gray-6 dark:text-ink-gray-4">
                           {{ c.default_currency || 'USD' }}
                         </span>
                         <span
@@ -286,9 +350,9 @@
                     </div>
 
                     <!-- Empty Search State -->
-                    <div v-if="!filteredClients.length" class="p-6 text-center text-xs text-ink-gray-5 space-y-1">
-                      <div class="font-semibold text-ink-gray-7">{{ __('No registered clients found') }}</div>
-                      <p class="text-[11px] text-ink-gray-5">
+                    <div v-if="!filteredClients.length" class="p-6 text-center text-xs text-ink-gray-5 dark:text-ink-gray-4 space-y-1">
+                      <div class="font-semibold text-ink-gray-8 dark:text-ink-gray-2">{{ __('No registered clients found') }}</div>
+                      <p class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4">
                         {{ clientSearchQuery ? __('No client matches "{0}".', [clientSearchQuery]) : __('No clients registered yet in the system.') }}
                       </p>
                     </div>
@@ -296,7 +360,7 @@
 
                   <!-- Footer: Enter Manually -->
                   <div class="p-2 border-t border-outline-gray-1 bg-surface-gray-1/30 dark:bg-surface-gray-2/30 flex items-center justify-between text-xs">
-                    <span class="text-[11px] text-ink-gray-5">{{ __('Total: {0} client(s)', [availableClients.length]) }}</span>
+                    <span class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4">{{ __('Total: {0} client(s)', [availableClients.length]) }}</span>
                     <button
                       type="button"
                       class="text-[11px] font-semibold text-ink-blue-7 dark:text-ink-blue-3 hover:underline"
@@ -310,33 +374,44 @@
             </div>
 
             <div class="space-y-2">
-              <input
-                v-model="invoice.client_name"
-                type="text"
-                :placeholder="__('Client or Company Name')"
-                class="w-full bg-surface-base rounded-md px-3 py-1.5 text-sm border border-outline-gray-2 text-ink-gray-9 font-semibold focus:outline-none print:border-none print:px-0"
-                required
-              />
-              <input
-                v-model="invoice.contact_name"
-                type="text"
-                :placeholder="__('Primary Contact Person')"
-                class="w-full bg-surface-base rounded-md px-3 py-1.5 text-xs border border-outline-gray-2 text-ink-gray-8 focus:outline-none print:border-none print:px-0"
-              />
-              <input
-                v-model="invoice.client_email"
-                type="email"
-                :placeholder="__('Billing Email Address')"
-                class="w-full bg-surface-base rounded-md px-3 py-1.5 text-xs border border-outline-gray-2 text-ink-gray-8 focus:outline-none print:border-none print:px-0"
-              />
+              <div class="relative flex items-center">
+                <span class="lucide-building size-3.5 text-ink-gray-5 dark:text-ink-gray-4 absolute left-2.5 pointer-events-none print:hidden" />
+                <input
+                  v-model="invoice.client_name"
+                  type="text"
+                  :placeholder="__('Client or Company Name')"
+                  class="w-full bg-surface-base dark:bg-surface-gray-1 rounded-md pl-8 pr-3 py-1.5 text-sm border border-outline-gray-2 text-ink-gray-9 font-semibold placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-outline-gray-3 transition-colors print:border-none print:p-0 print:bg-transparent"
+                  required
+                />
+              </div>
+
+              <div class="relative flex items-center">
+                <span class="lucide-user size-3.5 text-ink-gray-5 dark:text-ink-gray-4 absolute left-2.5 pointer-events-none print:hidden" />
+                <input
+                  v-model="invoice.contact_name"
+                  type="text"
+                  :placeholder="__('Primary Contact Person')"
+                  class="w-full bg-surface-base dark:bg-surface-gray-1 rounded-md pl-8 pr-3 py-1.5 text-xs border border-outline-gray-2 text-ink-gray-9 placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-outline-gray-3 transition-colors print:border-none print:p-0 print:bg-transparent"
+                />
+              </div>
+
+              <div class="relative flex items-center">
+                <span class="lucide-mail size-3.5 text-ink-gray-5 dark:text-ink-gray-4 absolute left-2.5 pointer-events-none print:hidden" />
+                <input
+                  v-model="invoice.client_email"
+                  type="email"
+                  :placeholder="__('Billing Email Address')"
+                  class="w-full bg-surface-base dark:bg-surface-gray-1 rounded-md pl-8 pr-3 py-1.5 text-xs border border-outline-gray-2 text-ink-gray-9 placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-outline-gray-3 transition-colors print:border-none print:p-0 print:bg-transparent"
+                />
+              </div>
             </div>
           </div>
 
           <!-- Quick Fill from Inventory (Hidden on print) -->
           <div class="print:hidden space-y-1.5">
             <div class="flex items-center justify-between">
-              <label class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">{{ __('Select item') }}</label>
-              <span class="text-[11px] text-ink-gray-5 font-medium">
+              <label class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Select item') }}</label>
+              <span class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 font-medium">
                 {{ business.inventory.length }} {{ __('items') }}
               </span>
             </div>
@@ -344,20 +419,20 @@
             <!-- Searchable Inventory Combobox -->
             <div ref="inventoryDropdownRef" class="relative">
               <div class="relative flex items-center">
-                <span class="lucide-search size-3.5 text-ink-gray-5 absolute left-3 pointer-events-none" />
+                <span class="lucide-search size-3.5 text-ink-gray-5 dark:text-ink-gray-4 absolute left-3 pointer-events-none" />
                 <input
                   ref="inventorySearchInputRef"
                   v-model="inventorySearchQuery"
                   type="text"
                   :placeholder="__('Select item')"
-                  class="w-full bg-surface-base border border-outline-gray-2 rounded-lg pl-9 pr-8 py-2 text-xs text-ink-gray-9 placeholder:text-ink-gray-5 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+                  class="w-full bg-surface-base border border-outline-gray-2 rounded-lg pl-9 pr-8 py-2 text-xs text-ink-gray-9 placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
                   @focus="inventoryDropdownOpen = true"
                   @click="inventoryDropdownOpen = true"
                 />
                 <button
                   v-if="inventorySearchQuery"
                   type="button"
-                  class="absolute right-2.5 text-ink-gray-4 hover:text-ink-gray-7 p-0.5"
+                  class="absolute right-2.5 text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-gray-7 dark:hover:text-ink-gray-2 p-0.5"
                   @click="inventorySearchQuery = ''; inventoryDropdownOpen = true"
                 >
                   <span class="lucide-x size-3.5" />
@@ -386,7 +461,7 @@
                     >
                       <!-- Item Image Thumbnail & Details -->
                       <div class="flex items-center gap-3 min-w-0">
-                        <div class="size-8 rounded-lg overflow-hidden shrink-0 border border-outline-gray-2 bg-surface-gray-2 flex items-center justify-center font-bold text-ink-gray-6 text-xs">
+                        <div class="size-8 rounded-lg overflow-hidden shrink-0 border border-outline-gray-2 bg-surface-gray-2 flex items-center justify-center font-bold text-ink-gray-7 dark:text-ink-gray-4 text-xs">
                           <img
                             v-if="prod.image_url"
                             :src="prod.image_url"
@@ -400,10 +475,10 @@
                         <div class="min-w-0">
                           <div class="font-semibold text-xs text-ink-gray-9 truncate flex items-center gap-1.5">
                             <span>{{ prod.name }}</span>
-                            <span class="font-mono text-[10px] text-ink-gray-5 font-normal">({{ prod.code }})</span>
+                            <span class="font-mono text-[10px] text-ink-gray-6 dark:text-ink-gray-4 font-normal">({{ prod.code }})</span>
                           </div>
                           <div class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 truncate flex items-center gap-1.5 mt-0.5">
-                            <span class="px-1.5 py-0.2 rounded text-[10px] bg-surface-gray-2 font-medium">
+                            <span class="px-1.5 py-0.2 rounded text-[10px] bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-4 font-medium">
                               {{ prod.category }}
                             </span>
                             <span
@@ -415,7 +490,7 @@
                             <span
                               v-else
                               class="px-1.5 py-0.2 rounded text-[10px] font-medium"
-                              :class="prod.quantity_in_stock <= prod.low_stock_threshold ? 'bg-surface-red-2 text-ink-red-7' : 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4'"
+                              :class="prod.quantity_in_stock <= prod.low_stock_threshold ? 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4' : 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4'"
                             >
                               {{ prod.quantity_in_stock }} {{ __('in stock') }}
                             </span>
@@ -436,10 +511,10 @@
                     </div>
 
                     <!-- Empty Results State -->
-                    <div v-if="!filteredInventoryItems.length" class="py-8 text-center text-ink-gray-4">
-                      <span class="lucide-package-open size-6 text-ink-gray-4 mx-auto block mb-1.5" />
-                      <p class="text-xs font-semibold text-ink-gray-7">{{ __('No matching products or services') }}</p>
-                      <p class="text-[11px] mt-0.5">{{ __('Try searching with another keyword or code.') }}</p>
+                    <div v-if="!filteredInventoryItems.length" class="py-8 text-center text-ink-gray-5 dark:text-ink-gray-4">
+                      <span class="lucide-package-open size-6 text-ink-gray-5 dark:text-ink-gray-4 mx-auto block mb-1.5" />
+                      <p class="text-xs font-semibold text-ink-gray-8 dark:text-ink-gray-2">{{ __('No matching products or services') }}</p>
+                      <p class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 mt-0.5">{{ __('Try searching with another keyword or code.') }}</p>
                     </div>
                   </div>
                 </div>
@@ -458,7 +533,7 @@
           <!-- Desktop Table (>= 768px) -->
           <div class="hidden md:block border border-outline-gray-1 rounded-xl overflow-hidden print:border-outline-gray-2">
             <table class="w-full text-left text-sm border-collapse">
-              <thead class="bg-surface-gray-1 dark:bg-surface-gray-2 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
+              <thead class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
                 <tr>
                   <th class="py-3 px-4">{{ __('Item & Description') }}</th>
                   <th class="py-3 px-3 w-24 text-center">{{ __('Qty') }}</th>
@@ -479,13 +554,13 @@
                           v-model="item.name"
                           type="text"
                           :placeholder="__('Item title')"
-                          class="w-full bg-transparent font-medium text-ink-gray-9 focus:outline-none print:border-none"
+                          class="w-full bg-transparent font-medium text-ink-gray-9 placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none print:border-none"
                         />
                         <input
                           v-model="item.code"
                           type="text"
                           :placeholder="__('Item code/SKU')"
-                          class="w-full bg-transparent text-xs text-ink-gray-5 font-mono focus:outline-none mt-0.5 print:border-none"
+                          class="w-full bg-transparent text-xs text-ink-gray-6 dark:text-ink-gray-4 font-mono placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none mt-0.5 print:border-none"
                         />
                       </div>
                     </div>
@@ -515,7 +590,7 @@
                   <td class="py-3 px-2 text-center print:hidden">
                     <button
                       v-if="invoice.items.length > 1"
-                      class="p-1 rounded text-ink-gray-4 hover:text-red-600"
+                      class="p-1 rounded text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-red-7 dark:hover:text-ink-red-4 transition-colors"
                       @click="removeItem(idx)"
                     >
                       <span class="lucide-trash-2 size-4" />
@@ -549,13 +624,13 @@
                       v-model="item.code"
                       type="text"
                       :placeholder="__('SKU / Code')"
-                      class="w-full bg-surface-base rounded px-2 py-0.5 text-xs text-ink-gray-5 font-mono border border-outline-gray-2 focus:outline-none"
+                      class="w-full bg-surface-base rounded px-2 py-0.5 text-xs text-ink-gray-6 dark:text-ink-gray-4 font-mono border border-outline-gray-2 focus:outline-none"
                     />
                   </div>
                 </div>
                 <button
                   v-if="invoice.items.length > 1"
-                  class="p-1.5 rounded text-ink-gray-4 hover:text-red-600 shrink-0"
+                  class="p-1.5 rounded text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-red-7 dark:hover:text-ink-red-4 shrink-0 transition-colors"
                   @click="removeItem(idx)"
                 >
                   <span class="lucide-trash-2 size-4" />
@@ -564,7 +639,7 @@
 
               <div class="grid grid-cols-3 gap-2 items-center text-xs">
                 <div>
-                  <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Qty') }}</span>
+                  <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-4 block">{{ __('Qty') }}</span>
                   <input
                     v-model.number="item.quantity"
                     type="number"
@@ -574,7 +649,7 @@
                   />
                 </div>
                 <div>
-                  <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Price ({0})', [currencySymbol]) }}</span>
+                  <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-4 block">{{ __('Price ({0})', [currencySymbol]) }}</span>
                   <input
                     v-model.number="item.unit_price"
                     type="number"
@@ -585,7 +660,7 @@
                   />
                 </div>
                 <div class="text-right">
-                  <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Total') }}</span>
+                  <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-4 block">{{ __('Total') }}</span>
                   <span class="font-mono font-bold text-sm block mt-1 text-ink-gray-9">
                     {{ currencySymbol }}{{ formatNum(item.quantity * item.unit_price) }}
                   </span>
@@ -600,11 +675,11 @@
           <!-- Notes & Payment Terms -->
           <div class="flex-1 space-y-3">
             <div class="space-y-1.5">
-              <label class="text-xs font-bold uppercase tracking-wider text-ink-gray-5">{{ __('Notes / Instructions') }}</label>
+              <label class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Notes / Instructions') }}</label>
               <textarea
                 v-model="invoice.notes"
                 rows="3"
-                class="w-full bg-surface-gray-1 dark:bg-surface-gray-2/40 border border-outline-gray-2 rounded-lg p-3 text-xs text-ink-gray-8 focus:outline-none print:border-none print:p-0"
+                class="w-full bg-surface-gray-1 dark:bg-surface-gray-2/40 border border-outline-gray-2 rounded-lg p-3 text-xs text-ink-gray-9 placeholder:text-ink-gray-5 dark:placeholder:text-ink-gray-4 focus:outline-none print:border-none print:p-0"
                 placeholder="Payment instructions or terms..."
               />
             </div>
@@ -615,24 +690,24 @@
               class="p-3 bg-surface-gray-1 dark:bg-surface-gray-2/40 rounded-lg border border-outline-gray-2 text-xs space-y-1"
             >
               <div class="font-bold text-ink-gray-9 flex items-center gap-1.5">
-                <span class="lucide-landmark size-3.5 text-ink-gray-5" />
+                <span class="lucide-landmark size-3.5 text-ink-gray-5 dark:text-ink-gray-4" />
                 {{ __('Remittance Settlement Details') }}
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-ink-gray-7 dark:text-ink-gray-6 pt-1">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-ink-gray-8 dark:text-ink-gray-3 pt-1">
                 <div v-if="business.settings.bank_name">
-                  <span class="font-medium text-ink-gray-5">{{ __('Bank:') }}</span> {{ business.settings.bank_name }}
+                  <span class="font-medium text-ink-gray-6 dark:text-ink-gray-4">{{ __('Bank:') }}</span> {{ business.settings.bank_name }}
                 </div>
                 <div v-if="business.settings.bank_account_name">
-                  <span class="font-medium text-ink-gray-5">{{ __('Account Name:') }}</span> {{ business.settings.bank_account_name }}
+                  <span class="font-medium text-ink-gray-6 dark:text-ink-gray-4">{{ __('Account Name:') }}</span> {{ business.settings.bank_account_name }}
                 </div>
                 <div v-if="business.settings.bank_account_number">
-                  <span class="font-medium text-ink-gray-5">{{ __('Account / IBAN:') }}</span> {{ business.settings.bank_account_number }}
+                  <span class="font-medium text-ink-gray-6 dark:text-ink-gray-4">{{ __('Account / IBAN:') }}</span> {{ business.settings.bank_account_number }}
                 </div>
                 <div v-if="business.settings.swift_bic">
-                  <span class="font-medium text-ink-gray-5">{{ __('SWIFT / BIC:') }}</span> {{ business.settings.swift_bic }}
+                  <span class="font-medium text-ink-gray-6 dark:text-ink-gray-4">{{ __('SWIFT / BIC:') }}</span> {{ business.settings.swift_bic }}
                 </div>
               </div>
-              <div v-if="business.settings.payment_instructions" class="text-[11px] text-ink-gray-5 pt-1 italic">
+              <div v-if="business.settings.payment_instructions" class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 pt-1 italic">
                 {{ business.settings.payment_instructions }}
               </div>
             </div>
@@ -640,12 +715,12 @@
 
           <!-- Financial Calculation Box -->
           <div class="w-full sm:w-80 space-y-2.5 text-sm">
-            <div class="flex justify-between text-ink-gray-6">
+            <div class="flex justify-between text-ink-gray-7 dark:text-ink-gray-6">
               <span>{{ __('Subtotal:') }}</span>
               <span class="font-mono font-medium text-ink-gray-9">{{ currencySymbol }}{{ formatNum(invoice.subtotal) }}</span>
             </div>
 
-            <div class="flex items-center justify-between text-ink-gray-6">
+            <div class="flex items-center justify-between text-ink-gray-7 dark:text-ink-gray-6">
               <span class="flex items-center gap-1.5">
                 {{ __('Discount (%):') }}
                 <input
@@ -653,14 +728,14 @@
                   type="number"
                   min="0"
                   max="100"
-                  class="w-16 bg-surface-gray-1 dark:bg-surface-gray-2 border border-outline-gray-2 rounded px-1.5 py-0.5 text-xs text-right font-semibold print:border-none"
+                  class="w-16 bg-surface-gray-1 dark:bg-surface-gray-2 border border-outline-gray-2 text-ink-gray-9 rounded px-1.5 py-0.5 text-xs text-right font-semibold print:border-none"
                   @input="recalculateTotals"
                 />
               </span>
-              <span class="font-mono text-ink-gray-7">-{{ currencySymbol }}{{ formatNum(invoice.discount_amount) }}</span>
+              <span class="font-mono text-ink-green-7 dark:text-ink-green-4 font-semibold">-{{ currencySymbol }}{{ formatNum(invoice.discount_amount) }}</span>
             </div>
 
-            <div class="flex items-center justify-between text-ink-gray-6">
+            <div class="flex items-center justify-between text-ink-gray-7 dark:text-ink-gray-6">
               <span class="flex items-center gap-1.5">
                 {{ __('Tax (%):') }}
                 <input
@@ -669,11 +744,11 @@
                   min="0"
                   max="100"
                   step="0.1"
-                  class="w-16 bg-surface-gray-1 dark:bg-surface-gray-2 border border-outline-gray-2 rounded px-1.5 py-0.5 text-xs text-right font-semibold print:border-none"
+                  class="w-16 bg-surface-gray-1 dark:bg-surface-gray-2 border border-outline-gray-2 text-ink-gray-9 rounded px-1.5 py-0.5 text-xs text-right font-semibold print:border-none"
                   @input="recalculateTotals"
                 />
               </span>
-              <span class="font-mono text-ink-gray-7">+{{ currencySymbol }}{{ formatNum(invoice.tax_amount) }}</span>
+              <span class="font-mono text-ink-gray-7 dark:text-ink-gray-4">+{{ currencySymbol }}{{ formatNum(invoice.tax_amount) }}</span>
             </div>
 
             <div class="border-t border-outline-gray-1 pt-2 flex justify-between font-bold text-lg text-ink-gray-9">
@@ -681,27 +756,117 @@
               <span class="font-mono">{{ currencySymbol }}{{ formatNum(invoice.total_amount) }}</span>
             </div>
 
-            <div v-if="!isNew" class="flex justify-between text-ink-green-3 font-medium">
-              <span>{{ __('Amount Paid:') }}</span>
-              <span class="font-mono">{{ currencySymbol }}{{ formatNum(invoice.amount_paid) }}</span>
+            <div v-if="!isNew" class="flex justify-between font-medium">
+              <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Amount Paid:') }}</span>
+              <span class="font-mono text-ink-green-7 dark:text-ink-green-4 font-semibold">{{ currencySymbol }}{{ formatNum(invoice.amount_paid) }}</span>
             </div>
 
-            <div v-if="!isNew" class="flex justify-between font-bold text-base" :class="invoice.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'">
-              <span>{{ __('Balance Due:') }}</span>
-              <span class="font-mono">{{ currencySymbol }}{{ formatNum(invoice.balance_due) }}</span>
+            <div v-if="!isNew" class="flex justify-between font-bold text-base">
+              <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Balance Due:') }}</span>
+              <span
+                class="font-mono"
+                :class="invoice.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-green-7 dark:text-ink-green-4'"
+              >
+                {{ currencySymbol }}{{ formatNum(invoice.balance_due) }}
+              </span>
             </div>
+
+            <div v-if="!isNew && (invoice.status === 'Paid' || invoice.balance_due <= 0)" class="pt-2 print:hidden">
+              <div class="invoice-settled-box flex items-center justify-between px-3 py-2 rounded-lg border border-outline-green-2 bg-surface-green-2 text-xs font-semibold text-ink-green-7 dark:text-ink-green-4">
+                <span class="flex items-center gap-1.5 font-bold">
+                  <span class="lucide-check-circle size-4 text-ink-green-7 dark:text-ink-green-4" />
+                  <span>{{ __('PAID IN FULL') }}</span>
+                </span>
+                <span class="invoice-settled-tag font-mono text-[11px] font-bold uppercase tracking-wider bg-surface-green-3 text-ink-green-7 dark:text-ink-green-3 px-2 py-0.5 rounded border border-outline-green-2">
+                  {{ __('Settled') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recorded Payments & Commercial Receipts Section -->
+        <div
+          v-if="invoice.payments && invoice.payments.length > 0"
+          class="bg-surface-gray-1/60 dark:bg-surface-gray-2/30 rounded-xl border border-outline-gray-1 p-4 sm:p-5 space-y-3 print:border-none print:p-0"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="lucide-receipt size-4 text-ink-green-7 dark:text-ink-green-4" />
+              <h3 class="text-xs font-bold uppercase tracking-wider text-ink-gray-9">
+                {{ __('Recorded Payments & Commercial Receipts') }} ({{ invoice.payments.length }})
+              </h3>
+            </div>
+            <span class="text-[11px] font-semibold text-ink-green-7 dark:text-ink-green-4 bg-surface-green-2 px-2.5 py-0.5 rounded-full border border-outline-green-2">
+              {{ __('Total Settled: {0}', [currencySymbol + formatNum(invoice.amount_paid)]) }}
+            </span>
+          </div>
+
+          <div class="overflow-x-auto border border-outline-gray-1 rounded-lg bg-surface-base">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-surface-gray-1 border-b border-outline-gray-1 font-semibold text-ink-gray-7 dark:text-ink-gray-6 text-[11px] uppercase tracking-wider">
+                <tr>
+                  <th class="p-2.5">{{ __('Receipt #') }}</th>
+                  <th class="p-2.5">{{ __('Date') }}</th>
+                  <th class="p-2.5">{{ __('Method') }}</th>
+                  <th class="p-2.5 text-right">{{ __('Amount') }}</th>
+                  <th class="p-2.5 text-center">{{ __('Status') }}</th>
+                  <th class="p-2.5 text-right print:hidden">{{ __('Receipt Actions') }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-gray-1">
+                <tr v-for="pay in invoice.payments" :key="pay.id" class="hover:bg-surface-gray-1 transition-colors">
+                  <td class="p-2.5 font-mono font-bold text-ink-blue-7 dark:text-ink-blue-3">
+                    {{ pay.receipt_number || pay.transaction_ref || 'REC-SETTLED' }}
+                  </td>
+                  <td class="p-2.5 text-ink-gray-7 dark:text-ink-gray-6">{{ pay.payment_date || '-' }}</td>
+                  <td class="p-2.5 text-ink-gray-8 dark:text-ink-gray-6 font-medium">{{ pay.payment_method || 'Electronic' }}</td>
+                  <td class="p-2.5 text-right font-mono font-bold text-ink-green-7 dark:text-ink-green-4">
+                    {{ currencySymbol }}{{ formatNum(pay.amount) }}
+                  </td>
+                  <td class="p-2.5 text-center">
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2">
+                      {{ pay.status || 'Settled' }}
+                    </span>
+                  </td>
+                  <td class="p-2.5 text-right space-x-1.5 whitespace-nowrap print:hidden">
+                    <Button
+                      size="sm"
+                      variant="subtle"
+                      :label="__('View')"
+                      iconLeft="file-text"
+                      @click="openReceiptModal(pay)"
+                    />
+                    <Button
+                      size="sm"
+                      variant="subtle"
+                      :label="__('Print')"
+                      iconLeft="printer"
+                      @click="printReceipt(pay)"
+                    />
+                    <Button
+                      size="sm"
+                      variant="subtle"
+                      :label="__('PDF')"
+                      iconLeft="download"
+                      @click="downloadReceipt(pay)"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
         <!-- Invoice Bottom Footer (Small Font) -->
         <div class="pt-6 border-t border-outline-gray-1 text-center space-y-1 print:pt-4">
-          <p class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-3">
+          <p class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6">
             {{ business.settings.business_name || 'Crestara CRM' }}
             <span v-if="business.settings.legal_name && business.settings.legal_name !== business.settings.business_name">
               • {{ business.settings.legal_name }}
             </span>
           </p>
-          <p v-if="business.settings.business_address || business.settings.tax_id || business.settings.business_phone" class="text-[11px] text-ink-gray-5 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5">
+          <p v-if="business.settings.business_address || business.settings.tax_id || business.settings.business_phone" class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5">
             <span v-if="business.settings.business_address">{{ business.settings.business_address.replace(/\n/g, ', ') }}</span>
             <span v-if="business.settings.tax_id">• {{ __('Tax ID:') }} {{ business.settings.tax_id }}</span>
             <span v-if="business.settings.business_phone">• {{ business.settings.business_phone }}</span>
@@ -716,6 +881,31 @@
       :invoice="invoice"
       @paymentRecorded="onPaymentRecorded"
     />
+
+    <!-- Vector PDF Document Preview Modal -->
+    <DocumentPreviewModal
+      v-model="showPreviewModal"
+      :invoice="invoice"
+      :payment="activePayment"
+      :isReceipt="previewIsReceipt"
+      @emailRequested="onEmailRequested"
+    />
+
+    <!-- Commercial Receipt Modal Component -->
+    <CommercialReceiptModal
+      v-model="showReceiptModal"
+      :invoice="invoice"
+      :payment="activePayment"
+      @emailRequested="onEmailRequested"
+    />
+
+    <!-- Email Invoice / Receipt with PDF Attachment Modal -->
+    <EmailInvoiceModal
+      v-model="showEmailModal"
+      :invoice="invoice"
+      :payment="activePayment"
+      :isReceipt="emailModalIsReceipt"
+    />
   </div>
 </template>
 
@@ -723,8 +913,20 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBusinessStore } from '@/stores/business'
+import { isMobileView } from '@/composables/settings'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import RecordPaymentModal from '@/components/Invoices/RecordPaymentModal.vue'
+import DocumentPreviewModal from '@/components/Common/DocumentPreviewModal.vue'
+import CommercialReceiptModal from '@/components/Common/CommercialReceiptModal.vue'
+import EmailInvoiceModal from '@/components/Invoices/EmailInvoiceModal.vue'
+import {
+  generateInvoicePdf,
+  generateReceiptPdf,
+  downloadInvoicePdf,
+  downloadReceiptPdf,
+  printDocumentPdf,
+  loadImageAsBase64,
+} from '@/utils/pdfGenerator'
 import { Button } from 'frappe-ui'
 
 const route = useRoute()
@@ -734,6 +936,12 @@ const business = useBusinessStore()
 const isNew = computed(() => route.params.invoiceId === 'new' || !route.params.invoiceId)
 const saving = ref(false)
 const showPaymentModal = ref(false)
+const showPreviewModal = ref(false)
+const showReceiptModal = ref(false)
+const showEmailModal = ref(false)
+const previewIsReceipt = ref(false)
+const emailModalIsReceipt = ref(false)
+const activePayment = ref(null)
 const selectedClientId = ref('')
 
 // Searchable Client Dropdown State
@@ -910,6 +1118,7 @@ onMounted(async () => {
   try {
     await business.fetchBusinessSettingsFromSupabase()
     await business.fetchClientsFromSupabase()
+    await ensureSettingsLogo()
   } catch (e) {
     // ignore
   }
@@ -1070,8 +1279,64 @@ function onPaymentRecorded({ invoice: updatedInv }) {
   }
 }
 
-function printInvoice() {
-  window.print()
+async function handleMarkAsPaid() {
+  if (!confirm(`Mark invoice ${invoice.invoice_number} as PAID IN FULL for ${currencySymbol.value}${formatNum(invoice.balance_due)}?`)) {
+    return
+  }
+  try {
+    const res = await business.markInvoiceAsPaid(invoice.id)
+    onPaymentRecorded(res)
+    activePayment.value = res.transaction
+    // Prompt to view official commercial receipt
+    showReceiptModal.value = true
+  } catch (err) {
+    alert(err.message || 'Failed to mark invoice as paid')
+  }
+}
+
+function openReceiptModal(pay) {
+  activePayment.value = pay
+  showReceiptModal.value = true
+}
+
+async function ensureSettingsLogo() {
+  if (business.settings.logo_url) {
+    if (!business.settings.logo_data_uri || business.settings._resolved_logo_url !== business.settings.logo_url) {
+      const b64 = await loadImageAsBase64(business.settings.logo_url)
+      if (b64) {
+        business.settings.logo_data_uri = b64
+        business.settings._resolved_logo_url = business.settings.logo_url
+      }
+    }
+  }
+}
+
+async function printReceipt(pay) {
+  await ensureSettingsLogo()
+  const doc = generateReceiptPdf(invoice, pay, business.settings)
+  printDocumentPdf(doc)
+}
+
+async function downloadReceipt(pay) {
+  await ensureSettingsLogo()
+  await downloadReceiptPdf(invoice, pay, business.settings)
+}
+
+function openInvoiceEmailModal() {
+  emailModalIsReceipt.value = false
+  showEmailModal.value = true
+}
+
+function onEmailRequested({ payment, isReceipt }) {
+  if (payment) activePayment.value = payment
+  emailModalIsReceipt.value = Boolean(isReceipt)
+  showEmailModal.value = true
+}
+
+async function printInvoice() {
+  await ensureSettingsLogo()
+  const doc = generateInvoicePdf(invoice, business.settings)
+  printDocumentPdf(doc)
 }
 
 function formatNum(num) {
@@ -1081,27 +1346,81 @@ function formatNum(num) {
   })
 }
 
+async function downloadPdfDirect() {
+  await ensureSettingsLogo()
+  await downloadInvoicePdf(invoice, business.settings)
+}
+
 function getStatusClass(status) {
   switch (status) {
     case 'Paid':
-      return 'bg-surface-green-2 text-ink-green-7 border-outline-green-2'
+      return 'status-badge-paid bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2 font-semibold'
     case 'Partially paid':
-      return 'bg-surface-amber-2 text-ink-amber-7 border-outline-amber-2'
+    case 'Partially Paid':
+      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
     case 'Cancelled':
-      return 'bg-surface-gray-2 text-ink-gray-4 line-through border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 line-through border border-outline-gray-2 font-medium'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-6 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
   }
 }
 </script>
 
 <style>
+/* Dark Theme Adaptation for Invoice Indicators */
+:root[data-theme='dark'] .status-badge-paid,
+.dark .status-badge-paid,
+:root[data-theme='dark'] .paid-in-full-pill,
+.dark .paid-in-full-pill {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  color: #34d399 !important;
+}
+
+:root[data-theme='dark'] .paid-in-full-pill svg,
+.dark .paid-in-full-pill svg,
+:root[data-theme='dark'] .paid-in-full-pill [class*='lucide-'],
+.dark .paid-in-full-pill [class*='lucide-'] {
+  color: #34d399 !important;
+}
+
+:root[data-theme='dark'] .invoice-settled-box,
+.dark .invoice-settled-box {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+
+:root[data-theme='dark'] .invoice-settled-box svg,
+.dark .invoice-settled-box svg,
+:root[data-theme='dark'] .invoice-settled-box [class*='lucide-'],
+.dark .invoice-settled-box [class*='lucide-'] {
+  color: #34d399 !important;
+}
+
+:root[data-theme='dark'] .invoice-settled-tag,
+.dark .invoice-settled-tag {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  color: #6ee7b7 !important;
+}
+
+:root[data-theme='dark'] .balance-due-zero,
+.dark .balance-due-zero {
+  color: #34d399 !important;
+}
+
+:root[data-theme='dark'] .balance-due-positive,
+.dark .balance-due-positive {
+  color: #fbbf24 !important;
+}
+
 @media print {
   body {
     background-color: #ffffff !important;

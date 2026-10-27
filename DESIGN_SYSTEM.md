@@ -109,6 +109,21 @@ To guarantee that all pages (Clients, Calendar, Dashboard, Invoices, Detail view
    - In the top `LayoutHeader`, amber action buttons must use `variant="subtle"` with:
      `class="!bg-surface-amber-2 !text-ink-amber-8 dark:!bg-amber-950/50 dark:!text-amber-300 border border-outline-amber-2 dark:border-amber-800/60 hover:!bg-surface-amber-3 dark:hover:!bg-amber-900/50 transition-colors"`.
 
+9. **Invoice & Financial Document Dark Mode Typography & Brand Context Rules**:
+   - **The Frappe UI Token Inversion Trap (Critical Anti-Pattern)**:
+     - In Frappe UI's OKLCH color system, `text-ink-gray-9` maps to `gray-900` in light mode and **automatically maps to `gray-50` (crisp white) in dark mode**.
+     - **NEVER** add `dark:text-ink-gray-1` onto titles, inputs, or headers. In Frappe UI, `--text-ink-gray-1` in dark mode is `gray-700` (nearly black)! Appending `dark:text-ink-gray-1` actively inverts the token into dark charcoal against a dark background, making invoice numbers, grand totals, and line items completely unreadable.
+     - *Rule*: Use standalone `text-ink-gray-9` for all high-contrast titles, invoice numbers, grand totals, and input text.
+   - **Secondary & Ancillary Financial Metadata**:
+     - Subtitles, legal names, addresses, and timestamps must use `text-ink-gray-7 dark:text-ink-gray-6` or `text-ink-gray-6 dark:text-ink-gray-4`.
+     - Avoid bare `text-ink-gray-5` for body text or numbers; in dark mode `gray-500` lacks sufficient WCAG AA contrast.
+   - **Balances Due & Financial Indicators**:
+     - Positive balance due (receivable): `text-ink-amber-3` with `font-mono font-bold`.
+     - Fully settled balance ($0.00): `text-ink-green-7 dark:text-ink-green-4` or `text-ink-gray-9` (never hardcoded `text-emerald-600` or `text-amber-600`).
+   - **Official Settlement Indicators & Seal Badges**:
+     - Settled pill / Paid status badge: `status-badge-paid bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 font-semibold`.
+     - Audit Verified seal box: `border border-outline-green-2 bg-surface-green-2 text-xs font-semibold text-ink-green-7 dark:text-ink-green-4`.
+
 ---
 
 ## 3. Typography & Spatial Rhythm
@@ -1029,6 +1044,136 @@ function handleConfirm() {
   </div>
 </template>
 ```
+
+#### Recipe 7: Commercial Invoice & Financial Document Recipe (`InvoiceDetail.vue` & `CommercialReceiptModal.vue` Pattern)
+
+```vue
+<template>
+  <div class="flex flex-col h-full overflow-hidden print:bg-white print:overflow-visible">
+    <!-- Header with 1-Click Quick Actions -->
+    <LayoutHeader class="print:hidden">
+      <template #left-header>
+        <div class="flex items-center gap-3">
+          <router-link to="/invoices" class="p-1.5 rounded-md hover:bg-surface-gray-2 text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 transition-colors">
+            <span class="lucide-arrow-left size-5" />
+          </router-link>
+          <div>
+            <h1 class="text-lg font-bold text-ink-gray-9">{{ invoice.invoice_number }}</h1>
+            <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold border" :class="getStatusClass(invoice.status)">
+              {{ invoice.status }}
+            </span>
+          </div>
+        </div>
+      </template>
+
+      <template #right-header>
+        <div class="flex items-center gap-2">
+          <Button
+            v-if="invoice.balance_due > 0"
+            variant="solid"
+            theme="green"
+            :label="__('Mark as Paid')"
+            iconLeft="check-check"
+            @click="handleMarkPaid"
+          />
+          <Button
+            variant="solid"
+            :label="__('Save Changes')"
+            iconLeft="save"
+            @click="saveInvoice"
+          />
+        </div>
+      </template>
+    </LayoutHeader>
+
+    <!-- Document Sheet Canvas -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-20 md:pb-8 print:p-0">
+      <div class="max-w-4xl mx-auto bg-surface-base rounded-2xl border border-outline-gray-1 p-6 sm:p-8 shadow-sm space-y-8 print:border-none print:shadow-none">
+        <!-- Top Row: Business Branding & Invoice Metadata -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-outline-gray-1 pb-6">
+          <div>
+            <div class="flex items-center gap-3">
+              <img v-if="settings.logo_url" :src="settings.logo_url" alt="Logo" class="h-12 w-auto object-contain rounded" />
+              <div v-else class="flex items-center gap-2">
+                <span class="lucide-building-2 size-7 text-ink-blue-7 dark:text-ink-blue-3" />
+                <span class="text-xl font-bold text-ink-gray-9">{{ settings.business_name || 'Crestara CRM' }}</span>
+              </div>
+            </div>
+            <p class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 mt-1.5">{{ settings.legal_name }}</p>
+            <p class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 whitespace-pre-line">{{ settings.business_address }}</p>
+            <div class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 space-x-3">
+              <span>Tax ID: {{ settings.tax_id }}</span>
+              <span>{{ settings.business_phone }}</span>
+            </div>
+          </div>
+
+          <div class="space-y-3 sm:text-right min-w-[260px]">
+            <h2 class="text-2xl font-bold text-ink-gray-9 tracking-tight font-mono">
+              {{ invoice.invoice_number }}
+            </h2>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <span class="text-ink-gray-6 dark:text-ink-gray-4 sm:text-right font-medium self-center">{{ __('Issue Date:') }}</span>
+              <input v-model="invoice.issue_date" type="date" class="bg-surface-gray-1 dark:bg-surface-gray-2 rounded px-2 py-1 text-xs border border-outline-gray-2 text-ink-gray-9 focus:outline-none" />
+              <span class="text-ink-gray-6 dark:text-ink-gray-4 sm:text-right font-medium self-center">{{ __('Due Date:') }}</span>
+              <input v-model="invoice.due_date" type="date" class="bg-surface-gray-1 dark:bg-surface-gray-2 rounded px-2 py-1 text-xs border border-outline-gray-2 text-ink-gray-9 focus:outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Bill To Section -->
+        <div class="bg-surface-gray-1 dark:bg-surface-gray-2/40 p-5 rounded-xl border border-outline-gray-1">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6 mb-2">{{ __('Billed To Client') }}</h3>
+          <input v-model="invoice.client_name" class="w-full bg-surface-base rounded-md px-3 py-1.5 text-sm border border-outline-gray-2 text-ink-gray-9 font-semibold focus:outline-none" />
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="border border-outline-gray-1 rounded-xl overflow-hidden">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">{{ __('Item & Description') }}</th>
+                <th class="py-3 px-3 w-24 text-center">{{ __('Qty') }}</th>
+                <th class="py-3 px-3 w-36 text-right">{{ __('Unit Price') }}</th>
+                <th class="py-3 px-4 w-36 text-right">{{ __('Amount') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-gray-1">
+              <tr v-for="item in invoice.items" :key="item.id">
+                <td class="py-3 px-4">
+                  <div class="font-medium text-ink-gray-9">{{ item.name }}</div>
+                  <div class="text-xs text-ink-gray-6 dark:text-ink-gray-4 font-mono">{{ item.code }}</div>
+                </td>
+                <td class="py-3 px-3 text-center font-mono font-semibold text-ink-gray-9">{{ item.quantity }}</td>
+                <td class="py-3 px-3 text-right font-mono font-semibold text-ink-gray-9">${{ item.unit_price.toFixed(2) }}</td>
+                <td class="py-3 px-4 text-right font-mono font-bold text-ink-gray-9">${{ (item.quantity * item.unit_price).toFixed(2) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Financial Summary Calculation Box -->
+        <div class="flex justify-end pt-4 border-t border-outline-gray-1">
+          <div class="w-full sm:w-80 space-y-2 text-sm">
+            <div class="flex justify-between text-ink-gray-7 dark:text-ink-gray-6">
+              <span>{{ __('Subtotal:') }}</span>
+              <span class="font-mono font-medium text-ink-gray-9">${{ invoice.subtotal.toFixed(2) }}</span>
+            </div>
+            <div class="border-t border-outline-gray-1 pt-2 flex justify-between font-bold text-lg text-ink-gray-9">
+              <span>{{ __('Grand Total:') }}</span>
+              <span class="font-mono">${{ invoice.total_amount.toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between font-bold text-base">
+              <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Balance Due:') }}</span>
+              <span class="font-mono" :class="invoice.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-green-7 dark:text-ink-green-4'">
+                ${{ invoice.balance_due.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 ```
 
 ---

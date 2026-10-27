@@ -24,15 +24,31 @@ import { Dialogs } from '@/utils/dialogs'
 import { sessionStore } from '@/stores/session'
 import { isMobileView } from '@/composables/settings'
 import { FrappeUIProvider, setConfig, useTheme } from 'frappe-ui'
-import { computed, defineAsyncComponent, provide } from 'vue'
+import { computed, defineAsyncComponent, provide, watch } from 'vue'
 
 const session = sessionStore()
 provide('session', session)
 
-const { setTheme } = useTheme()
+const { setTheme, currentTheme } = useTheme()
 if (!localStorage.getItem('theme')) {
   setTheme('light')
 }
+
+watch(
+  currentTheme,
+  (theme) => {
+    if (typeof document !== 'undefined') {
+      const isDark =
+        theme === 'dark' ||
+        (theme === 'system' &&
+          typeof window !== 'undefined' &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches)
+      document.documentElement.classList.toggle('dark', Boolean(isDark))
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    }
+  },
+  { immediate: true }
+)
 
 const MobileLayout = defineAsyncComponent(
   () => import('./components/Layouts/MobileLayout.vue'),

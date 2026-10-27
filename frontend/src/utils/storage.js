@@ -100,6 +100,48 @@ export async function uploadCrmAsset(file, folder = 'avatars', customName = '') 
 }
 
 /**
+ * Uploads a PDF document to Supabase Storage bucket 'crm-assets' in 'invoices' or 'receipts' folder
+ * @param {Blob|File} pdfBlob - PDF Blob or File
+ * @param {string} filename - Filename (e.g. INV-2026-1045.pdf)
+ * @param {'invoices' | 'receipts'} [folder]
+ * @returns {Promise<{ success: boolean, url: string | null, path: string | null, error: string | null }>}
+ */
+export async function uploadPdfAsset(pdfBlob, filename, folder = 'invoices') {
+  if (!pdfBlob) return { success: false, url: null, path: null, error: 'No PDF data provided' }
+  const cleanName = sanitizeFileName(filename || 'document.pdf')
+  const filePath = `${folder}/${Date.now()}-${cleanName}`
+
+  try {
+    const { error } = await supabase.storage
+      .from('crm-assets')
+      .upload(filePath, pdfBlob, {
+        contentType: 'application/pdf',
+        cacheControl: '3600',
+        upsert: true,
+      })
+
+    if (error) {
+      console.warn('[Storage] PDF upload error:', error)
+      return { success: false, url: null, path: null, error: error.message }
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('crm-assets')
+      .getPublicUrl(filePath)
+
+    return {
+      success: true,
+      url: publicUrlData?.publicUrl || null,
+      path: filePath,
+      error: null,
+    }
+  } catch (err) {
+    console.warn('[Storage] Unexpected PDF upload error:', err)
+    return { success: false, url: null, path: null, error: err.message || 'PDF upload failed' }
+  }
+}
+
+/**
  * Deletes an asset from Supabase Storage bucket 'crm-assets'
  * @param {string} path
  * @returns {Promise<{ success: boolean, error: string | null }>}

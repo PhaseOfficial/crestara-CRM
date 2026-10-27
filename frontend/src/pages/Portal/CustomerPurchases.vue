@@ -59,13 +59,24 @@
                 </span>
               </td>
               <td class="py-4 px-6 text-right" @click.stop>
-                <Button
-                  size="xs"
-                  variant="outline"
-                  :label="__('View Receipt')"
-                  iconLeft="file-text"
-                  @click="openReceipt(inv)"
-                />
+                <div class="flex items-center justify-end gap-1.5">
+                  <Button
+                    v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
+                    size="xs"
+                    variant="solid"
+                    theme="green"
+                    :label="__('Pay Now')"
+                    iconLeft="credit-card"
+                    @click="openPaymentModal(inv)"
+                  />
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    :label="__('View Receipt')"
+                    iconLeft="file-text"
+                    @click="openReceipt(inv)"
+                  />
+                </div>
               </td>
             </tr>
             <tr v-if="!invoices.length">
@@ -130,14 +141,22 @@
             </div>
           </div>
 
-          <!-- Bottom: View Receipt Button -->
-          <div class="pt-1 flex items-center justify-end" @click.stop>
+          <!-- Bottom: View Receipt / Pay Button -->
+          <div class="pt-1 flex items-center justify-end gap-2" @click.stop>
+            <Button
+              v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
+              size="sm"
+              variant="solid"
+              theme="green"
+              iconLeft="credit-card"
+              :label="__('Pay Now')"
+              @click="openPaymentModal(inv)"
+            />
             <Button
               size="sm"
               variant="outline"
               iconLeft="file-text"
-              :label="__('View Receipt / Invoice')"
-              class="w-full sm:w-auto"
+              :label="__('View Receipt')"
               @click="openReceipt(inv)"
             />
           </div>
@@ -155,6 +174,13 @@
     <ReceiptModal
       v-model="showReceiptModal"
       :invoice="selectedInvoice"
+      @payRequested="openPaymentModal"
+    />
+
+    <!-- Record Payment Modal Component -->
+    <RecordPaymentModal
+      v-model="showPaymentModal"
+      :invoice="selectedInvoice"
     />
   </div>
 </template>
@@ -164,9 +190,11 @@ import { ref, computed } from 'vue'
 import { useBusinessStore } from '@/stores/business'
 import { Button } from 'frappe-ui'
 import ReceiptModal from '@/components/Portal/ReceiptModal.vue'
+import RecordPaymentModal from '@/components/Invoices/RecordPaymentModal.vue'
 
 const business = useBusinessStore()
 const showReceiptModal = ref(false)
+const showPaymentModal = ref(false)
 const selectedInvoice = ref(null)
 
 const invoices = computed(() => {
@@ -185,17 +213,22 @@ function openReceipt(inv) {
   showReceiptModal.value = true
 }
 
+function openPaymentModal(inv) {
+  selectedInvoice.value = inv || selectedInvoice.value
+  showPaymentModal.value = true
+}
+
 function getStatusBadgeClass(status) {
   switch (status) {
     case 'Paid':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 font-semibold'
     case 'Overdue':
       return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'
     case 'Issued':
       return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border-outline-blue-2'
     case 'Partially paid':
     case 'Partially Paid':
-      return 'bg-surface-amber-2 text-ink-amber-7 dark:text-ink-amber-4 border-outline-amber-2'
+      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2 font-semibold'
     case 'Draft':
       return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'
     case 'Cancelled':

@@ -163,46 +163,21 @@
       </div>
     </div>
 
-    <!-- Receipt Details Modal -->
-    <Dialog v-model:open="showReceiptModal" :size="'sm'">
-      <template #body>
-        <div v-if="activeTx" class="p-6 bg-surface-base space-y-4 text-sm">
-          <div class="text-center pb-4 border-b border-outline-gray-1">
-            <span class="lucide-check-circle-2 size-10 text-ink-green-3 mx-auto block mb-2" />
-            <h3 class="text-lg font-bold text-ink-gray-9">{{ __('Payment Settled') }}</h3>
-            <p class="text-xs text-ink-gray-4 font-mono">{{ activeTx.transaction_ref }}</p>
-          </div>
+    <!-- Official Commercial Receipt Modal -->
+    <CommercialReceiptModal
+      v-model="showReceiptModal"
+      :invoice="activeInvoice"
+      :payment="activeTx"
+      @emailRequested="onEmailRequested"
+    />
 
-          <div class="space-y-2 text-xs">
-            <div class="flex justify-between">
-              <span class="text-ink-gray-5">{{ __('Client:') }}</span>
-              <span class="font-bold text-ink-gray-9">{{ activeTx.client_name }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-ink-gray-5">{{ __('Invoice:') }}</span>
-              <span class="font-medium text-ink-blue-3">{{ activeTx.invoice_number }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-ink-gray-5">{{ __('Date:') }}</span>
-              <span class="text-ink-gray-7">{{ activeTx.payment_date }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-ink-gray-5">{{ __('Method:') }}</span>
-              <span class="text-ink-gray-7">{{ activeTx.payment_method }}</span>
-            </div>
-            <div class="flex justify-between pt-2 border-t border-outline-gray-1 text-sm font-bold">
-              <span class="text-ink-gray-9">{{ __('Amount Received:') }}</span>
-              <span class="text-ink-green-3">{{ business.formatCurrency(activeTx.amount, activeTx.currency) }}</span>
-            </div>
-          </div>
-
-          <div class="pt-4 border-t border-outline-gray-1 flex justify-end gap-2">
-            <Button variant="outline" :label="__('Close')" @click="showReceiptModal = false" />
-            <Button variant="solid" :label="__('Print')" iconLeft="printer" @click="printReceipt" />
-          </div>
-        </div>
-      </template>
-    </Dialog>
+    <!-- Email Receipt Modal -->
+    <EmailInvoiceModal
+      v-model="showEmailModal"
+      :invoice="activeInvoice"
+      :payment="activeTx"
+      :isReceipt="true"
+    />
   </div>
 </template>
 
@@ -210,13 +185,27 @@
 import { ref, computed } from 'vue'
 import { useBusinessStore } from '@/stores/business'
 import LayoutHeader from '@/components/LayoutHeader.vue'
-import { Button, TextInput, Dialog } from 'frappe-ui'
+import CommercialReceiptModal from '@/components/Common/CommercialReceiptModal.vue'
+import EmailInvoiceModal from '@/components/Invoices/EmailInvoiceModal.vue'
+import { Button, TextInput } from 'frappe-ui'
 
 const business = useBusinessStore()
 const searchQuery = ref('')
 const selectedMethod = ref('All')
 const showReceiptModal = ref(false)
+const showEmailModal = ref(false)
 const activeTx = ref(null)
+
+const activeInvoice = computed(() => {
+  if (!activeTx.value) return null
+  return business.invoices.find(
+    (i) => i.id === activeTx.value.invoice_id || i.invoice_number === activeTx.value.invoice_number,
+  ) || null
+})
+
+function onEmailRequested() {
+  showEmailModal.value = true
+}
 
 const filteredTransactions = computed(() => {
   return business.transactions.filter((tx) => {
@@ -237,10 +226,6 @@ const filteredTransactions = computed(() => {
 function viewReceipt(tx) {
   activeTx.value = tx
   showReceiptModal.value = true
-}
-
-function printReceipt() {
-  window.print()
 }
 
 function formatNum(num) {

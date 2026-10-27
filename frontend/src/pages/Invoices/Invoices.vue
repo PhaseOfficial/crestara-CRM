@@ -35,7 +35,7 @@
             <span class="lucide-circle-dollar-sign size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
           <div class="mt-2 text-2xl font-bold text-ink-gray-9">{{ business.formatCurrency(business.totalRevenue) }}</div>
-          <span class="text-xs text-ink-green-3 mt-1 block">{{ __('Settled via payment transactions') }}</span>
+          <span class="text-xs text-ink-green-7 dark:text-ink-green-4 mt-1 block">{{ __('Settled via payment transactions') }}</span>
         </div>
 
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
@@ -44,7 +44,7 @@
             <span class="lucide-clock size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
           <div class="mt-2 text-2xl font-bold text-ink-amber-3">{{ business.formatCurrency(business.totalOutstanding) }}</div>
-          <span class="text-xs text-ink-gray-6 mt-1 block">{{ __('Pending payment collection') }}</span>
+          <span class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 block">{{ __('Pending payment collection') }}</span>
         </div>
 
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
@@ -52,10 +52,10 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Overdue Invoices') }}</span>
             <span class="lucide-alert-triangle size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
-          <div class="mt-2 text-2xl font-bold" :class="business.overdueInvoicesCount > 0 ? 'text-ink-red-3' : 'text-ink-gray-9'">
+          <div class="mt-2 text-2xl font-bold" :class="business.overdueInvoicesCount > 0 ? 'text-ink-red-7 dark:text-ink-red-4' : 'text-ink-gray-9'">
             {{ business.overdueInvoicesCount }}
           </div>
-          <span class="text-xs text-ink-red-3 mt-1 block">{{ __('Requires follow-up action') }}</span>
+          <span class="text-xs text-ink-red-7 dark:text-ink-red-4 mt-1 block">{{ __('Requires follow-up action') }}</span>
         </div>
 
         <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm">
@@ -64,7 +64,7 @@
             <span class="lucide-check-circle-2 size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
           <div class="mt-2 text-2xl font-bold text-ink-gray-9">{{ business.paidInvoicesCount }}</div>
-          <span class="text-xs text-ink-gray-6 mt-1 block">{{ __('Fully completed invoices') }}</span>
+          <span class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 block">{{ __('Fully completed invoices') }}</span>
         </div>
       </div>
 
@@ -76,11 +76,11 @@
             v-for="st in statusOptions"
             :key="st"
             class="px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5"
-            :class="selectedStatus === st ? 'bg-surface-base text-ink-gray-9 font-bold shadow-sm' : 'text-ink-gray-6 hover:text-ink-gray-9'"
+            :class="selectedStatus === st ? 'bg-surface-base dark:bg-surface-gray-3 text-ink-gray-9 font-bold shadow-sm' : 'text-ink-gray-7 dark:text-ink-gray-4 hover:text-ink-gray-9'"
             @click="selectedStatus = st"
           >
             <span>{{ __(st) }}</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full" :class="selectedStatus === st ? 'bg-surface-gray-2 text-ink-gray-8 font-bold' : 'bg-surface-gray-3/50 text-ink-gray-5'">
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full" :class="selectedStatus === st ? 'bg-surface-gray-2 dark:bg-surface-gray-2 text-ink-gray-8 dark:text-ink-gray-2 font-bold' : 'bg-surface-gray-3/50 dark:bg-surface-gray-3/40 text-ink-gray-6 dark:text-ink-gray-4'">
               {{ getStatusCount(st) }}
             </span>
           </button>
@@ -90,7 +90,7 @@
         <div class="flex items-center gap-2 w-full sm:w-auto">
           <select
             v-model="selectedCustomer"
-            class="bg-surface-base border border-outline-gray-2 rounded-lg px-2.5 py-1.5 text-xs text-ink-gray-9 focus:outline-none"
+            class="bg-surface-base dark:bg-surface-gray-2 border border-outline-gray-2 rounded-lg px-2.5 py-1.5 text-xs text-ink-gray-9 focus:outline-none"
           >
             <option value="">{{ __('All Clients') }}</option>
             <option v-for="c in business.clients" :key="c.id" :value="c.id">
@@ -149,14 +149,14 @@
                     {{ inv.client_name }}
                   </router-link>
                   <div v-else class="font-semibold text-ink-gray-9">{{ inv.client_name }}</div>
-                  <div v-if="inv.contact_name" class="text-xs text-ink-gray-5">{{ inv.contact_name }}</div>
+                  <div v-if="inv.contact_name" class="text-xs text-ink-gray-6 dark:text-ink-gray-4">{{ inv.contact_name }}</div>
                 </td>
-                <td class="py-4 px-6 text-xs text-ink-gray-7">{{ inv.issue_date }}</td>
-                <td class="py-4 px-6 text-xs text-ink-gray-7">{{ inv.due_date }}</td>
+                <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">{{ inv.issue_date }}</td>
+                <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">{{ inv.due_date }}</td>
                 <td class="py-4 px-6 text-right font-mono font-bold text-ink-gray-9">
                   {{ business.formatCurrency(inv.total_amount, inv.currency) }}
                 </td>
-                <td class="py-4 px-6 text-right font-mono font-bold" :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'">
+                <td class="py-4 px-6 text-right font-mono font-bold" :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-green-7 dark:text-ink-green-4'">
                   {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </td>
                 <td class="py-4 px-6 text-center">
@@ -172,10 +172,28 @@
                     <Button
                       v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
                       size="xs"
+                      variant="solid"
+                      theme="green"
+                      :label="__('Mark Paid')"
+                      iconLeft="check"
+                      @click="markAsPaidQuick(inv)"
+                    />
+                    <Button
+                      v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
+                      size="xs"
                       variant="outline"
                       :label="__('Pay')"
                       iconLeft="credit-card"
                       @click="openPaymentModal(inv)"
+                    />
+                    <Button
+                      v-if="inv.status === 'Paid' || inv.balance_due <= 0"
+                      size="xs"
+                      variant="outline"
+                      theme="green"
+                      :label="__('Receipt')"
+                      iconLeft="file-text"
+                      @click="openInvoiceReceipt(inv)"
                     />
                     <Button
                       size="xs"
@@ -187,10 +205,10 @@
                 </td>
               </tr>
               <tr v-if="!filteredInvoices.length">
-                <td colspan="8" class="py-12 text-center text-ink-gray-4">
-                  <span class="lucide-receipt size-8 text-ink-gray-4 mx-auto block mb-2" />
-                  <p class="text-base font-semibold text-ink-gray-7">{{ __('No invoices found') }}</p>
-                  <p class="text-xs mt-1">{{ __('Try adjusting your filters or create a new commercial invoice.') }}</p>
+                <td colspan="8" class="py-12 text-center text-ink-gray-5 dark:text-ink-gray-4">
+                  <span class="lucide-receipt size-8 text-ink-gray-4 dark:text-ink-gray-5 mx-auto block mb-2" />
+                  <p class="text-base font-semibold text-ink-gray-8 dark:text-ink-gray-2">{{ __('No invoices found') }}</p>
+                  <p class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1">{{ __('Try adjusting your filters or create a new commercial invoice.') }}</p>
                 </td>
               </tr>
             </tbody>
@@ -208,7 +226,7 @@
             <!-- Row 1: Document Avatar + Invoice # + Status Badge + Chevron -->
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <div class="size-8 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center text-ink-blue-7">
+                <div class="size-8 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center text-ink-blue-7 dark:text-ink-blue-3">
                   <span class="lucide-file-text size-4" />
                 </div>
                 <span class="font-mono font-bold text-ink-gray-9 text-xs bg-surface-gray-2 dark:bg-surface-gray-1 px-2 py-0.5 rounded border border-outline-gray-2/60">
@@ -221,31 +239,31 @@
                   {{ __(inv.status) }}
                 </span>
               </div>
-              <span class="lucide-chevron-right size-4 text-ink-gray-4" />
+              <span class="lucide-chevron-right size-4 text-ink-gray-5 dark:text-ink-gray-4" />
             </div>
 
             <!-- Client & Contact Info -->
             <div>
               <div class="font-semibold text-ink-gray-9 text-sm">{{ inv.client_name }}</div>
-              <div v-if="inv.contact_name" class="text-xs text-ink-gray-5">{{ inv.contact_name }}</div>
+              <div v-if="inv.contact_name" class="text-xs text-ink-gray-6 dark:text-ink-gray-4">{{ inv.contact_name }}</div>
             </div>
 
             <!-- Row 2: 2-Column Structured Data Grid -->
             <div class="grid grid-cols-2 gap-2 text-xs bg-surface-gray-1/80 border border-outline-gray-1/60 p-2.5 rounded-lg">
               <div>
-                <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Due Date') }}</span>
-                <span class="font-medium text-ink-gray-8">{{ inv.due_date }}</span>
-                <span class="text-[10px] text-ink-gray-4 block mt-0.5">Issued: {{ inv.issue_date }}</span>
+                <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-4 block">{{ __('Due Date') }}</span>
+                <span class="font-medium text-ink-gray-9">{{ inv.due_date }}</span>
+                <span class="text-[10px] text-ink-gray-6 dark:text-ink-gray-4 block mt-0.5">Issued: {{ inv.issue_date }}</span>
               </div>
               <div class="text-right">
-                <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Balance Due') }}</span>
+                <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-4 block">{{ __('Balance Due') }}</span>
                 <span
                   class="font-mono font-bold text-sm block"
-                  :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-6'"
+                  :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-green-7 dark:text-ink-green-4'"
                 >
                   {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </span>
-                <span class="text-[10px] text-ink-gray-5 font-mono">Total: {{ business.formatCurrency(inv.total_amount, inv.currency) }}</span>
+                <span class="text-[10px] text-ink-gray-6 dark:text-ink-gray-4 font-mono">Total: {{ business.formatCurrency(inv.total_amount, inv.currency) }}</span>
               </div>
             </div>
 
@@ -254,10 +272,28 @@
               <Button
                 v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
                 size="sm"
+                variant="solid"
+                theme="green"
+                iconLeft="check"
+                :label="__('Mark Paid')"
+                @click="markAsPaidQuick(inv)"
+              />
+              <Button
+                v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
+                size="sm"
                 variant="outline"
                 iconLeft="credit-card"
                 :label="__('Pay')"
                 @click="openPaymentModal(inv)"
+              />
+              <Button
+                v-if="inv.status === 'Paid' || inv.balance_due <= 0"
+                size="sm"
+                variant="outline"
+                theme="green"
+                iconLeft="file-text"
+                :label="__('Receipt')"
+                @click="openInvoiceReceipt(inv)"
               />
               <Button
                 size="sm"
@@ -269,10 +305,10 @@
             </div>
           </div>
 
-          <div v-if="!filteredInvoices.length" class="py-12 text-center text-ink-gray-4">
-            <span class="lucide-receipt size-8 text-ink-gray-4 mx-auto block mb-2" />
-            <p class="text-base font-semibold text-ink-gray-7">{{ __('No invoices found') }}</p>
-            <p class="text-xs mt-1">{{ __('Try adjusting your filter or create a new invoice.') }}</p>
+          <div v-if="!filteredInvoices.length" class="py-12 text-center text-ink-gray-5 dark:text-ink-gray-4">
+            <span class="lucide-receipt size-8 text-ink-gray-4 dark:text-ink-gray-5 mx-auto block mb-2" />
+            <p class="text-base font-semibold text-ink-gray-8 dark:text-ink-gray-2">{{ __('No invoices found') }}</p>
+            <p class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1">{{ __('Try adjusting your filter or create a new invoice.') }}</p>
           </div>
         </div>
       </div>
@@ -284,6 +320,13 @@
       :invoice="selectedInvoice"
       @paymentRecorded="onPaymentSuccess"
     />
+
+    <!-- Commercial Receipt Modal Component -->
+    <CommercialReceiptModal
+      v-model="showReceiptModal"
+      :invoice="selectedInvoice"
+      :payment="selectedPayment"
+    />
   </div>
 </template>
 
@@ -294,6 +337,7 @@ import { useBusinessStore } from '@/stores/business'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import { isMobileView } from '@/composables/settings'
 import RecordPaymentModal from '@/components/Invoices/RecordPaymentModal.vue'
+import CommercialReceiptModal from '@/components/Common/CommercialReceiptModal.vue'
 import { Button, TextInput } from 'frappe-ui'
 
 const router = useRouter()
@@ -303,7 +347,9 @@ const selectedStatus = ref('All')
 const selectedCustomer = ref('')
 const searchQuery = ref('')
 const showPaymentModal = ref(false)
+const showReceiptModal = ref(false)
 const selectedInvoice = ref(null)
+const selectedPayment = ref(null)
 const refreshing = ref(false)
 
 const statusOptions = ['All', 'Issued', 'Partially paid', 'Paid', 'Overdue', 'Draft', 'Cancelled']
@@ -360,6 +406,37 @@ function openPaymentModal(inv) {
   showPaymentModal.value = true
 }
 
+async function markAsPaidQuick(inv) {
+  if (confirm(`Mark invoice ${inv.invoice_number} as PAID IN FULL?`)) {
+    try {
+      await business.markInvoiceAsPaid(inv.id)
+    } catch (err) {
+      alert(err.message || 'Failed to mark as paid')
+    }
+  }
+}
+
+function openInvoiceReceipt(inv) {
+  selectedInvoice.value = inv
+  // If invoice has recorded payments, use the most recent; else synthesize from invoice
+  if (inv.payments && inv.payments.length > 0) {
+    selectedPayment.value = inv.payments[0]
+  } else {
+    selectedPayment.value = {
+      id: `rec-${inv.id}`,
+      receipt_number: `REC-${inv.invoice_number}`,
+      transaction_ref: `TXN-${inv.invoice_number}`,
+      amount: inv.total_amount,
+      currency: inv.currency,
+      payment_method: 'Direct Settlement',
+      payment_date: inv.issue_date,
+      status: 'Settled',
+      notes: 'Settled in full',
+    }
+  }
+  showReceiptModal.value = true
+}
+
 function onPaymentSuccess() {
   // Store is reactive, modal auto updates
 }
@@ -367,19 +444,29 @@ function onPaymentSuccess() {
 function getStatusClass(status) {
   switch (status) {
     case 'Paid':
-      return 'bg-surface-green-2 text-ink-green-7 border border-outline-green-2'
+      return 'status-badge-paid bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 border border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 border border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2 font-semibold'
     case 'Partially paid':
-      return 'bg-surface-amber-2 text-ink-amber-7 border border-outline-amber-2'
+    case 'Partially Paid':
+      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
     case 'Cancelled':
-      return 'bg-surface-gray-2 text-ink-gray-5 line-through border border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 line-through border border-outline-gray-2 font-medium'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-6 border border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
   }
 }
 </script>
+
+<style>
+:root[data-theme='dark'] .status-badge-paid,
+.dark .status-badge-paid {
+  background-color: rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  color: #34d399 !important;
+}
+</style>

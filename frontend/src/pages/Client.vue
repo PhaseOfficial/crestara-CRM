@@ -230,7 +230,7 @@
               <a
                 v-if="client.phone || client.mobile_no"
                 :href="'tel:' + (client.phone || client.mobile_no)"
-                class="text-xs text-ink-gray-9 dark:text-ink-gray-1 hover:text-ink-blue-7 dark:hover:text-ink-blue-3 hover:underline"
+                class="text-xs text-ink-gray-9 hover:text-ink-blue-7 dark:hover:text-ink-blue-3 hover:underline"
               >
                 {{ client.phone || client.mobile_no }}
               </a>
@@ -361,6 +361,15 @@
                     <Button
                       v-if="Number(inv.balance_due) > 0 && inv.status !== 'Cancelled'"
                       size="xs"
+                      variant="solid"
+                      theme="green"
+                      iconLeft="check"
+                      :label="__('Mark Paid')"
+                      @click="markInvoiceAsPaidQuick(inv)"
+                    />
+                    <Button
+                      v-if="Number(inv.balance_due) > 0 && inv.status !== 'Cancelled'"
+                      size="xs"
                       variant="outline"
                       iconLeft="credit-card"
                       :label="__('Pay')"
@@ -433,6 +442,15 @@
 
             <!-- Card Actions -->
             <div class="flex items-center justify-end gap-2 pt-1 border-t border-outline-gray-1/40" @click.stop>
+              <Button
+                v-if="Number(inv.balance_due) > 0 && inv.status !== 'Cancelled'"
+                size="sm"
+                variant="solid"
+                theme="green"
+                iconLeft="check"
+                :label="__('Mark Paid')"
+                @click="markInvoiceAsPaidQuick(inv)"
+              />
               <Button
                 v-if="Number(inv.balance_due) > 0 && inv.status !== 'Cancelled'"
                 size="sm"
@@ -998,6 +1016,16 @@ async function saveClient() {
 function openPaymentModal(inv) {
   selectedInvoice.value = inv
   showPaymentModal.value = true
+}
+
+async function markInvoiceAsPaidQuick(inv) {
+  if (confirm(`Mark invoice ${inv.invoice_number} as PAID IN FULL?`)) {
+    try {
+      await business.markInvoiceAsPaid(inv.id)
+    } catch (err) {
+      alert(err.message || 'Failed to mark as paid')
+    }
+  }
 }
 
 async function confirmUpgradeClient() {

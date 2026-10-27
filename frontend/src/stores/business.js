@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '@/utils/supabase'
 import { sessionStore } from './session'
+import { loadImageAsBase64 } from '@/utils/pdfGenerator'
 const defaultSettings = {
   business_name: 'Crestara CRM',
   legal_name: 'Crestara Technologies Inc.',
@@ -17,7 +18,7 @@ const defaultSettings = {
   default_payment_terms: 30,
   tax_rate: 8.5,
   late_fee_percentage: 2.0,
-  logo_url: '',
+  logo_url: '/crestara_logo.png',
   notes_template: 'Thank you for your business. Remittance is due within agreed terms.',
   bank_name: '',
   bank_account_name: '',
@@ -29,6 +30,16 @@ const defaultSettings = {
   auto_deduct_inventory: false,
   allow_negative_stock: false,
   default_low_stock_threshold: 5,
+  // Commercial Receipts & cPanel Email Defaults
+  receipt_prefix: 'REC-2026-',
+  next_receipt_number: 5001,
+  smtp_host: '',
+  smtp_port: 465,
+  smtp_user: '',
+  smtp_pass: '',
+  smtp_secure: 'ssl',
+  from_email: '',
+  from_name: '',
 }
 
 export const useBusinessStore = defineStore('business-store', () => {
@@ -372,6 +383,31 @@ export const useBusinessStore = defineStore('business-store', () => {
     return invoiceNumber
   }
 
+  async function getNextReceiptNumber() {
+    try {
+      const { data, error } = await supabase.rpc('get_next_receipt_number')
+      if (!error && data) {
+        const prefix = settings.value.receipt_prefix || 'REC-2026-'
+        const numPart = String(data).replace(prefix, '')
+        const parsedNum = parseInt(numPart, 10)
+        if (!isNaN(parsedNum)) {
+          settings.value.next_receipt_number = parsedNum + 1
+          saveStorage('settings', settings.value)
+        }
+        return String(data)
+      }
+    } catch (err) {
+      console.warn('[Business] Supabase RPC get_next_receipt_number error, falling back locally:', err)
+    }
+
+    const nextNum = settings.value.next_receipt_number || 5001
+    const prefix = settings.value.receipt_prefix || 'REC-2026-'
+    const receiptNumber = `${prefix}${nextNum}`
+    settings.value.next_receipt_number = nextNum + 1
+    saveStorage('settings', settings.value)
+    return receiptNumber
+  }
+
   // ==========================================
   // INVOICES & PAYMENTS (SUPABASE 1-TABLE MODEL)
   // ==========================================
@@ -670,19 +706,26 @@ export const useBusinessStore = defineStore('business-store', () => {
       inv.payments = []
     }
 
-    // Record corresponding transaction payload
+    const receiptNumber = await getNextReceiptNumber()
+    const payDate = payment_date || new Date().toISOString().split('T')[0]
+    const payMethod = payment_method || 'Credit Card'
+    const payNotes = notes || `Payment recorded against ${inv.invoice_number}`
+
+    // Record corresponding transaction payload with official receipt number
     const newTx = {
       id: `pay-${Date.now()}`,
-      transaction_ref: `TXN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      receipt_number: receiptNumber,
+      transaction_ref: receiptNumber,
       invoice_number: inv.invoice_number,
       invoice_id: inv.id,
+      customer_id: inv.customer_id || null,
       client_name: inv.client_name,
       amount: payAmount,
       currency: inv.currency, // Inherits the invoice's specific currency
-      payment_method: payment_method || 'Credit Card',
-      payment_date: payment_date || new Date().toISOString().split('T')[0],
+      payment_method: payMethod,
+      payment_date: payDate,
       status: 'Settled',
-      notes: notes || `Payment recorded against ${inv.invoice_number}`,
+      notes: payNotes,
     }
 
     inv.payments.unshift(newTx)
@@ -691,7 +734,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     saveStorage('transactions', transactions.value)
     saveStorage('invoices', invoices.value)
 
-    // Persist payment to Supabase
+    // Persist payment to Supabase invoices table
     try {
       await supabase
         .from('invoices')
@@ -703,10 +746,39 @@ export const useBusinessStore = defineStore('business-store', () => {
         })
         .eq('id', inv.id)
     } catch (err) {
-      console.warn('[Business] Could not persist payment to Supabase:', err)
+      console.warn('[Business] Could not persist payment to Supabase invoices:', err)
+    }
+
+    // Persist into payments table
+    try {
+      await supabase.from('payments').insert({
+        receipt_number: receiptNumber,
+        invoice_id: inv.id,
+        customer_id: inv.customer_id || null,
+        amount: payAmount,
+        currency: inv.currency,
+        payment_method: payMethod,
+        payment_date: payDate,
+        status: 'Settled',
+        notes: payNotes,
+      })
+    } catch (err) {
+      console.warn('[Business] Could not persist payment into Supabase payments table:', err)
     }
 
     return { invoice: inv, transaction: newTx }
+  }
+
+  async function markInvoiceAsPaid(invoiceId, options = {}) {
+    const inv = invoices.value.find((i) => i.id === invoiceId)
+    if (!inv) throw new Error('Invoice not found')
+    const remaining = inv.balance_due > 0 ? inv.balance_due : inv.total_amount
+    return recordPayment(invoiceId, {
+      amount: remaining,
+      payment_method: options.payment_method || 'Direct Settlement',
+      notes: options.notes || 'Full settlement marked by staff',
+      payment_date: options.payment_date || new Date().toISOString().split('T')[0],
+    })
   }
 
   // ==========================================
@@ -1607,6 +1679,15 @@ export const useBusinessStore = defineStore('business-store', () => {
           ...data,
         }
         saveStorage('settings', settings.value)
+        if (settings.value.logo_url) {
+          loadImageAsBase64(settings.value.logo_url).then((b64) => {
+            if (b64) {
+              settings.value.logo_data_uri = b64
+              settings.value._resolved_logo_url = settings.value.logo_url
+              saveStorage('settings', settings.value)
+            }
+          })
+        }
       }
     } catch (err) {
       console.warn('[Business] Could not fetch business_settings from Supabase:', err)
@@ -1617,9 +1698,29 @@ export const useBusinessStore = defineStore('business-store', () => {
 
   async function updateBusinessSettings(newSettings) {
     isSavingSettings.value = true
+    const logoChanged = newSettings.logo_url !== undefined && newSettings.logo_url !== settings.value.logo_url
+    if (logoChanged && !newSettings.logo_data_uri) {
+      settings.value.logo_data_uri = null
+      settings.value._resolved_logo_url = null
+    }
+
     // Update local reactive state and cache immediately
     settings.value = { ...settings.value, ...newSettings }
     saveStorage('settings', settings.value)
+
+    if (settings.value.logo_url) {
+      loadImageAsBase64(settings.value.logo_url).then((b64) => {
+        if (b64) {
+          settings.value.logo_data_uri = b64
+          settings.value._resolved_logo_url = settings.value.logo_url
+          saveStorage('settings', settings.value)
+        }
+      })
+    } else {
+      settings.value.logo_data_uri = null
+      settings.value._resolved_logo_url = null
+      saveStorage('settings', settings.value)
+    }
 
     try {
       const payload = {
@@ -1649,6 +1750,15 @@ export const useBusinessStore = defineStore('business-store', () => {
         auto_deduct_inventory: Boolean(settings.value.auto_deduct_inventory),
         allow_negative_stock: Boolean(settings.value.allow_negative_stock),
         default_low_stock_threshold: Number(settings.value.default_low_stock_threshold) || 5,
+        receipt_prefix: settings.value.receipt_prefix || 'REC-2026-',
+        next_receipt_number: Number(settings.value.next_receipt_number) || 5001,
+        smtp_host: settings.value.smtp_host || '',
+        smtp_port: Number(settings.value.smtp_port) || 465,
+        smtp_user: settings.value.smtp_user || '',
+        smtp_pass: settings.value.smtp_pass || '',
+        smtp_secure: settings.value.smtp_secure || 'ssl',
+        from_email: settings.value.from_email || '',
+        from_name: settings.value.from_name || '',
         updated_at: new Date().toISOString(),
       }
 
@@ -1757,11 +1867,13 @@ export const useBusinessStore = defineStore('business-store', () => {
     // Invoices
     fetchInvoicesFromSupabase,
     getNextInvoiceNumber,
+    getNextReceiptNumber,
     createInvoice,
     updateInvoice,
     cancelInvoice,
     deleteInvoice,
     recordPayment,
+    markInvoiceAsPaid,
     // Inventory
     isFetchingInventory,
     fetchInventoryFromSupabase,

@@ -6,27 +6,27 @@
           <h2 class="text-lg font-bold text-ink-gray-9">
             {{ __('Record Payment for {0}', [invoice?.invoice_number || '']) }}
           </h2>
-          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-surface-blue-2 text-ink-blue-7 border border-outline-blue-2">
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2">
             {{ invoice?.currency || 'USD' }}
           </span>
         </div>
 
-        <div class="bg-surface-gray-1 rounded-lg p-3 text-xs space-y-1">
+        <div class="bg-surface-gray-1 dark:bg-surface-gray-2/40 border border-outline-gray-1 rounded-lg p-3 text-xs space-y-1">
           <div class="flex justify-between">
-            <span class="text-ink-gray-5">{{ __('Client:') }}</span>
+            <span class="text-ink-gray-6 dark:text-ink-gray-4">{{ __('Client:') }}</span>
             <span class="font-bold text-ink-gray-9">{{ invoice?.client_name }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-ink-gray-5">{{ __('Total Amount:') }}</span>
-            <span class="font-medium text-ink-gray-9">{{ business.formatCurrency(invoice?.total_amount, invoice?.currency) }}</span>
+            <span class="text-ink-gray-6 dark:text-ink-gray-4">{{ __('Total Amount:') }}</span>
+            <span class="font-medium font-mono text-ink-gray-9">{{ business.formatCurrency(invoice?.total_amount, invoice?.currency) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-ink-gray-5">{{ __('Amount Already Paid:') }}</span>
-            <span class="font-medium text-ink-green-3">{{ business.formatCurrency(invoice?.amount_paid, invoice?.currency) }}</span>
+            <span class="text-ink-gray-6 dark:text-ink-gray-4">{{ __('Amount Already Paid:') }}</span>
+            <span class="font-medium font-mono text-ink-green-7 dark:text-ink-green-4">{{ business.formatCurrency(invoice?.amount_paid, invoice?.currency) }}</span>
           </div>
           <div class="flex justify-between pt-1 border-t border-outline-gray-1 font-bold text-sm">
-            <span class="text-ink-gray-7">{{ __('Remaining Balance:') }}</span>
-            <span class="text-ink-amber-3">{{ business.formatCurrency(invoice?.balance_due, invoice?.currency) }}</span>
+            <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Remaining Balance:') }}</span>
+            <span class="font-mono text-ink-amber-3">{{ business.formatCurrency(invoice?.balance_due, invoice?.currency) }}</span>
           </div>
         </div>
 
@@ -124,11 +124,11 @@ function formatNum(num) {
   })
 }
 
-function submitPayment() {
+async function submitPayment() {
   if (!props.invoice) return
   recording.value = true
   try {
-    const result = business.recordPayment(props.invoice.id, {
+    const result = await business.recordPayment(props.invoice.id, {
       amount: amount.value,
       payment_method: paymentMethod.value,
       payment_date: paymentDate.value,

@@ -1,8 +1,23 @@
+# ==============================================================================
+# cPanel Apache Rewrite Rules for Single Page Application (Vue Router History Mode)
+# ==============================================================================
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+  
+  # Allow direct access to API endpoint scripts and existing files
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Route all other web requests to index.html for Vue Router
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# MIME type headers for modern fonts and assets
+<IfModule mod_mime.c>
+  AddType application/font-woff2 .woff2
+  AddType application/font-woff .woff
+  AddType application/json .json
+  AddType image/svg+xml .svg
 </IfModule>

@@ -123,7 +123,7 @@ const props = defineProps({
   description: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update:modelValue', 'uploaded', 'removed', 'error'])
+const emit = defineEmits(['update:modelValue', 'uploaded', 'removed', 'error', 'dataUri'])
 
 const fileInputRef = ref(null)
 const uploading = ref(false)
@@ -205,6 +205,19 @@ async function handleUpload(file) {
   errorMessage.value = ''
   imageError.value = false
 
+  // Instantly read local file as Data URI for immediate caching and PDF rendering
+  try {
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        emit('dataUri', evt.target.result)
+      }
+    }
+    reader.readAsDataURL(file)
+  } catch (readerErr) {
+    // Non-fatal, uploadCrmAsset will provide remote URL
+  }
+
   try {
     const result = await uploadCrmAsset(file, props.folder)
     if (!result.success) {
@@ -227,6 +240,7 @@ function removeImage() {
   imageError.value = false
   errorMessage.value = ''
   emit('update:modelValue', '')
+  emit('dataUri', '')
   emit('removed')
 }
 </script>
