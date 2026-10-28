@@ -12,7 +12,11 @@ export const globalStore = defineStore('crm-global', () => {
   }
 
   function makeCall(number) {
-    callMethod(number)
+    if (callMethod && typeof callMethod === 'function' && callMethod.length > 0) {
+      callMethod(number)
+    } else if (number && typeof window !== 'undefined') {
+      window.open(`tel:${number}`, '_self')
+    }
   }
 
   return {

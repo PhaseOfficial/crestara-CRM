@@ -11,11 +11,9 @@
     </div>
     <div id="app-header" class="flex-1" />
   </div>
-  <CallUI class="mr-3 mt-2" />
 </template>
 
 <script setup>
 import MenuIcon from '@/components/Icons/MenuIcon.vue'
-import CallUI from '@/components/Telephony/CallUI.vue'
 import { mobileSidebarOpened as sidebarOpened } from '@/composables/settings'
 </script>
