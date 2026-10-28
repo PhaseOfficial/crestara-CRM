@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="show" :size="'md'">
-    <template #body>
+  <Dialog v-model:open="show" size="md" bare>
+    <template #default>
       <div class="bg-surface-base rounded-2xl overflow-hidden p-6 space-y-4">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-outline-gray-1 pb-4">
@@ -111,7 +111,7 @@
             v-model="personalMessage"
             :label="__('Personalized Note & Instructions')"
             type="textarea"
-            rows="4"
+            :rows="4"
             required
           />
 
@@ -142,7 +142,7 @@
               <Button
                 variant="solid"
                 type="submit"
-                iconLeft="send"
+                iconLeft="lucide-send"
                 :label="__('Send Reminder')"
                 :loading="sending"
               />

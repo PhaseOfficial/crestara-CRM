@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="show" :size="'xl'">
-    <template #body>
+  <Dialog v-model:open="show" size="xl" bare>
+    <template #default>
       <div class="flex flex-col h-[85vh] max-h-[900px] bg-surface-base rounded-2xl overflow-hidden">
         <!-- Modal Toolbar Header -->
         <div class="flex items-center justify-between px-5 py-3.5 border-b border-outline-gray-1 bg-surface-gray-1 dark:bg-surface-gray-2/70 shrink-0">
@@ -24,7 +24,7 @@
             <Button
               variant="outline"
               size="sm"
-              iconLeft="printer"
+              iconLeft="lucide-printer"
               :label="__('Print')"
               :tooltip="__('Isolated Clean Print (No Screen Chrome)')"
               @click="handlePrint"
@@ -32,14 +32,14 @@
             <Button
               variant="outline"
               size="sm"
-              iconLeft="download"
+              iconLeft="lucide-download"
               :label="__('Download PDF')"
               @click="handleDownloadPdf"
             />
             <Button
               variant="solid"
               size="sm"
-              iconLeft="mail"
+              iconLeft="lucide-mail"
               :label="__('Email to Client')"
               @click="handleEmail"
             />

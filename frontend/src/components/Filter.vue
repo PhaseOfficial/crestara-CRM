@@ -1,6 +1,6 @@
 <template>
-  <Popover placement="bottom-end">
-    <template #target="{ togglePopover, close }">
+  <Popover side="bottom" align="end" bare>
+    <template #trigger="{ togglePopover, close }">
       <div class="flex items-center">
         <Button
           :label="__('Filter')"
@@ -25,7 +25,7 @@
         />
       </div>
     </template>
-    <template #body="{ close }">
+    <template #default="{ close }">
       <div
         class="my-2 min-w-40 rounded-lg bg-surface-elevation-2 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
       >
@@ -139,7 +139,7 @@
                   class="!text-ink-gray-5"
                   variant="ghost"
                   :label="__('Add Filter')"
-                  iconLeft="plus"
+                  iconLeft="lucide-plus"
                   @click="setOpen(!open)"
                 />
               </template>

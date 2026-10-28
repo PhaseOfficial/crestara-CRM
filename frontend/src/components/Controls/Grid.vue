@@ -230,7 +230,7 @@
                             field.fieldtype,
                           )
                         "
-                        rows="1"
+                        :rows="1"
                         type="textarea"
                         variant="outline"
                         :value="row[field.fieldname]"

@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="show" :size="'xl'">
-    <template #body>
+  <Dialog v-model:open="show" :size="'xl'" bare>
+    <template #default>
       <div class="bg-surface-elevation-2 px-4 pb-6 pt-5 sm:px-6">
         <!-- Header -->
         <div class="mb-5 flex items-center justify-between">
@@ -114,7 +114,7 @@
               variant="outline"
               theme="red"
               :label="__('Delete')"
-              iconLeft="trash-2"
+              iconLeft="lucide-trash-2"
               @click="confirmDelete"
             />
           </div>

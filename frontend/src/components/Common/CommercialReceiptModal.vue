@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="show" :size="'lg'">
-    <template #body>
+  <Dialog v-model:open="show" size="lg" bare>
+    <template #default>
       <div class="bg-surface-base rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <!-- Receipt Top Bar -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-outline-gray-1 bg-surface-gray-1 dark:bg-surface-gray-2/70">
@@ -14,21 +14,21 @@
             <Button
               variant="outline"
               size="sm"
-              iconLeft="printer"
+              iconLeft="lucide-printer"
               :label="__('Print')"
               @click="printReceipt"
             />
             <Button
               variant="outline"
               size="sm"
-              iconLeft="download"
+              iconLeft="lucide-download"
               :label="__('Download PDF')"
               @click="downloadReceipt"
             />
             <Button
               variant="solid"
               size="sm"
-              iconLeft="mail"
+              iconLeft="lucide-mail"
               :label="__('Email Receipt')"
               @click="openEmailModal"
             />

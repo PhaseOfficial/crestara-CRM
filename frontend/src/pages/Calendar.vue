@@ -59,12 +59,21 @@
               :clearable="false"
               @update:modelValue="(val) => onMonthYearChange(val)"
             >
+              <template #trigger="{ togglePopover }">
+                <Button
+                  variant="ghost"
+                  class="text-lg-medium text-ink-gray-7"
+                  :label="currentMonthYear"
+                  iconRight="lucide-chevron-down"
+                  @click="togglePopover"
+                />
+              </template>
               <template #target="{ togglePopover }">
                 <Button
                   variant="ghost"
                   class="text-lg-medium text-ink-gray-7"
                   :label="currentMonthYear"
-                  iconRight="chevron-down"
+                  iconRight="lucide-chevron-down"
                   @click="togglePopover"
                 />
               </template>
@@ -109,7 +118,7 @@
                 label: selectedStaffLabel,
                 class: 'form-control text-sm font-medium !w-44 justify-start [&>span]:mr-auto',
                 variant: 'outline',
-                iconRight: 'chevron-down',
+                iconRight: 'lucide-chevron-down',
               }"
             >
               <template #button-prefix>

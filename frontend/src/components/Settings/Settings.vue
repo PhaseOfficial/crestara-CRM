@@ -2,10 +2,11 @@
   <Dialog
     v-model:open="showSettings"
     :size="'5xl'"
-    :disableOutsideClickToClose="disableSettingModalOutsideClick"
+    :dismissible="!disableSettingModalOutsideClick"
+    bare
     @close="activeSettingsPage = ''"
   >
-    <template #body>
+    <template #default>
       <div class="flex h-[calc(100vh_-_8rem)] bg-surface-gray-1">
         <div
           class="flex flex-col m-1 rounded-l-lg w-56 shrink-0 bg-surface-gray-1 overflow-y-auto"
@@ -155,13 +156,13 @@ const tabs = computed(() => {
       items: [
         {
           label: __('Users'),
-          icon: 'user',
+          icon: 'lucide-user',
           component: markRaw(Users),
           condition: () => isManager(),
         },
         {
           label: __('Invite User'),
-          icon: 'user-plus',
+          icon: 'lucide-user-plus',
           component: markRaw(InviteUserPage),
           condition: () => isManager(),
         },
@@ -217,7 +218,7 @@ const tabs = computed(() => {
         {
           label: __('Home Actions'),
           component: markRaw(HomeActions),
-          icon: 'house',
+          icon: 'lucide-house',
         },
       ],
       condition: () => isManager(),
@@ -244,7 +245,7 @@ const tabs = computed(() => {
         },
         {
           label: __('Lead Syncing'),
-          icon: 'refresh-cw',
+          icon: 'lucide-refresh-cw',
           component: markRaw(LeadSyncSourcePage),
           condition: () => isManager(),
         },

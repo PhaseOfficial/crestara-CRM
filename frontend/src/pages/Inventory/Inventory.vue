@@ -10,7 +10,7 @@
         </div>
       </template>
       <template #right-header>
-        <Button variant="solid" :label="isMobileView ? '' : __('Add Product / Service')" iconLeft="plus" @click="openAddModal" />
+        <Button variant="solid" :label="isMobileView ? '' : __('Add Product / Service')" iconLeft="lucide-plus" @click="openAddModal" />
       </template>
     </LayoutHeader>
 
@@ -171,8 +171,8 @@
 
                 <td class="py-3 px-6 text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <Button size="sm" variant="ghost" iconLeft="edit-2" @click="openEditModal(item)" />
-                    <Button size="sm" variant="ghost" theme="red" iconLeft="trash-2" @click="deleteItem(item.id)" />
+                    <Button size="sm" variant="ghost" iconLeft="lucide-edit-2" @click="openEditModal(item)" />
+                    <Button size="sm" variant="ghost" theme="red" iconLeft="lucide-trash-2" @click="deleteItem(item.id)" />
                   </div>
                 </td>
               </tr>
@@ -270,8 +270,8 @@
 
             <!-- Quick Actions -->
             <div class="flex items-center justify-end gap-2 pt-1 border-t border-outline-gray-1/40">
-              <Button size="sm" variant="outline" iconLeft="edit-2" :label="__('Edit')" @click="openEditModal(item)" />
-              <Button size="sm" variant="subtle" theme="red" iconLeft="trash-2" :label="__('Delete')" @click="deleteItem(item.id)" />
+              <Button size="sm" variant="outline" iconLeft="lucide-edit-2" :label="__('Edit')" @click="openEditModal(item)" />
+              <Button size="sm" variant="subtle" theme="red" iconLeft="lucide-trash-2" :label="__('Delete')" @click="deleteItem(item.id)" />
             </div>
           </div>
 
@@ -285,8 +285,8 @@
     </div>
 
     <!-- Add / Edit Modal -->
-    <Dialog v-model:open="showModal" :size="'md'">
-      <template #body>
+    <Dialog v-model:open="showModal" size="md" bare>
+      <template #default>
         <div class="p-6 bg-surface-base space-y-4">
           <div class="border-b border-outline-gray-1 pb-3 flex justify-between items-center">
             <h2 class="text-lg font-bold text-ink-gray-9">
@@ -346,7 +346,7 @@
               v-model="formData.description"
               :label="__('Description')"
               type="textarea"
-              rows="2"
+              :rows="2"
             />
 
             <div class="grid grid-cols-2 gap-3">

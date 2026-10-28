@@ -1,12 +1,10 @@
 <template>
   <Dialog
     v-model="isOpen"
-    :options="{
-      title: __('Complete Your Account Profile'),
-      size: 'md',
-    }"
+    :title="__('Complete Your Account Profile')"
+    size="md"
   >
-    <template #body-content>
+    <template #default>
       <div class="space-y-5 text-ink-gray-9">
         <!-- Banner alert -->
         <div class="flex items-start gap-3 bg-surface-amber-2 border border-outline-amber-2 p-3.5 rounded-xl text-ink-amber-8 dark:text-amber-300">
@@ -82,7 +80,7 @@
         />
         <Button
           variant="solid"
-          iconLeft="arrow-right"
+          iconLeft="lucide-arrow-right"
           :label="__('Complete Profile Now')"
           @click="goToCompleteProfile"
         />

@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="show" :size="'md'">
-    <template #body>
+  <Dialog v-model:open="show" size="md" bare>
+    <template #default>
       <div class="bg-surface-base rounded-2xl overflow-hidden p-6 space-y-4">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-outline-gray-1 pb-4">
@@ -129,7 +129,7 @@
               v-if="canShareFiles"
               variant="outline"
               size="sm"
-              iconLeft="share-2"
+              iconLeft="lucide-share-2"
               :label="__('Direct OS Share')"
               :tooltip="__('Directly attach PDF file via native mobile share')"
               :loading="processing"

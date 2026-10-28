@@ -1,6 +1,6 @@
 <template>
-  <Popover class="w-full min-w-0">
-    <template #target="{ isOpen, togglePopover }">
+  <Popover class="w-full min-w-0" bare>
+    <template #trigger="{ isOpen, togglePopover }">
       <Button
         :label="value"
         class="dropdown-button flex w-full items-center !justify-between bg-surface-base !px-2.5 py-1.5 text-base text-ink-gray-8 placeholder-ink-gray-4 transition-colors hover:bg-surface-base focus:bg-surface-base focus:outline-none focus:ring-0"
@@ -18,7 +18,7 @@
         </template>
       </Button>
     </template>
-    <template #body>
+    <template #default>
       <div
         class="my-2 p-1.5 w-72 space-y-1.5 divide-y divide-outline-gray-1 rounded-lg bg-surface-elevation-2 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
       >
@@ -47,7 +47,7 @@
             variant="ghost"
             class="w-full !justify-start"
             :label="__('Create New')"
-            iconLeft="plus"
+            iconLeft="lucide-plus"
             @click="addDraft"
           />
         </div>

@@ -111,7 +111,7 @@
           v-model="form.business_address"
           :label="__('Official Street Address')"
           type="textarea"
-          rows="3"
+          :rows="3"
         />
       </div>
 
@@ -192,7 +192,7 @@
           v-model="form.notes_template"
           :label="__('Default Footer / Remittance Notes')"
           type="textarea"
-          rows="2"
+          :rows="2"
         />
       </div>
 
@@ -246,7 +246,7 @@
             v-model="form.payment_instructions"
             :label="__('Wire Instructions / Remittance Notes')"
             type="textarea"
-            rows="2"
+            :rows="2"
             placeholder="e.g. Include invoice number in memo. Remitter is responsible for wire fees."
           />
         </div>
@@ -657,8 +657,8 @@
     </div>
 
     <!-- Invite / Add Staff Modal (Archetype B Alignment) -->
-    <Dialog v-model:open="showInvite" :size="'md'">
-      <template #body>
+    <Dialog v-model:open="showInvite" size="md" bare>
+      <template #default>
         <div class="p-6 bg-surface-base text-ink-gray-9 space-y-4">
           <div class="flex items-center justify-between border-b border-outline-gray-1 pb-3">
             <h2 class="text-lg font-bold text-ink-gray-9 flex items-center gap-2">
@@ -762,8 +762,8 @@
     </Dialog>
 
     <!-- Staff Avatar Management Modal -->
-    <Dialog v-model:open="showAvatarModal" :size="'sm'">
-      <template #body>
+    <Dialog v-model:open="showAvatarModal" size="sm" bare>
+      <template #default>
         <div class="p-6 bg-surface-base text-ink-gray-9 space-y-4">
           <div class="border-b border-outline-gray-1 pb-3">
             <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">

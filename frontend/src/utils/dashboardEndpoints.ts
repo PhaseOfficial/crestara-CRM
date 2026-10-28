@@ -304,7 +304,7 @@ export function computeChartData(
           formattedValue: formatNum(overdueAmount, currencySymbol),
           prefix: currencySymbol,
           negativeIsBetter: true,
-          icon: 'alert-circle',
+          icon: 'lucide-alert-circle',
           theme: 'red',
           badgeText: overdueList.length > 0 ? `${overdueList.length} past due` : 'All clear',
           badgeType: overdueList.length > 0 ? 'red' : 'green',

@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="show" :size="'md'">
-    <template #body>
+  <Dialog v-model:open="show" size="md" bare>
+    <template #default>
       <div class="bg-surface-base rounded-2xl overflow-hidden p-6 space-y-4">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-outline-gray-1 pb-4">
@@ -67,7 +67,7 @@
             v-model="personalMessage"
             :label="__('Personal Note / Custom Instructions (Optional)')"
             type="textarea"
-            rows="3"
+            :rows="3"
             :placeholder="__('e.g. Please find your invoice attached. Contact us for any settlement questions.')"
           />
 
@@ -80,7 +80,7 @@
             <Button
               variant="solid"
               type="submit"
-              iconLeft="send"
+              iconLeft="lucide-send"
               :label="__('Send Email with PDF')"
               :loading="sending"
             />

@@ -15,12 +15,12 @@
           <Button
             size="sm"
             variant="ghost"
-            iconLeft="refresh-cw"
+            iconLeft="lucide-refresh-cw"
             :loading="refreshing"
             @click="refreshInvoices"
           />
           <router-link to="/invoices/new">
-            <Button variant="solid" :label="isMobileView ? '' : __('Create Invoice')" iconLeft="plus" />
+            <Button variant="solid" :label="isMobileView ? '' : __('Create Invoice')" iconLeft="lucide-plus" />
           </router-link>
         </div>
       </template>
@@ -186,7 +186,7 @@
                       variant="solid"
                       theme="green"
                       :label="__('Mark Paid')"
-                      iconLeft="check"
+                      iconLeft="lucide-check"
                       @click="markAsPaidQuick(inv)"
                     />
                     <Button
@@ -194,7 +194,7 @@
                       size="xs"
                       variant="outline"
                       :label="__('Pay')"
-                      iconLeft="credit-card"
+                      iconLeft="lucide-credit-card"
                       @click="openPaymentModal(inv)"
                     />
                     <Button
@@ -202,7 +202,7 @@
                       size="xs"
                       variant="outline"
                       :label="__('Remind')"
-                      iconLeft="bell"
+                      iconLeft="lucide-bell"
                       :tooltip="__('Send Payment Reminder')"
                       @click="openReminderModal(inv)"
                     />
@@ -212,13 +212,13 @@
                       variant="outline"
                       theme="green"
                       :label="__('Receipt')"
-                      iconLeft="file-text"
+                      iconLeft="lucide-file-text"
                       @click="openInvoiceReceipt(inv)"
                     />
                     <Button
                       size="xs"
                       variant="ghost"
-                      iconLeft="eye"
+                      iconLeft="lucide-eye"
                       @click="goToDetail(inv.id)"
                     />
                   </div>
@@ -303,7 +303,7 @@
                 size="sm"
                 variant="solid"
                 theme="green"
-                iconLeft="check"
+                iconLeft="lucide-check"
                 :label="__('Mark Paid')"
                 @click="markAsPaidQuick(inv)"
               />
@@ -311,7 +311,7 @@
                 v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
                 size="sm"
                 variant="outline"
-                iconLeft="credit-card"
+                iconLeft="lucide-credit-card"
                 :label="__('Pay')"
                 @click="openPaymentModal(inv)"
               />
@@ -319,7 +319,7 @@
                 v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
                 size="sm"
                 variant="outline"
-                iconLeft="bell"
+                iconLeft="lucide-bell"
                 :label="__('Remind')"
                 @click="openReminderModal(inv)"
               />
@@ -328,14 +328,14 @@
                 size="sm"
                 variant="outline"
                 theme="green"
-                iconLeft="file-text"
+                iconLeft="lucide-file-text"
                 :label="__('Receipt')"
                 @click="openInvoiceReceipt(inv)"
               />
               <Button
                 size="sm"
                 variant="outline"
-                iconRight="arrow-right"
+                iconRight="lucide-arrow-right"
                 :label="__('View')"
                 @click="goToDetail(inv.id)"
               />

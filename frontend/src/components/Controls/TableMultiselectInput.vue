@@ -32,7 +32,7 @@
           :hideMe="true"
           @change="(v) => addValue(v)"
         >
-          <template #target="{ togglePopover }">
+          <template #trigger="{ togglePopover }">
             <button
               class="w-full h-7 cursor-text"
               @click.stop="togglePopover"

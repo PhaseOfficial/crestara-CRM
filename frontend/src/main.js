@@ -60,12 +60,83 @@ let globalComponents = {
   FeatherIcon,
 }
 
+// Standalone onboarding initial state & safe fallback interceptors
+const defaultOnboardingSteps = [
+  { name: 'setup_your_password', completed: false },
+  { name: 'invite_your_team', completed: false },
+  { name: 'create_first_task', completed: false },
+]
+
+try {
+  const currentStatus = JSON.parse(localStorage.getItem('onboardingStatus') || '{}')
+  const defaultUser = 'Administrator'
+  if (!currentStatus[defaultUser] || !currentStatus[defaultUser].frappecrm_onboarding_status) {
+    currentStatus[defaultUser] = {
+      frappecrm_onboarding_status: defaultOnboardingSteps,
+    }
+    localStorage.setItem('onboardingStatus', JSON.stringify(currentStatus))
+  }
+} catch (e) {}
+
+// Intercept window.fetch for standalone onboarding endpoints
+const originalFetch = window.fetch
+window.fetch = async function (input, init) {
+  const url = typeof input === 'string' ? input : input?.url || ''
+  if (url.includes('frappe.onboarding.get_onboarding_status')) {
+    const user = window.frappe?.session?.user || 'Administrator'
+    const stored = JSON.parse(localStorage.getItem('onboardingStatus') || '{}')
+    const userStatus = stored[user] || {
+      frappecrm_onboarding_status: defaultOnboardingSteps,
+    }
+    return new Response(JSON.stringify({ message: userStatus }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  if (url.includes('frappe.onboarding.update_user_onboarding_status')) {
+    if (init?.body) {
+      try {
+        const body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body
+        if (body.steps && body.appName) {
+          const user = window.frappe?.session?.user || 'Administrator'
+          const stored = JSON.parse(localStorage.getItem('onboardingStatus') || '{}')
+          stored[user] = stored[user] || {}
+          stored[user][body.appName + '_onboarding_status'] =
+            typeof body.steps === 'string' ? JSON.parse(body.steps) : body.steps
+          localStorage.setItem('onboardingStatus', JSON.stringify(stored))
+        }
+      } catch (e) {}
+    }
+    return new Response(JSON.stringify({ message: 'ok' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  return originalFetch.apply(this, arguments)
+}
+
+const safeResourceFetcher = (options) => {
+  const url = typeof options === 'string' ? options : options?.url || ''
+  if (url.includes('frappe.onboarding.get_onboarding_status')) {
+    const user = window.frappe?.session?.user || 'Administrator'
+    const stored = JSON.parse(localStorage.getItem('onboardingStatus') || '{}')
+    const userStatus = stored[user] || {
+      frappecrm_onboarding_status: defaultOnboardingSteps,
+    }
+    return Promise.resolve(userStatus)
+  }
+  if (url.includes('frappe.onboarding.update_user_onboarding_status')) {
+    return Promise.resolve('ok')
+  }
+  return frappeRequest(options)
+}
+
 // create a pinia instance
 let pinia = createPinia()
 
 let app = createApp(App)
 
-setConfig('resourceFetcher', frappeRequest)
+setConfig('resourceFetcher', safeResourceFetcher)
 app.use(FrappeUI, { socketio: false })
 app.use(spritePlugin)
 app.use(pinia)

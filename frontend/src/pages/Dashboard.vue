@@ -65,8 +65,8 @@
           class:
             '!w-48 justify-start [&>span]:mr-auto [&>svg]:text-ink-gray-5',
           variant: 'outline',
-          iconRight: 'chevron-down',
-          iconLeft: 'calendar',
+          iconRight: 'lucide-chevron-down',
+          iconLeft: 'lucide-calendar',
         }"
       />
       <DateRangePicker
@@ -104,8 +104,8 @@
           class:
             '!w-48 justify-start [&>span]:mr-auto [&>svg]:text-ink-gray-5',
           variant: 'outline',
-          iconRight: 'chevron-down',
-          iconLeft: 'user',
+          iconRight: 'lucide-chevron-down',
+          iconLeft: 'lucide-user',
         }"
       />
 

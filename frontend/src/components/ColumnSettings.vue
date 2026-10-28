@@ -1,6 +1,6 @@
 <template>
-  <Popover placement="bottom-end">
-    <template #target="{ togglePopover }">
+  <Popover side="bottom" align="end" bare>
+    <template #trigger="{ togglePopover }">
       <Button :label="__('Columns')" @click="togglePopover">
         <template v-if="hideLabel" #icon>
           <ColumnsIcon class="h-4" />
@@ -10,7 +10,7 @@
         </template>
       </Button>
     </template>
-    <template #body="{ close }">
+    <template #default="{ close }">
       <div
         class="my-2 p-1.5 min-w-40 rounded-lg bg-surface-elevation-2 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
       >
@@ -66,7 +66,7 @@
                   class="w-full !justify-start !text-ink-gray-5"
                   variant="ghost"
                   :label="__('Add Column')"
-                  iconLeft="plus"
+                  iconLeft="lucide-plus"
                   @click="setOpen(!open)"
                 />
               </template>

@@ -1,12 +1,10 @@
 <template>
   <Dialog
     v-model="isOpen"
-    :options="{
-      title: __('Client Portal Quickstart & Feature Guide'),
-      size: '3xl',
-    }"
+    :title="__('Client Portal Quickstart & Feature Guide')"
+    size="3xl"
   >
-    <template #body-content>
+    <template #default>
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[420px]">
         <!-- Left Steps Navigation (4 cols) -->
         <div class="md:col-span-5 border-r border-outline-gray-1 pr-4 space-y-2">
@@ -106,7 +104,7 @@
               />
               <Button
                 variant="solid"
-                iconRight="arrow-right"
+                iconRight="lucide-arrow-right"
                 :label="__(activeStep.actionLabel || 'Take Action')"
                 @click="performStepAction"
               />

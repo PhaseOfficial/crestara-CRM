@@ -238,9 +238,9 @@ import {
   useOnboarding,
   showHelpModal,
   minimize,
-  IntermediateStepModal,
   useTelemetry,
 } from 'frappe-ui/frappe'
+import IntermediateStepModal from '@/components/Modals/IntermediateStepModal.vue'
 import router from '@/router'
 import { useStorage } from '@vueuse/core'
 import { useDemoData } from '@/composables/demoData'

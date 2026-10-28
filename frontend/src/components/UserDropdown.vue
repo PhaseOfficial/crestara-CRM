@@ -101,14 +101,14 @@ const dropdownItems = computed(() => {
       items: [
         {
           label: __('Customer Portal'),
-          icon: 'external-link',
+          icon: 'lucide-external-link',
           onClick: () => router.push('/portal'),
         },
         ...(business.isAdmin
           ? [
               {
                 label: __('Business Settings'),
-                icon: 'sliders',
+                icon: 'lucide-sliders',
                 onClick: () => router.push('/business-settings'),
               },
             ]
@@ -120,23 +120,23 @@ const dropdownItems = computed(() => {
       items: [
         {
           label: currentTheme.value === 'dark' ? __('Light Theme') : __('Dark Theme'),
-          icon: currentTheme.value === 'dark' ? 'sun' : 'moon',
+          icon: currentTheme.value === 'dark' ? 'lucide-sun' : 'lucide-moon',
           onClick: () => setTheme(currentTheme.value === 'dark' ? 'light' : 'dark'),
         },
         {
           label: __('Settings'),
-          icon: 'settings',
+          icon: 'lucide-settings',
           onClick: () => (showSettings.value = true),
           condition: () => !isMobileView.value,
         },
         {
           label: __('About Crestara CRM'),
-          icon: 'info',
+          icon: 'lucide-info',
           onClick: () => (showAboutModal.value = true),
         },
         {
           label: __('Log out'),
-          icon: 'log-out',
+          icon: 'lucide-log-out',
           onClick: () => logout.submit(),
         },
       ],

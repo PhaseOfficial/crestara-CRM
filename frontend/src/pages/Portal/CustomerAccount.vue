@@ -357,8 +357,8 @@
     </div>
 
     <!-- Request Change Modal (Archetype A: Multi-Section Complex Form Modal) -->
-    <Dialog v-model:open="showChangeModal" :size="'2xl'">
-      <template #body>
+    <Dialog v-model:open="showChangeModal" size="2xl" bare>
+      <template #default>
         <div class="p-6 bg-surface-base text-ink-gray-9 space-y-5 max-h-[85vh] overflow-y-auto">
           <!-- Modal Header -->
           <div class="border-b border-outline-gray-1 pb-3 flex items-center justify-between">
@@ -463,7 +463,7 @@
                 v-model="changeForm.address"
                 :label="__('New Billing Street Address')"
                 type="textarea"
-                rows="2"
+                :rows="2"
                 required
               />
 
@@ -492,7 +492,7 @@
                 v-model="changeForm.reason"
                 :label="__('Reason for Change (Required by Administration)')"
                 type="textarea"
-                rows="2"
+                :rows="2"
                 placeholder="e.g. Relocating office headquarters, change in billing representative, updated corporate legal entity..."
                 required
               />

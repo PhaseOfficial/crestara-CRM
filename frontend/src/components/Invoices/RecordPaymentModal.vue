@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="show" :size="'md'">
-    <template #body>
+  <Dialog v-model:open="show" size="md" bare>
+    <template #default>
       <div class="p-6 bg-surface-base space-y-4">
         <div class="flex items-center justify-between border-b border-outline-gray-1 pb-4">
           <h2 class="text-lg font-bold text-ink-gray-9">

@@ -11,7 +11,7 @@
       <Button
         variant="solid"
         :label="__('Create')"
-        iconLeft="plus"
+        iconLeft="lucide-plus"
         @click="createTask"
       />
     </template>
@@ -29,7 +29,7 @@
             size="sm"
             class="text-xs"
             :label="selectedStatusLabel"
-            :iconRight="open ? 'chevron-up' : 'chevron-down'"
+            :iconRight="open ? 'lucide-chevron-up' : 'lucide-chevron-down'"
           >
             <template #prefix>
               <TaskStatusIcon v-if="selectedStatus !== 'All'" :status="selectedStatus" class="size-3.5" />
@@ -46,7 +46,7 @@
             size="sm"
             class="text-xs"
             :label="selectedPriorityLabel"
-            :iconRight="open ? 'chevron-up' : 'chevron-down'"
+            :iconRight="open ? 'lucide-chevron-up' : 'lucide-chevron-down'"
           >
             <template #prefix>
               <TaskPriorityIcon v-if="selectedPriority !== 'All'" :priority="selectedPriority" class="size-3" />
@@ -63,7 +63,7 @@
             size="sm"
             class="text-xs"
             :label="selectedStaffLabel"
-            :iconRight="open ? 'chevron-up' : 'chevron-down'"
+            :iconRight="open ? 'lucide-chevron-up' : 'lucide-chevron-down'"
           >
             <template #prefix>
               <UserAvatar v-if="selectedStaff" :user="selectedStaff" size="xs" class="!size-4" />
@@ -346,12 +346,12 @@ const viewControls = computed(() => ({
   viewsDropdownOptions: [
     {
       label: __('Kanban'),
-      icon: 'kanban',
+      icon: 'lucide-kanban',
       onClick: () => router.push({ name: 'Tasks', params: { viewType: 'kanban' } }),
     },
     {
       label: __('List'),
-      icon: 'list',
+      icon: 'lucide-list',
       onClick: () => router.push({ name: 'Tasks', params: { viewType: 'list' } }),
     },
   ],
@@ -636,12 +636,12 @@ function actions(itemName: string) {
   return [
     {
       label: __('Edit'),
-      icon: 'edit-2',
+      icon: 'lucide-edit-2',
       onClick: () => showTask(itemName),
     },
     {
       label: __('Delete'),
-      icon: 'trash-2',
+      icon: 'lucide-trash-2',
       onClick: async () => {
         await business.deleteTask(itemName)
         await loadTasks()

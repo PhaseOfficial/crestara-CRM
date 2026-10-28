@@ -462,7 +462,7 @@
               <Button
                 size="sm"
                 variant="outline"
-                iconRight="arrow-right"
+                iconRight="lucide-arrow-right"
                 :label="__('View Invoice')"
                 @click="router.push(`/invoices/${inv.id}`)"
               />
@@ -500,8 +500,8 @@
   </div>
 
   <!-- ARCHETYPE A MODAL: EDIT CLIENT ORGANIZATION & CONTACTS -->
-  <Dialog v-model:open="showEditModal" :size="'2xl'">
-    <template #body>
+  <Dialog v-model:open="showEditModal" size="2xl" bare>
+    <template #default>
       <div class="p-6 bg-surface-base text-ink-gray-9 space-y-6 max-h-[85vh] overflow-y-auto">
         <div class="border-b border-outline-gray-1 pb-3 flex items-center justify-between">
           <div>
@@ -745,8 +745,8 @@
   </Dialog>
 
   <!-- ARCHETYPE B MODAL: UPGRADE CLIENT TO STAFF -->
-  <Dialog v-model:open="showUpgradeModal" :size="'sm'">
-    <template #body>
+  <Dialog v-model:open="showUpgradeModal" size="sm" bare>
+    <template #default>
       <div class="p-6 bg-surface-base space-y-4">
         <div class="flex items-center gap-2 border-b border-outline-gray-1 pb-3">
           <span class="lucide-arrow-up-circle size-5 text-ink-amber-8 dark:text-amber-300" />

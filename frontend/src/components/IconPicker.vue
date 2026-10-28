@@ -1,11 +1,11 @@
 <template>
-  <Popover transition="default">
-    <template #target="{ togglePopover, isOpen }">
+  <Popover bare>
+    <template #trigger="{ togglePopover, isOpen }">
       <slot v-bind="{ isOpen, togglePopover }">
         <span class="text-base"> {{ modelValue || '' }} </span>
       </slot>
     </template>
-    <template #body="{ togglePopover }">
+    <template #default="{ togglePopover }">
       <div
         v-if="reaction"
         class="px-2 py-1 flex items-center justify-center gap-2 rounded-full bg-surface-elevation-2 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"

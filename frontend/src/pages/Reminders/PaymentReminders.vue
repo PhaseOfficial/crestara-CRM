@@ -16,7 +16,7 @@
           <Button
             size="sm"
             variant="outline"
-            iconLeft="play"
+            iconLeft="lucide-play"
             :label="isMobileView ? '' : __('Test Reminder Run')"
             :loading="testingCron"
             :tooltip="__('Simulate automated reminder run without sending emails')"
@@ -26,7 +26,7 @@
             <Button
               size="sm"
               variant="outline"
-              iconLeft="settings"
+              iconLeft="lucide-settings"
               :label="isMobileView ? '' : __('Reminder Settings')"
               :tooltip="__('Configure default reminder countdown schedules')"
             />
@@ -303,7 +303,7 @@
                     <Button
                       size="xs"
                       variant="outline"
-                      iconLeft="bell"
+                      iconLeft="lucide-bell"
                       :label="__('Remind')"
                       :tooltip="__('Send Payment Reminder to Client')"
                       @click="openReminderModal(item)"
@@ -312,7 +312,7 @@
                       <Button
                         size="xs"
                         variant="ghost"
-                        iconLeft="eye"
+                        iconLeft="lucide-eye"
                         :tooltip="__('View Invoice Details')"
                       />
                     </router-link>
@@ -394,7 +394,7 @@
                 <Button
                   size="xs"
                   variant="solid"
-                  iconLeft="bell"
+                  iconLeft="lucide-bell"
                   :label="__('Send Reminder')"
                   @click="openReminderModal(item)"
                 />

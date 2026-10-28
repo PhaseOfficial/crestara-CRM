@@ -548,7 +548,7 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold text-ink-gray-9">{{ __('Line Items') }}</h3>
-            <Button size="sm" variant="outline" :label="__('Add Custom Item')" iconLeft="plus" class="print:hidden" @click="addCustomItem" />
+            <Button size="sm" variant="outline" :label="__('Add Custom Item')" iconLeft="lucide-plus" class="print:hidden" @click="addCustomItem" />
           </div>
 
           <!-- Desktop Table (>= 768px) -->
@@ -855,21 +855,21 @@
                       size="sm"
                       variant="subtle"
                       :label="__('View')"
-                      iconLeft="file-text"
+                      iconLeft="lucide-file-text"
                       @click="openReceiptModal(pay)"
                     />
                     <Button
                       size="sm"
                       variant="subtle"
                       :label="__('Print')"
-                      iconLeft="printer"
+                      iconLeft="lucide-printer"
                       @click="printReceipt(pay)"
                     />
                     <Button
                       size="sm"
                       variant="subtle"
                       :label="__('PDF')"
-                      iconLeft="download"
+                      iconLeft="lucide-download"
                       @click="downloadReceipt(pay)"
                     />
                   </td>
@@ -896,7 +896,7 @@
               v-if="invoice.status !== 'Paid' && invoice.status !== 'Cancelled' && Number(invoice.balance_due) > 0"
               size="sm"
               variant="subtle"
-              iconLeft="bell"
+              iconLeft="lucide-bell"
               :label="__('Send Reminder Now')"
               @click="showReminderModal = true"
             />
@@ -971,7 +971,7 @@
             <Button
               size="sm"
               variant="subtle"
-              iconLeft="plus"
+              iconLeft="lucide-plus"
               :label="__('Schedule Meeting')"
               @click="openCalendarForInvoice"
             />

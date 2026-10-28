@@ -199,7 +199,7 @@ const userMenuOptions = computed(() => {
   const options = [
     {
       label: 'My Account',
-      icon: 'user',
+      icon: 'lucide-user',
       onClick: () => router.push({ path: '/portal/account' }),
     },
   ]
@@ -207,20 +207,20 @@ const userMenuOptions = computed(() => {
   if (business.currentRole !== 'Customer') {
     options.push({
       label: 'CRM Workspace',
-      icon: 'arrow-left',
+      icon: 'lucide-arrow-left',
       onClick: () => router.push({ path: '/dashboard' }),
     })
   }
 
   options.push({
     label: currentTheme.value === 'dark' ? 'Light Theme' : 'Dark Theme',
-    icon: currentTheme.value === 'dark' ? 'sun' : 'moon',
+    icon: currentTheme.value === 'dark' ? 'lucide-sun' : 'lucide-moon',
     onClick: () => toggleTheme(),
   })
 
   options.push({
     label: 'Sign Out',
-    icon: 'log-out',
+    icon: 'lucide-log-out',
     onClick: () => session.logout.submit(),
   })
 

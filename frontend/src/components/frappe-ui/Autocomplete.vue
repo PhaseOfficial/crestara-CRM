@@ -1,9 +1,15 @@
 <template>
   <Combobox v-model="selectedValue" nullable>
-    <Popover v-model:show="showOptions" class="w-full" :placement="placement">
-      <template #target="{ open: openPopover, togglePopover }">
+    <Popover
+      v-model:open="showOptions"
+      class="w-full"
+      :side="resolvedSide"
+      :align="resolvedAlign"
+      bare
+    >
+      <template #trigger="{ open: openPopover, togglePopover }">
         <slot
-          name="target"
+          name="trigger"
           v-bind="{
             open: openPopover,
             togglePopover,
@@ -12,37 +18,48 @@
             displayValue,
           }"
         >
-          <div class="w-full">
-            <button
-              class="relative flex h-7 w-full items-center justify-between gap-2 rounded px-2 py-1 transition-colors pr-7"
-              :class="inputClasses"
-              @click="() => !disabled && togglePopover()"
-            >
-              <div
-                v-if="selectedValue"
-                class="flex text-base leading-5 items-center truncate"
+          <slot
+            name="target"
+            v-bind="{
+              open: openPopover,
+              togglePopover,
+              isOpen: showOptions,
+              selectedValue,
+              displayValue,
+            }"
+          >
+            <div class="w-full">
+              <button
+                class="relative flex h-7 w-full items-center justify-between gap-2 rounded px-2 py-1 transition-colors pr-7"
+                :class="inputClasses"
+                @click="() => !disabled && togglePopover()"
               >
-                <slot name="prefix" />
-                <span class="truncate">
-                  {{ displayValue(selectedValue) }}
-                </span>
-              </div>
-              <div
-                v-else
-                class="absolute text-ink-gray-4 text-left truncate w-full pr-7"
-              >
-                {{ placeholder || '' }}
-              </div>
-              <span
-                v-if="!disabled"
-                class="lucide-chevron-down absolute h-4 w-4 text-ink-gray-5 right-2"
-                aria-hidden="true"
-              />
-            </button>
-          </div>
+                <div
+                  v-if="selectedValue"
+                  class="flex text-base leading-5 items-center truncate"
+                >
+                  <slot name="prefix" />
+                  <span class="truncate">
+                    {{ displayValue(selectedValue) }}
+                  </span>
+                </div>
+                <div
+                  v-else
+                  class="absolute text-ink-gray-4 text-left truncate w-full pr-7"
+                >
+                  {{ placeholder || '' }}
+                </div>
+                <span
+                  v-if="!disabled"
+                  class="lucide-chevron-down absolute h-4 w-4 text-ink-gray-5 right-2"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+          </slot>
         </slot>
       </template>
-      <template #body="{ isOpen }">
+      <template #default="{ isOpen }">
         <div v-show="isOpen">
           <div
             class="relative mt-1 rounded-lg bg-surface-elevation-2 text-base shadow-2xl max-w-[350px]"
@@ -191,6 +208,21 @@ const search = ref(null)
 
 const attrs = useAttrs()
 const slots = useSlots()
+
+const resolvedSide = computed(() => {
+  if (props.placement) {
+    return props.placement.split('-')[0]
+  }
+  return 'bottom'
+})
+
+const resolvedAlign = computed(() => {
+  if (props.placement) {
+    const [, align] = props.placement.split('-')
+    return align || 'start'
+  }
+  return 'start'
+})
 
 const valuePropPassed = computed(() => 'value' in attrs)
 

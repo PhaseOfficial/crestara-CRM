@@ -18,7 +18,7 @@
       size="sm"
       placement="right"
       :button="{
-        icon: 'chevron-down',
+        icon: 'lucide-chevron-down',
         variant: $attrs.variant,
         size: $attrs.size,
         class:

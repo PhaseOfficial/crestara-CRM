@@ -314,7 +314,7 @@
                 size="sm"
                 variant="solid"
                 :label="__('View')"
-                iconRight="arrow-right"
+                iconRight="lucide-arrow-right"
                 @click="router.push(`/clients/${c.id}`)"
               />
             </div>
@@ -504,8 +504,8 @@
     </div>
 
     <!-- MODAL: ADD / EDIT CLIENT ORGANIZATION & CONTACT -->
-    <Dialog v-model:open="showClientModal" :size="'2xl'">
-      <template #body>
+    <Dialog v-model:open="showClientModal" size="2xl" bare>
+      <template #default>
         <div class="p-6 bg-surface-base text-ink-gray-9 space-y-6 max-h-[85vh] overflow-y-auto">
           <div class="border-b border-outline-gray-1 pb-3 flex items-center justify-between">
             <div>
@@ -734,8 +734,8 @@
     </Dialog>
 
     <!-- REJECT REQUEST MODAL -->
-    <Dialog v-model:open="showRejectDialog" :size="'md'">
-      <template #body>
+    <Dialog v-model:open="showRejectDialog" size="md" bare>
+      <template #default>
         <div class="p-6 bg-surface-base text-ink-gray-9 space-y-4">
           <h3 class="text-base font-bold text-ink-gray-9">
             {{ __('Reject Detail Change Request') }}
@@ -748,7 +748,7 @@
             v-model="rejectionReason"
             :label="__('Rejection Notes')"
             type="textarea"
-            rows="3"
+            :rows="3"
             placeholder="e.g. Official tax documents required before updating registered company name..."
             required
           />
@@ -768,8 +768,8 @@
     </Dialog>
 
     <!-- Upgrade Client to Staff Modal -->
-    <Dialog v-model:open="showUpgradeDialog" :size="'sm'">
-      <template #body>
+    <Dialog v-model:open="showUpgradeDialog" size="sm" bare>
+      <template #default>
         <div class="p-6 bg-surface-base space-y-4">
           <div class="flex items-center gap-2 border-b border-outline-gray-1 pb-3">
             <span class="lucide-arrow-up-circle size-5 text-amber-600 dark:text-amber-400" />

@@ -14,10 +14,40 @@ const esbuildLucidePlugin = {
   },
 }
 
+const mockOnboardingPlugin = {
+  name: 'mock-onboarding-plugin',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url && req.url.includes('/api/method/frappe.onboarding.get_onboarding_status')) {
+        res.setHeader('Content-Type', 'application/json')
+        res.end(
+          JSON.stringify({
+            message: {
+              frappecrm_onboarding_status: [
+                { name: 'setup_your_password', completed: false },
+                { name: 'invite_your_team', completed: false },
+                { name: 'create_first_task', completed: false },
+              ],
+            },
+          }),
+        )
+        return
+      }
+      if (req.url && req.url.includes('/api/method/frappe.onboarding.update_user_onboarding_status')) {
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify({ message: 'ok' }))
+        return
+      }
+      next()
+    })
+  },
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   return {
     plugins: [
+      mockOnboardingPlugin,
       frappeui({
         frappeProxy: false,
         lucideIcons: true,

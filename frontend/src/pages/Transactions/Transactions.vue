@@ -90,7 +90,7 @@
                   <Button
                     size="sm"
                     variant="ghost"
-                    iconLeft="file-text"
+                    iconLeft="lucide-file-text"
                     :label="__('View')"
                     @click="viewReceipt(tx)"
                   />
@@ -147,7 +147,7 @@
               <Button
                 size="sm"
                 variant="outline"
-                iconLeft="file-text"
+                iconLeft="lucide-file-text"
                 :label="__('View Receipt')"
                 @click="viewReceipt(tx)"
               />

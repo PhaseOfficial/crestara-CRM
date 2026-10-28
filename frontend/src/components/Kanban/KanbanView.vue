@@ -15,8 +15,8 @@
         >
           <div class="flex gap-2 items-center group justify-between">
             <div class="flex items-center text-base">
-              <Popover>
-                <template #target="{ togglePopover }">
+              <Popover bare>
+                <template #trigger="{ togglePopover }">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -26,7 +26,7 @@
                     <IndicatorIcon :class="parseColor(column.column.color)" />
                   </Button>
                 </template>
-                <template #body>
+                <template #default>
                   <div
                     class="flex flex-col gap-3 px-3 py-2.5 min-w-40 rounded-lg bg-surface-elevation-2 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
                   >
@@ -159,7 +159,7 @@
           <Button
             class="w-full mt-2.5 mb-1 mr-5"
             :label="__('Add Column')"
-            iconLeft="plus"
+            iconLeft="lucide-plus"
             @click="setOpen(!open)"
           />
         </template>
@@ -233,7 +233,7 @@ function actions(column) {
       items: [
         {
           label: __('Delete'),
-          icon: 'trash-2',
+          icon: 'lucide-trash-2',
           onClick: () => {
             column.column['delete'] = true
             updateColumn()

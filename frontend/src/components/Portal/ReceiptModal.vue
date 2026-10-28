@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:open="isOpen" :size="'xl'">
-    <template #body>
+  <Dialog v-model:open="isOpen" size="xl" bare>
+    <template #default>
       <div v-if="invoice" class="p-6 sm:p-8 bg-surface-base text-ink-gray-9 space-y-6 max-h-[85vh] overflow-y-auto">
         <!-- Receipt Header with Business Logo & Status -->
         <div class="flex flex-col sm:flex-row sm:items-start justify-between border-b border-outline-gray-1 pb-6 gap-4">
@@ -130,7 +130,7 @@
         <!-- Action Buttons -->
         <div class="flex justify-end gap-2 pt-4 border-t border-outline-gray-1">
           <Button variant="outline" :label="__('Close')" @click="isOpen = false" />
-          <Button variant="solid" :label="__('Print / PDF Receipt')" iconLeft="printer" @click="printReceipt" />
+          <Button variant="solid" :label="__('Print / PDF Receipt')" iconLeft="lucide-printer" @click="printReceipt" />
         </div>
       </div>
     </template>

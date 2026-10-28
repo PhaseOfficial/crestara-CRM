@@ -1,6 +1,6 @@
 <template>
-  <Popover placement="bottom-end">
-    <template #target="{ togglePopover }">
+  <Popover side="bottom" align="end" bare>
+    <template #trigger="{ togglePopover }">
       <div class="flex items-center" @click="togglePopover">
         <component
           :is="assignees?.length == 1 ? 'Button' : 'div'"
@@ -11,7 +11,7 @@
         <Button v-else :label="__('Assign To')" />
       </div>
     </template>
-    <template #body="{ isOpen }">
+    <template #default="{ isOpen }">
       <AssignToBody
         v-show="isOpen"
         v-model="assignees"
