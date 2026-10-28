@@ -134,7 +134,7 @@
                   class="!text-ink-gray-5"
                   :label="__('Add Sort')"
                   variant="ghost"
-                  iconLeft="plus"
+                  iconLeft="lucide-plus"
                   @click="setOpen(!open)"
                 />
               </template>

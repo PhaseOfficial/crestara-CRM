@@ -46,7 +46,7 @@
       <!-- Navigation Tabs -->
       <TabButtons
         v-model="activeTab"
-        :buttons="tabs"
+        :options="tabs"
         class="flex px-4 py-2 border-b border-outline-gray-1 [&_button]:w-full [&_div]:w-full [&_button>span]:w-full"
       />
 
@@ -154,6 +154,7 @@
         <!-- Empty State -->
         <EmptyState
           v-else
+          name="Notifications"
           title="No New Notifications"
           description="You are completely caught up!"
           :icon="NotificationsIcon"

@@ -15,7 +15,7 @@
           <Button
             v-if="business.pendingChangeRequests.length"
             variant="subtle"
-            iconLeft="clock"
+            iconLeft="lucide-clock"
             :label="isMobileView ? `${business.pendingChangeRequests.length}` : __('{0} Pending Approvals', [business.pendingChangeRequests.length])"
             class="!bg-surface-amber-2 !text-ink-amber-8 dark:!bg-amber-950/50 dark:!text-amber-300 border border-outline-amber-2 dark:border-amber-800/60 hover:!bg-surface-amber-3 dark:hover:!bg-amber-900/50 transition-colors"
             @click="activeTab = 'pending'"
@@ -23,7 +23,7 @@
           <Button
             variant="solid"
             :label="isMobileView ? '' : __('Add Client')"
-            iconLeft="plus"
+            iconLeft="lucide-plus"
             @click="openAddClientModal"
           />
         </div>
@@ -73,8 +73,11 @@
             v-model="searchQuery"
             type="search"
             :placeholder="__('Search clients or contacts...')"
-            iconLeft="search"
-          />
+          >
+            <template #prefix>
+              <span class="lucide-search size-4 text-ink-gray-5 ml-1" />
+            </template>
+          </TextInput>
         </div>
       </div>
 
@@ -182,14 +185,14 @@
                     <Button
                       size="sm"
                       variant="ghost"
-                      iconLeft="file-edit"
+                      iconLeft="lucide-file-edit"
                       :tooltip="__('Edit Client')"
                       @click="openEditClientModal(c)"
                     />
                     <Button
                       size="sm"
                       variant="ghost"
-                      iconLeft="user-plus"
+                      iconLeft="lucide-user-plus"
                       :tooltip="__('Upgrade to Staff')"
                       class="!text-amber-600 dark:!text-amber-400 hover:!text-amber-700 dark:hover:!text-amber-300 hover:!bg-amber-50 dark:hover:!bg-amber-950/60 transition-colors"
                       @click="promptUpgradeClient(c)"
@@ -197,7 +200,7 @@
                     <Button
                       size="sm"
                       variant="ghost"
-                      iconLeft="chevron-right"
+                      iconLeft="lucide-chevron-right"
                       @click="router.push(`/clients/${c.id}`)"
                     />
                   </div>
@@ -298,14 +301,14 @@
               <Button
                 size="sm"
                 variant="outline"
-                iconLeft="file-edit"
+                iconLeft="lucide-file-edit"
                 :label="__('Edit')"
                 @click="openEditClientModal(c)"
               />
               <Button
                 size="sm"
                 variant="subtle"
-                iconLeft="user-plus"
+                iconLeft="lucide-user-plus"
                 :label="__('Upgrade')"
                 class="!bg-surface-amber-2 !text-ink-amber-8 dark:!bg-amber-950/50 dark:!text-amber-300 border border-outline-amber-2 dark:border-amber-800/60 hover:!bg-surface-amber-3 dark:hover:!bg-amber-900/50 transition-colors"
                 @click="promptUpgradeClient(c)"
@@ -354,7 +357,7 @@
                   size="sm"
                   variant="subtle"
                   theme="red"
-                  iconLeft="x"
+                  iconLeft="lucide-x"
                   :label="__('Reject')"
                   @click="openRejectModal(req)"
                 />
@@ -362,7 +365,7 @@
                   size="sm"
                   variant="solid"
                   theme="green"
-                  iconLeft="check"
+                  iconLeft="lucide-check"
                   :label="__('Approve Updates')"
                   @click="approveRequest(req.id)"
                 />
@@ -793,7 +796,7 @@
             <Button variant="subtle" :label="__('Cancel')" @click="showUpgradeDialog = false" />
             <Button
               variant="solid"
-              iconLeft="arrow-up-right"
+              iconLeft="lucide-arrow-up-right"
               :label="__('Confirm Upgrade')"
               class="!bg-amber-600 hover:!bg-amber-500 active:!bg-amber-700 !text-white dark:!bg-amber-500 dark:hover:!bg-amber-400 dark:!text-gray-950 font-bold shadow-sm"
               @click="confirmUpgradeClient"

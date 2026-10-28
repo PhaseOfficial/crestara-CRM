@@ -225,7 +225,7 @@
                         class="w-full !h-8 !bg-surface-elevation-2"
                         variant="outline"
                         :label="__('Add Field')"
-                        iconLeft="plus"
+                        iconLeft="lucide-plus"
                         @click="setOpen(!open)"
                       />
                     </template>
@@ -257,7 +257,7 @@
           class="w-full h-8"
           variant="subtle"
           :label="__('Add Section')"
-          iconLeft="plus"
+          iconLeft="lucide-plus"
           @click="
             tabs[tabIndex].sections.push({
               label: '',

@@ -527,14 +527,9 @@ function toggleHelpModal() {
 // onboarding
 const { user } = sessionStore()
 const { users, isManager } = usersStore()
-const onboarding = useOnboarding('frappecrm') || {
-  isOnboardingStepsCompleted: ref(true),
-  setUp: () => {},
-  stepsCompleted: ref(100),
-  totalSteps: ref(1),
-  completedPercentage: ref(100),
-}
-const { isOnboardingStepsCompleted = ref(true), setUp = () => {} } = onboarding
+// Standalone CRM onboarding - bypasses remote Frappe Python endpoint 404s
+const isOnboardingStepsCompleted = ref(true)
+const setUp = () => {}
 
 async function getFirstLead() {
   let firstLead = localStorage.getItem('firstLead' + user)

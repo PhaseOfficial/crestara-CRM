@@ -96,7 +96,7 @@
                   :label="__('Delete')"
                   theme="red"
                   size="sm"
-                  iconLeft="trash-2"
+                  iconLeft="lucide-trash-2"
                   @click="deleteOrganization()"
                 />
                 <Button

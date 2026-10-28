@@ -22,7 +22,7 @@ import Icon from '@/components/Icon.vue'
 import { computed } from 'vue'
 
 const props = defineProps({
-  name: { type: String, required: true },
+  name: { type: String, default: '' },
   title: { type: String, default: '' },
   description: { type: String, default: '' },
   icon: {

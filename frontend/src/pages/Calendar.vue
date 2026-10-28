@@ -68,15 +68,6 @@
                   @click="togglePopover"
                 />
               </template>
-              <template #target="{ togglePopover }">
-                <Button
-                  variant="ghost"
-                  class="text-lg-medium text-ink-gray-7"
-                  :label="currentMonthYear"
-                  iconRight="lucide-chevron-down"
-                  @click="togglePopover"
-                />
-              </template>
             </DatePicker>
           </div>
 

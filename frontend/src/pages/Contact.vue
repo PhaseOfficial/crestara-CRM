@@ -99,7 +99,7 @@
                   :label="__('Delete')"
                   theme="red"
                   size="sm"
-                  iconLeft="trash-2"
+                  iconLeft="lucide-trash-2"
                   @click="deleteContact()"
                 />
               </div>
@@ -194,7 +194,7 @@
             <Button
               variant="solid"
               :label="__('Create Invoice')"
-              iconLeft="plus"
+              iconLeft="lucide-plus"
               @click="router.push(`/invoices/new?customer=${encodeURIComponent(contact.doc?.full_name || '')}&email=${encodeURIComponent(contact.doc?.email_id || '')}`)"
             />
           </div>
@@ -265,7 +265,7 @@
               class="mt-4"
               variant="outline"
               :label="__('Generate First Invoice')"
-              iconLeft="plus"
+              iconLeft="lucide-plus"
               @click="router.push(`/invoices/new?customer=${encodeURIComponent(contact.doc?.full_name || '')}&email=${encodeURIComponent(contact.doc?.email_id || '')}`)"
             />
           </div>

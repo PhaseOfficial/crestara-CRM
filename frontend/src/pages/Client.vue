@@ -49,7 +49,7 @@
         <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <Button
             variant="ghost"
-            iconLeft="arrow-left"
+            iconLeft="lucide-arrow-left"
             :tooltip="__('Back to Clients')"
             @click="router.push('/clients')"
           />
@@ -88,14 +88,14 @@
           <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`">
             <Button
               variant="subtle"
-              iconLeft="plus"
+              iconLeft="lucide-plus"
               :label="isMobileView ? '' : __('Issue Invoice')"
               :tooltip="__('Issue Invoice')"
             />
           </router-link>
           <Button
             variant="subtle"
-            iconLeft="user-plus"
+            iconLeft="lucide-user-plus"
             :label="isMobileView ? '' : __('Upgrade to Staff')"
             :tooltip="__('Upgrade to Staff')"
             class="!bg-surface-amber-2 !text-ink-amber-8 dark:!bg-amber-950/50 dark:!text-amber-300 border border-outline-amber-2 dark:border-amber-800/60 hover:!bg-surface-amber-3 dark:hover:!bg-amber-900/50 transition-colors"
@@ -103,7 +103,7 @@
           />
           <Button
             variant="solid"
-            iconLeft="file-edit"
+            iconLeft="lucide-file-edit"
             :label="isMobileView ? '' : __('Edit Client')"
             :tooltip="__('Edit Client Organization')"
             @click="openEditModal"
@@ -313,7 +313,7 @@
               {{ clientInvoices.length }} {{ __('Invoices') }}
             </span>
             <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`">
-              <Button size="sm" variant="subtle" iconLeft="plus" :label="__('New Invoice')" />
+              <Button size="sm" variant="subtle" iconLeft="lucide-plus" :label="__('New Invoice')" />
             </router-link>
           </div>
         </div>
@@ -363,7 +363,7 @@
                       size="xs"
                       variant="solid"
                       theme="green"
-                      iconLeft="check"
+                      iconLeft="lucide-check"
                       :label="__('Mark Paid')"
                       @click="markInvoiceAsPaidQuick(inv)"
                     />
@@ -371,14 +371,16 @@
                       v-if="Number(inv.balance_due) > 0 && inv.status !== 'Cancelled'"
                       size="xs"
                       variant="outline"
-                      iconLeft="credit-card"
+                      theme="gray"
+                      iconLeft="lucide-credit-card"
                       :label="__('Pay')"
                       @click="openPaymentModal(inv)"
                     />
                     <Button
                       size="xs"
                       variant="outline"
-                      iconLeft="eye"
+                      theme="gray"
+                      iconLeft="lucide-eye"
                       :label="__('View')"
                       @click="router.push(`/invoices/${inv.id}`)"
                     />
@@ -391,7 +393,7 @@
                   <p class="text-sm font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('No invoices issued to this client yet.') }}</p>
                   <p class="text-xs text-ink-gray-6 dark:text-ink-gray-5">{{ __('Generate commercial invoices to track receivables and billing.') }}</p>
                   <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`" class="inline-block pt-2">
-                    <Button variant="solid" size="sm" iconLeft="plus" :label="__('Issue First Invoice')" />
+                    <Button variant="solid" size="sm" iconLeft="lucide-plus" :label="__('Issue First Invoice')" />
                   </router-link>
                 </td>
               </tr>
@@ -447,7 +449,7 @@
                 size="sm"
                 variant="solid"
                 theme="green"
-                iconLeft="check"
+                iconLeft="lucide-check"
                 :label="__('Mark Paid')"
                 @click="markInvoiceAsPaidQuick(inv)"
               />
@@ -455,7 +457,7 @@
                 v-if="Number(inv.balance_due) > 0 && inv.status !== 'Cancelled'"
                 size="sm"
                 variant="outline"
-                iconLeft="credit-card"
+                iconLeft="lucide-credit-card"
                 :label="__('Record Payment')"
                 @click="openPaymentModal(inv)"
               />
@@ -473,7 +475,7 @@
             <span class="lucide-receipt size-8 text-ink-gray-4 mx-auto block mb-2" />
             <p class="text-sm font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('No invoices issued to this client yet.') }}</p>
             <router-link :to="`/invoices/new?customerId=${client.id}&customer=${encodeURIComponent(client.company_name)}&email=${encodeURIComponent(client.billing_email || client.primary_email || '')}`" class="inline-block pt-2">
-              <Button variant="solid" size="sm" iconLeft="plus" :label="__('Issue First Invoice')" />
+              <Button variant="solid" size="sm" iconLeft="lucide-plus" :label="__('Issue First Invoice')" />
             </router-link>
           </div>
         </div>
@@ -494,7 +496,7 @@
         </p>
       </div>
       <div class="pt-2">
-        <Button variant="solid" iconLeft="arrow-left" :label="__('Back to Clients Directory')" @click="router.push('/clients')" />
+        <Button variant="solid" iconLeft="lucide-arrow-left" :label="__('Back to Clients Directory')" @click="router.push('/clients')" />
       </div>
     </div>
   </div>
@@ -770,7 +772,7 @@
           <Button variant="subtle" :label="__('Cancel')" @click="showUpgradeModal = false" />
           <Button
             variant="solid"
-            iconLeft="arrow-up-right"
+            iconLeft="lucide-arrow-up-right"
             :label="__('Confirm Upgrade')"
             class="!bg-amber-600 hover:!bg-amber-500 active:!bg-amber-700 !text-white dark:!bg-amber-500 dark:hover:!bg-amber-400 dark:!text-gray-950 font-bold shadow-sm"
             @click="confirmUpgradeClient"
