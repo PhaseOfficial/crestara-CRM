@@ -54,15 +54,14 @@
           </p>
         </div>
 
-        <!-- Company CRM Logo Uploader -->
+        <!-- Company Logo Uploader -->
         <div class="py-3 border-y border-outline-gray-1/60">
           <CrmImageUploader
             v-model="form.logo_url"
             folder="company"
             shape="rounded"
             size="rect"
-            :label="__('Company CRM Logo')"
-            :description="__('Recommended: Transparent PNG, SVG, or WebP (max 5MB). Globally reflected on invoices, customer portal, app header, and sidebar.')"
+            :label="__('Your Logo')"
             fallback-text="CRM"
             @dataUri="onLogoDataUri"
           />
