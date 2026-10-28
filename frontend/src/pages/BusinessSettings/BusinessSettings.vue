@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col flex-1 h-full min-h-0 w-full overflow-hidden">
+  <div class="flex-1 flex flex-col min-h-0 overflow-hidden bg-surface-base">
     <!-- Header -->
     <LayoutHeader>
       <template #left-header>
@@ -41,7 +41,7 @@
     </LayoutHeader>
 
     <!-- Canvas with Safe Mobile Bottom Nav Clearance -->
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-6 max-w-5xl w-full mx-auto">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-12 md:pb-8 space-y-6 max-w-5xl w-full mx-auto">
       <!-- Company Information Card -->
       <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
         <div>
@@ -511,14 +511,6 @@
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-md transition-colors"
-                :class="selectedRoleFilter === 'Staff' ? 'bg-surface-base dark:bg-surface-gray-3 text-ink-gray-9 font-bold shadow-sm' : 'text-ink-gray-7 dark:text-ink-gray-6 hover:text-ink-gray-9'"
-                @click="selectedRoleFilter = 'Staff'"
-              >
-                {{ __('Staff') }} ({{ staffCount }})
-              </button>
-              <button
-                type="button"
-                class="px-2.5 py-1 rounded-md transition-colors"
                 :class="selectedRoleFilter === 'All' ? 'bg-surface-base dark:bg-surface-gray-3 text-ink-gray-9 font-bold shadow-sm' : 'text-ink-gray-7 dark:text-ink-gray-6 hover:text-ink-gray-9'"
                 @click="selectedRoleFilter = 'All'"
               >
@@ -531,6 +523,14 @@
                 @click="selectedRoleFilter = 'Administrator'"
               >
                 {{ __('Admins') }} ({{ adminCount }})
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md transition-colors"
+                :class="selectedRoleFilter === 'Staff' ? 'bg-surface-base dark:bg-surface-gray-3 text-ink-gray-9 font-bold shadow-sm' : 'text-ink-gray-7 dark:text-ink-gray-6 hover:text-ink-gray-9'"
+                @click="selectedRoleFilter = 'Staff'"
+              >
+                {{ __('Staff') }} ({{ staffCount }})
               </button>
             </div>
             <Button size="sm" variant="outline" :label="__('Invite Staff')" iconLeft="user-plus" @click="showInvite = true" />
@@ -997,8 +997,8 @@ watch(
   }
 )
 
-// Role filter for staff table: 'Staff' | 'All' | 'Administrator'
-const selectedRoleFilter = ref('Staff')
+// Role filter for staff table: 'All' | 'Administrator' | 'Staff'
+const selectedRoleFilter = ref('All')
 
 const staffCount = computed(() => (business.users || []).filter((u) => u?.role === 'Staff').length)
 const adminCount = computed(() => (business.users || []).filter((u) => u?.role === 'Administrator').length)
