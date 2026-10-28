@@ -220,9 +220,13 @@ export const sessionStore = defineStore('crm-session', () => {
           profileSubscription.unsubscribe()
           profileSubscription = null
         }
-        logoutLoading.value = false
         syncUserCookie(null)
-        router.replace({ name: 'Login' })
+        if (typeof window !== 'undefined') {
+          window.location.replace('/crm/login')
+        } else {
+          router.replace({ name: 'Login' })
+          logoutLoading.value = false
+        }
       }
     },
   }

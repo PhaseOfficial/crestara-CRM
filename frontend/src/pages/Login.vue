@@ -1,6 +1,6 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-surface-gray-2 px-4 py-12 sm:px-6 lg:px-8">
-    <div class="w-full max-w-md space-y-6 rounded-2xl bg-surface-base p-8 shadow-sm border border-outline-base">
+  <div class="h-full w-full overflow-y-auto flex min-h-full items-center justify-center bg-surface-gray-2 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md space-y-6 rounded-2xl bg-surface-base p-8 shadow-sm border border-outline-base my-auto">
       <div class="text-center">
         <div class="flex justify-center mb-4">
           <img
@@ -318,7 +318,7 @@ async function handleSubmit() {
           await session.fetchProfile(data.user.id)
         }
         business.resolveUserRole(emailVal)
-        redirectByRole()
+        await redirectByRole()
       } else {
         infoMessage.value = 'Account created! Please check your email to confirm your registration, or sign in.'
         authMode.value = 'signin'
@@ -336,7 +336,7 @@ async function handleSubmit() {
         await session.fetchProfile(res.user.id)
       }
       business.resolveUserRole(emailVal)
-      redirectByRole()
+      await redirectByRole()
     }
   } catch (err) {
     errorMessage.value =
@@ -346,12 +346,12 @@ async function handleSubmit() {
   }
 }
 
-function redirectByRole() {
+async function redirectByRole() {
   const role = session.userRole || business.currentRole
   if (role === 'Customer') {
-    router.replace('/portal')
+    await router.replace('/portal')
   } else {
-    router.replace('/dashboard')
+    await router.replace('/dashboard')
   }
 }
 </script>
