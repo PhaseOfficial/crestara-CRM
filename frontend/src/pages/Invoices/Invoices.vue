@@ -15,7 +15,8 @@
           <Button
             size="sm"
             variant="ghost"
-            iconLeft="lucide-refresh-cw"
+            icon="lucide-refresh-cw"
+            :tooltip="__('Refresh Invoices')"
             :loading="refreshing"
             @click="refreshInvoices"
           />
@@ -34,7 +35,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Total Revenue') }}</span>
             <span class="lucide-circle-dollar-sign size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
-          <div class="mt-2 text-2xl font-bold text-ink-gray-9">{{ business.formatCurrency(business.totalRevenue) }}</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-ink-gray-9">{{ business.formatCurrency(business.totalRevenue) }}</div>
           <span class="text-xs text-ink-green-7 dark:text-ink-green-4 mt-1 block">{{ __('Settled via payment transactions') }}</span>
         </div>
 
@@ -43,7 +44,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Outstanding Balance') }}</span>
             <span class="lucide-clock size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
-          <div class="mt-2 text-2xl font-bold text-ink-amber-3">{{ business.formatCurrency(business.totalOutstanding) }}</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-ink-amber-3">{{ business.formatCurrency(business.totalOutstanding) }}</div>
           <span class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 block">{{ __('Pending payment collection') }}</span>
         </div>
 
@@ -52,7 +53,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Overdue Invoices') }}</span>
             <span class="lucide-alert-triangle size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
-          <div class="mt-2 text-2xl font-bold" :class="business.overdueInvoicesCount > 0 ? 'text-ink-red-7 dark:text-ink-red-4' : 'text-ink-gray-9'">
+          <div class="mt-2 text-2xl font-bold font-mono" :class="business.overdueInvoicesCount > 0 ? 'text-ink-red-7 dark:text-ink-red-4' : 'text-ink-gray-9'">
             {{ business.overdueInvoicesCount }}
           </div>
           <span class="text-xs text-ink-red-7 dark:text-ink-red-4 mt-1 block">{{ __('Requires follow-up action') }}</span>
@@ -63,7 +64,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Paid Invoices') }}</span>
             <span class="lucide-check-circle-2 size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
-          <div class="mt-2 text-2xl font-bold text-ink-gray-9">{{ business.paidInvoicesCount }}</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-ink-gray-9">{{ business.paidInvoicesCount }}</div>
           <span class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 block">{{ __('Fully completed invoices') }}</span>
         </div>
       </div>
@@ -103,7 +104,7 @@
               v-model="searchQuery"
               type="search"
               :placeholder="__('Search invoice or client...')"
-              iconLeft="search"
+              iconLeft="lucide-search"
             />
           </div>
         </div>
@@ -172,53 +173,56 @@
                 </td>
                 <td class="py-4 px-6 text-center">
                   <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border"
                     :class="getStatusClass(inv.status)"
                   >
                     {{ __(inv.status) }}
                   </span>
                 </td>
                 <td class="py-4 px-6 text-right" @click.stop>
-                  <div class="flex items-center justify-end gap-1.5">
+                  <div class="flex items-center justify-end gap-1">
                     <Button
                       v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
-                      size="xs"
-                      variant="solid"
-                      theme="green"
-                      :label="__('Mark Paid')"
-                      iconLeft="lucide-check"
+                      size="sm"
+                      variant="ghost"
+                      icon="lucide-check"
+                      class="text-ink-green-7 dark:text-ink-green-4 hover:bg-surface-green-2 active:bg-surface-green-3"
+                      :tooltip="__('Mark as Paid in Full')"
                       @click="markAsPaidQuick(inv)"
                     />
                     <Button
                       v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
-                      size="xs"
-                      variant="outline"
-                      :label="__('Pay')"
-                      iconLeft="lucide-credit-card"
+                      size="sm"
+                      variant="ghost"
+                      icon="lucide-credit-card"
+                      class="text-ink-gray-7 dark:text-ink-gray-4 hover:text-ink-gray-9 dark:hover:text-ink-gray-2 hover:bg-surface-gray-2 active:bg-surface-gray-3"
+                      :tooltip="__('Record Payment')"
                       @click="openPaymentModal(inv)"
                     />
                     <Button
                       v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
-                      size="xs"
-                      variant="outline"
-                      :label="__('Remind')"
-                      iconLeft="lucide-bell"
+                      size="sm"
+                      variant="ghost"
+                      icon="lucide-bell"
+                      class="text-ink-amber-8 dark:text-amber-300 hover:bg-surface-amber-2 active:bg-surface-amber-3"
                       :tooltip="__('Send Payment Reminder')"
                       @click="openReminderModal(inv)"
                     />
                     <Button
                       v-if="inv.status === 'Paid' || inv.balance_due <= 0"
-                      size="xs"
-                      variant="outline"
-                      theme="green"
-                      :label="__('Receipt')"
-                      iconLeft="lucide-file-text"
+                      size="sm"
+                      variant="ghost"
+                      icon="lucide-file-text"
+                      class="text-ink-green-7 dark:text-ink-green-4 hover:bg-surface-green-2 active:bg-surface-green-3"
+                      :tooltip="__('Commercial Receipt')"
                       @click="openInvoiceReceipt(inv)"
                     />
                     <Button
-                      size="xs"
+                      size="sm"
                       variant="ghost"
-                      iconLeft="lucide-eye"
+                      icon="lucide-eye"
+                      class="text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 dark:hover:text-ink-gray-2 hover:bg-surface-gray-2 active:bg-surface-gray-3"
+                      :tooltip="__('View Invoice Details')"
                       @click="goToDetail(inv.id)"
                     />
                   </div>
@@ -296,15 +300,15 @@
               </div>
             </div>
 
-            <!-- Row 3: Touch Action Footer (Low-Dominance Outline Buttons) -->
-            <div class="flex items-center justify-end gap-2 pt-1 border-t border-outline-gray-1/40" @click.stop>
+            <!-- Row 3: Touch Action Footer (Low-Dominance Outline / Ghost Buttons) -->
+            <div class="flex items-center justify-end gap-1.5 pt-1 border-t border-outline-gray-1/40" @click.stop>
               <Button
                 v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
                 size="sm"
-                variant="solid"
+                variant="subtle"
                 theme="green"
-                iconLeft="lucide-check"
-                :label="__('Mark Paid')"
+                icon="lucide-check"
+                :tooltip="__('Mark as Paid in Full')"
                 @click="markAsPaidQuick(inv)"
               />
               <Button
@@ -334,7 +338,7 @@
               />
               <Button
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 iconRight="lucide-arrow-right"
                 :label="__('View')"
                 @click="goToDetail(inv.id)"
