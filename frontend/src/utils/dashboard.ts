@@ -10,13 +10,35 @@ export function getLastXDays(range: number = 30): string | null {
   )}`
 }
 
-export function formatter(range: string) {
-  const [from, to] = range.split(',')
-  return `${formatRange(from)} to ${formatRange(to)}`
+export function formatter(range: string | [string, string] | null | undefined): string {
+  if (!range) return ''
+  let from = ''
+  let to = ''
+
+  if (Array.isArray(range)) {
+    from = range[0] || ''
+    to = range[1] || ''
+  } else if (typeof range === 'string') {
+    if (range.includes(',')) {
+      const parts = range.split(',')
+      from = parts[0] || ''
+      to = parts[1] || ''
+    } else {
+      from = range
+    }
+  }
+
+  if (from && to) {
+    return `${formatRange(from)} to ${formatRange(to)}`
+  }
+  return formatRange(from)
 }
 
-export function formatRange(date: string) {
+export function formatRange(date: string | null | undefined): string {
+  if (!date) return ''
   const dateObj = new Date(date)
+  if (isNaN(dateObj.getTime())) return String(date)
+
   return dateObj.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

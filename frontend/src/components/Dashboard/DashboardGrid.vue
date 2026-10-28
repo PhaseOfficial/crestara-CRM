@@ -11,7 +11,9 @@
       @update:modelValue="
         (newLayout) => {
           items.forEach((item, idx) => {
-            item.layout = newLayout[idx]
+            if (newLayout[idx]) {
+              item.layout = newLayout[idx]
+            }
           })
         }
       "
@@ -22,28 +24,28 @@
             class="flex h-full w-full items-center justify-center"
             :class="
               editing
-                ? 'pointer-events-none  [&>div:first-child]:rounded [&>div:first-child]:group-hover:ring-2 [&>div:first-child]:group-hover:ring-outline-gray-2'
+                ? 'pointer-events-none [&>div:first-child]:rounded-xl [&>div:first-child]:group-hover:ring-2 [&>div:first-child]:group-hover:ring-outline-gray-3'
                 : ''
             "
           >
             <DashboardItem
+              v-if="items[index]"
               :index="index"
               :item="items[index]"
               :editing="editing"
             />
           </div>
+          <!-- Delete widget button in edit mode -->
           <div
             v-if="editing"
-            class="flex absolute right-0 top-0 bg-surface-gray-9 rounded cursor-pointer opacity-0 group-hover:opacity-100"
+            class="flex absolute right-1.5 top-1.5 z-20 rounded-lg cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
           >
             <div
-              class="rounded p-1 hover:bg-surface-gray-8"
+              class="rounded-lg p-1.5 bg-surface-gray-9 hover:bg-red-600 text-white transition-colors"
+              title="Remove widget"
               @click="items.splice(index, 1)"
             >
-              <span
-                class="lucide-trash-2 size-3 text-ink-base"
-                aria-hidden="true"
-              />
+              <LucideTrash2 class="size-3.5" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -51,8 +53,10 @@
     </GridLayout>
   </div>
 </template>
+
 <script setup>
 import { GridLayout } from 'frappe-ui'
+import LucideTrash2 from '~icons/lucide/trash-2'
 
 defineProps({
   editing: { type: Boolean, default: false },
