@@ -16,26 +16,114 @@
       />
     </template>
   </LayoutHeader>
-  <ViewControls
-    ref="viewControls"
-    v-model="tasks"
-    v-model:loadMore="loadMore"
-    v-model:resizeColumn="triggerResize"
-    v-model:updatedPageCount="updatedPageCount"
-    doctype="CRM Task"
-    :options="{
-      allowedViews: ['list', 'kanban'],
-    }"
-  />
+
+  <!-- Filter & Control Toolbar (Preserving Exact Frappe CRM UX Layout) -->
+  <div class="flex items-center justify-between gap-2 px-3 sm:px-5 py-3 border-b border-outline-gray-1 bg-surface-base">
+    <!-- Left: Quick Filters -->
+    <div class="flex items-center gap-2 flex-1 overflow-x-auto">
+      <!-- Status Filter Dropdown -->
+      <Dropdown :options="statusFilterOptions">
+        <template #default="{ open }">
+          <Button
+            variant="outline"
+            size="sm"
+            class="text-xs"
+            :label="selectedStatusLabel"
+            :iconRight="open ? 'chevron-up' : 'chevron-down'"
+          >
+            <template #prefix>
+              <TaskStatusIcon v-if="selectedStatus !== 'All'" :status="selectedStatus" class="size-3.5" />
+            </template>
+          </Button>
+        </template>
+      </Dropdown>
+
+      <!-- Priority Filter Dropdown -->
+      <Dropdown :options="priorityFilterOptions">
+        <template #default="{ open }">
+          <Button
+            variant="outline"
+            size="sm"
+            class="text-xs"
+            :label="selectedPriorityLabel"
+            :iconRight="open ? 'chevron-up' : 'chevron-down'"
+          >
+            <template #prefix>
+              <TaskPriorityIcon v-if="selectedPriority !== 'All'" :priority="selectedPriority" class="size-3" />
+            </template>
+          </Button>
+        </template>
+      </Dropdown>
+
+      <!-- Staff Assignee Filter -->
+      <Dropdown :options="staffFilterOptions">
+        <template #default="{ open }">
+          <Button
+            variant="outline"
+            size="sm"
+            class="text-xs"
+            :label="selectedStaffLabel"
+            :iconRight="open ? 'chevron-up' : 'chevron-down'"
+          >
+            <template #prefix>
+              <UserAvatar v-if="selectedStaff" :user="selectedStaff" size="xs" class="!size-4" />
+            </template>
+          </Button>
+        </template>
+      </Dropdown>
+
+      <!-- Search Box -->
+      <div class="relative min-w-40 max-w-64">
+        <input
+          v-model="searchQuery"
+          type="text"
+          :placeholder="__('Search tasks...')"
+          class="w-full h-7 pl-7 pr-2 text-xs rounded border border-outline-gray-2 bg-surface-base text-ink-gray-9 placeholder-ink-gray-4 focus:border-outline-gray-4 focus:outline-none"
+        />
+        <span class="absolute left-2 top-1.5 text-ink-gray-4">
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Right: Refresh & Sort Actions -->
+    <div class="flex items-center gap-2 shrink-0">
+      <Dropdown :options="sortOptions">
+        <template #default="{ open }">
+          <Button
+            variant="ghost"
+            size="sm"
+            :tooltip="__('Sort By')"
+            icon="lucide-arrow-up-down"
+            class="hover:bg-surface-gray-2"
+          />
+        </template>
+      </Dropdown>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        :tooltip="__('Refresh')"
+        icon="lucide-refresh-ccw"
+        :loading="isLoading"
+        class="hover:bg-surface-gray-2"
+        @click="loadTasks"
+      />
+    </div>
+  </div>
+
+  <!-- 1. KANBAN BOARD VIEW -->
   <KanbanView
-    v-if="$route.params.viewType == 'kanban' && rows.length"
+    v-if="isKanban"
     v-model="tasks"
     :options="{
       onClick: (row) => showTask(row.name),
       onNewClick: (column) => createTask(column),
     }"
-    @update="(data) => viewControls.updateKanbanSettings(data)"
-    @loadMore="(columnName) => viewControls.loadMoreKanban(columnName)"
+    @update="handleKanbanUpdate"
   >
     <template #title="{ titleField, itemName }">
       <div class="flex items-center gap-2">
@@ -130,7 +218,9 @@
             :label="
               getRow(itemName, 'reference_doctype').label == 'CRM Deal'
                 ? __('Deal')
-                : __('Lead')
+                : getRow(itemName, 'reference_doctype').label == 'CRM Lead'
+                ? __('Lead')
+                : __('Reference')
             "
             :iconRight="ArrowUpRightIcon"
             @click.stop="
@@ -152,8 +242,10 @@
       </div>
     </template>
   </KanbanView>
+
+  <!-- 2. LIST VIEW -->
   <TasksListView
-    v-else-if="tasks.data && rows.length"
+    v-else-if="!isKanban && rows.length"
     ref="tasksListView"
     v-model="tasks.data.page_length_count"
     v-model:list="tasks"
@@ -165,25 +257,32 @@
       rowCount: tasks.data.row_count,
       totalCount: tasks.data.total_count,
     }"
-    @loadMore="() => loadMore++"
-    @columnWidthUpdated="() => triggerResize++"
-    @updatePageCount="(count) => (updatedPageCount = count)"
+    @loadMore="handleLoadMore"
+    @columnWidthUpdated="handleColumnWidthUpdated"
+    @updatePageCount="handleUpdatePageCount"
     @showTask="showTask"
-    @applyFilter="(data) => viewControls.applyFilter(data)"
-    @applyLikeFilter="(data) => viewControls.applyLikeFilter(data)"
-    @likeDoc="(data) => viewControls.likeDoc(data)"
-    @selectionsChanged="
-      (selections) => viewControls.updateSelections(selections)
-    "
+    @applyLikeFilter="handleApplyLikeFilter"
+    @likeDoc="handleLikeDoc"
   />
+
+  <!-- 3. EMPTY STATE (List View only) -->
   <EmptyState
-    v-else-if="tasks.data && !rows.length"
+    v-else-if="!isKanban && !rows.length && !isLoading"
     name="Tasks"
     :icon="Email2Icon"
   />
+
+  <!-- Native Task Modal (Preserving Exact DoctypeModal UI & UX) -->
+  <TaskModal
+    v-model="showTaskModal"
+    :task="selectedTask"
+    :default-status="defaultTaskStatus"
+    @saved="handleTaskSaved"
+    @deleted="handleTaskDeleted"
+  />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
@@ -191,45 +290,180 @@ import TaskStatusIcon from '@/components/Icons/TaskStatusIcon.vue'
 import TaskPriorityIcon from '@/components/Icons/TaskPriorityIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
-import ViewControls from '@/components/ViewControls.vue'
 import TasksListView from '@/components/ListViews/TasksListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
 import KanbanView from '@/components/Kanban/KanbanView.vue'
-import { useDoctypeModal } from '@/composables/doctypeModal'
-import { getMeta } from '@/stores/meta'
+import TaskModal from '@/components/Tasks/TaskModal.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import { usersStore } from '@/stores/users'
+import { useBusinessStore } from '@/stores/business'
+import {
+  buildKanbanViewData,
+  buildListViewData,
+  DEFAULT_LIST_COLUMNS,
+  DEFAULT_TASK_ROWS,
+  CrmTask,
+} from '@/utils/taskEndpoints'
 import { formatDate } from '@/utils'
 import { timestampCell } from '@/composables/useTimelinePreferences'
-import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
-import { Tooltip, Avatar, TextEditor, Dropdown, call } from 'frappe-ui'
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
-  getMeta('CRM Task')
-const { getUser } = usersStore()
-const { updateOnboardingStep } = useOnboarding('frappecrm')
-const { capture } = useTelemetry()
+import { Tooltip, Avatar, TextEditor, Dropdown, Button } from 'frappe-ui'
+import { computed, ref, reactive, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
+const business = useBusinessStore()
+const { getUser } = usersStore()
 
-const tasksListView = ref(null)
+const tasksListView = ref<any>(null)
+const isLoading = ref(false)
 
-// tasks data is loaded in the ViewControls component
-const tasks = ref({})
-const loadMore = ref(1)
-const triggerResize = ref(1)
-const updatedPageCount = ref(20)
-const viewControls = ref(null)
+// Modals
+const showTaskModal = ref(false)
+const selectedTask = ref<any>(null)
+const defaultTaskStatus = ref('Backlog')
 
-function getRow(name, field) {
-  function getValue(value) {
+// Filter states
+const selectedStatus = ref('All')
+const selectedPriority = ref('All')
+const selectedStaff = ref('')
+const searchQuery = ref('')
+const sortBy = ref('created_at desc')
+
+// Current View Type (defaults to Kanban or List based on route)
+const isKanban = computed(() => {
+  const vt = route.params.viewType
+  return vt !== 'list'
+})
+
+// Navigation & ViewBreadcrumbs integration
+const viewControls = computed(() => ({
+  currentView: {
+    name: isKanban.value ? 'kanban' : 'list',
+    label: isKanban.value ? __('Kanban') : __('List'),
+    icon: isKanban.value ? 'kanban' : 'list',
+  },
+  viewsDropdownOptions: [
+    {
+      label: __('Kanban'),
+      icon: 'kanban',
+      onClick: () => router.push({ name: 'Tasks', params: { viewType: 'kanban' } }),
+    },
+    {
+      label: __('List'),
+      icon: 'list',
+      onClick: () => router.push({ name: 'Tasks', params: { viewType: 'list' } }),
+    },
+  ],
+}))
+
+// Filter Options
+const selectedStatusLabel = computed(() => {
+  return selectedStatus.value === 'All' ? __('Status: All') : __('Status: {0}', [selectedStatus.value])
+})
+
+const statusFilterOptions = [
+  { label: __('All Statuses'), onClick: () => { selectedStatus.value = 'All'; loadTasks() } },
+  { label: __('Backlog'), onClick: () => { selectedStatus.value = 'Backlog'; loadTasks() } },
+  { label: __('Todo'), onClick: () => { selectedStatus.value = 'Todo'; loadTasks() } },
+  { label: __('In Progress'), onClick: () => { selectedStatus.value = 'In Progress'; loadTasks() } },
+  { label: __('Done'), onClick: () => { selectedStatus.value = 'Done'; loadTasks() } },
+  { label: __('Canceled'), onClick: () => { selectedStatus.value = 'Canceled'; loadTasks() } },
+]
+
+const selectedPriorityLabel = computed(() => {
+  return selectedPriority.value === 'All' ? __('Priority: All') : __('Priority: {0}', [selectedPriority.value])
+})
+
+const priorityFilterOptions = [
+  { label: __('All Priorities'), onClick: () => { selectedPriority.value = 'All'; loadTasks() } },
+  { label: __('Urgent'), onClick: () => { selectedPriority.value = 'Urgent'; loadTasks() } },
+  { label: __('High'), onClick: () => { selectedPriority.value = 'High'; loadTasks() } },
+  { label: __('Medium'), onClick: () => { selectedPriority.value = 'Medium'; loadTasks() } },
+  { label: __('Low'), onClick: () => { selectedPriority.value = 'Low'; loadTasks() } },
+]
+
+const selectedStaffLabel = computed(() => {
+  if (!selectedStaff.value) return __('Assignee: All')
+  const u = (business.users || []).find((usr: any) => usr.email === selectedStaff.value || usr.id === selectedStaff.value)
+  return u ? u.full_name || u.email : selectedStaff.value
+})
+
+const staffFilterOptions = computed(() => [
+  { label: __('All Assignees'), onClick: () => { selectedStaff.value = ''; loadTasks() } },
+  ...(business.users || []).map((u: any) => ({
+    label: u.full_name || u.email,
+    onClick: () => { selectedStaff.value = u.email || u.id; loadTasks() },
+  })),
+])
+
+const sortOptions = [
+  { label: __('Newest First'), onClick: () => { sortBy.value = 'created_at desc'; loadTasks() } },
+  { label: __('Oldest First'), onClick: () => { sortBy.value = 'created_at asc'; loadTasks() } },
+  { label: __('Priority'), onClick: () => { sortBy.value = 'priority desc'; loadTasks() } },
+  { label: __('Title (A-Z)'), onClick: () => { sortBy.value = 'title asc'; loadTasks() } },
+]
+
+// Tasks state shaped for KanbanView & TasksListView
+const tasks = ref<any>({
+  data: {
+    view_type: 'kanban',
+    data: [],
+    columns: DEFAULT_LIST_COLUMNS,
+    rows: DEFAULT_TASK_ROWS,
+    row_count: 0,
+    total_count: 0,
+    page_length_count: 20,
+  },
+  reload: loadTasks,
+})
+
+async function loadTasks() {
+  isLoading.value = true
+  try {
+    const list = await business.fetchTasksFromSupabase({
+      status: selectedStatus.value,
+      priority: selectedPriority.value,
+      assigned_to: selectedStaff.value || null,
+      search: searchQuery.value || null,
+      order_by: sortBy.value,
+    })
+
+    if (isKanban.value) {
+      tasks.value.data = buildKanbanViewData(list)
+    } else {
+      tasks.value.data = buildListViewData(list)
+    }
+  } catch (err) {
+    console.error('[Tasks] Load error:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Watch filters
+watch(searchQuery, () => {
+  loadTasks()
+})
+
+watch(() => route.params.viewType, () => {
+  loadTasks()
+})
+
+onMounted(() => {
+  loadTasks()
+})
+
+// Task Rows & Columns Computation
+function getRow(name: string, field: string) {
+  function getValue(value: any) {
     if (value && typeof value === 'object') {
       return value
     }
     return { label: value }
   }
-  return getValue(rows.value?.find((row) => row.name == name)[field])
+  const found = rows.value?.find((row: any) => row.name == name)
+  return getValue(found ? found[field] : '')
 }
 
 const rows = computed(() => {
@@ -239,162 +473,189 @@ const rows = computed(() => {
     return getKanbanRows(tasks.value.data.data, tasks.value.data.fields)
   }
 
-  openTaskFromURL()
   return parseRows(tasks.value?.data.data, tasks.value?.data.columns)
 })
 
 const columns = computed(() => {
   let _columns = tasks.value?.data?.columns || []
-
-  // Set align right for last column
   if (_columns.length) {
-    _columns = _columns.map((col, index) => {
+    _columns = _columns.map((col: any, index: number) => {
       if (index === _columns.length - 1) {
         return { ...col, align: 'right' }
       }
       return col
     })
   }
-
   return _columns
 })
 
-function getKanbanRows(data, columns) {
-  let _rows = []
-  data.forEach((column) => {
-    column.data?.forEach((row) => {
+function getKanbanRows(data: any[], columns: any[]) {
+  let _rows: any[] = []
+  data.forEach((column: any) => {
+    column.data?.forEach((row: any) => {
       _rows.push(row)
     })
   })
   return parseRows(_rows, columns)
 }
 
-function parseRows(rows, columns = []) {
-  let view_type = tasks.value.data.view_type
-  let key = view_type === 'kanban' ? 'fieldname' : 'key'
-  let type = view_type === 'kanban' ? 'fieldtype' : 'type'
+function parseRows(rawRows: any[], cols = []) {
+  const view_type = tasks.value.data?.view_type || 'list'
+  const key = view_type === 'kanban' ? 'fieldname' : 'key'
+  const type = view_type === 'kanban' ? 'fieldtype' : 'type'
 
-  return rows.map((task) => {
-    let _rows = {}
-    tasks.value?.data.rows.forEach((row) => {
-      _rows[row] = task[row]
+  return rawRows.map((task: any) => {
+    let _rowObj: Record<string, any> = {}
+    const rowKeys = tasks.value?.data?.rows || DEFAULT_TASK_ROWS
 
-      let fieldType = columns?.find((col) => (col[key] || col.value) == row)?.[
-        type
-      ]
+    rowKeys.forEach((rowKey: string) => {
+      _rowObj[rowKey] = task[rowKey]
+
+      let fieldType = (cols || []).find((c: any) => (c[key] || c.value) == rowKey)?.[type]
 
       if (
         fieldType &&
         ['Date', 'Datetime'].includes(fieldType) &&
-        !['modified', 'creation', 'due_date'].includes(row)
+        !['modified', 'creation', 'due_date'].includes(rowKey)
       ) {
-        _rows[row] = formatDate(task[row], '', true, fieldType == 'Datetime')
+        try {
+          _rowObj[rowKey] = formatDate(task[rowKey], '', true, fieldType == 'Datetime')
+        } catch {
+          _rowObj[rowKey] = task[rowKey] || ''
+        }
       }
 
-      if (fieldType && fieldType == 'Currency') {
-        _rows[row] = getFormattedCurrency(row, task)
-      }
-
-      if (fieldType && fieldType == 'Float') {
-        _rows[row] = getFormattedFloat(row, task)
-      }
-
-      if (fieldType && fieldType == 'Percent') {
-        _rows[row] = getFormattedPercent(row, task)
-      }
-
-      if (['modified', 'creation'].includes(row)) {
-        _rows[row] = timestampCell(task[row])
-      } else if (row == 'assigned_to') {
-        _rows[row] = {
-          label: task.assigned_to && getUser(task.assigned_to).full_name,
-          ...(task.assigned_to && getUser(task.assigned_to)),
+      if (['modified', 'creation'].includes(rowKey)) {
+        try {
+          _rowObj[rowKey] = timestampCell(task[rowKey])
+        } catch {
+          _rowObj[rowKey] = {
+            label: String(task[rowKey] || ''),
+            timeAgo: String(task[rowKey] || ''),
+          }
+        }
+      } else if (rowKey == 'assigned_to') {
+        const u = getUser(task.assigned_to)
+        _rowObj[rowKey] = {
+          label: task.assigned_to && (u?.full_name || task.assigned_to),
+          ...(task.assigned_to && u),
         }
       }
     })
-    return _rows
+    _rowObj.name = task.id || task.name
+    return _rowObj
   })
 }
 
-const { showModal } = useDoctypeModal()
-
-const taskCallbacks = {
-  afterInsert: () => {
-    tasks.value.reload()
-    updateOnboardingStep('create_first_task')
-    capture('task_created')
-  },
-  afterUpdate: () => {
-    tasks.value.reload()
-    capture('task_updated')
-  },
+// Kanban Interactions
+async function handleKanbanUpdate(data: any) {
+  if (data?.item && data?.to) {
+    await business.updateTaskColumn(data.item, data.to)
+    await loadTasks()
+  }
 }
 
-function showTask(name) {
-  showModal({
-    name,
-    doctype: 'CRM Task',
-    title: 'Task',
-    callbacks: taskCallbacks,
-  })
+// Modal Handlers
+function showTask(name: string) {
+  const found = (business.tasks || []).find((t: any) => t.id === name || t.name === name)
+  selectedTask.value = found || { id: name }
+  showTaskModal.value = true
 }
 
-function createTask(column) {
-  const defaults = { status: 'Backlog', priority: 'Low' }
-
+function createTask(column?: any) {
+  selectedTask.value = null
   if (column?.column?.name) {
-    let column_field = tasks.value.params.column_field
-    if (column_field) {
-      defaults[column_field] = column.column.name
+    defaultTaskStatus.value = column.column.name
+  } else {
+    defaultTaskStatus.value = 'Backlog'
+  }
+  showTaskModal.value = true
+}
+
+function handleTaskSaved(savedTask?: any) {
+  if (savedTask) {
+    if (!Array.isArray(business.tasks)) {
+      business.tasks = []
+    }
+    const idx = business.tasks.findIndex(
+      (t: any) => t.id === savedTask.id || t.name === savedTask.name,
+    )
+    if (idx !== -1) {
+      business.tasks[idx] = savedTask
+    } else {
+      business.tasks.unshift(savedTask)
+    }
+
+    if (isKanban.value) {
+      tasks.value.data = buildKanbanViewData(business.tasks)
+    } else {
+      tasks.value.data = buildListViewData(business.tasks)
     }
   }
-
-  showModal({
-    doctype: 'CRM Task',
-    title: 'Task',
-    defaults: defaults,
-    callbacks: taskCallbacks,
-  })
+  loadTasks()
 }
 
-function actions(name) {
+function handleTaskDeleted(deletedId?: string) {
+  if (deletedId) {
+    if (Array.isArray(business.tasks)) {
+      business.tasks = business.tasks.filter(
+        (t: any) => t.id !== deletedId && t.name !== deletedId,
+      )
+    }
+    if (isKanban.value) {
+      tasks.value.data = buildKanbanViewData(business.tasks || [])
+    } else {
+      tasks.value.data = buildListViewData(business.tasks || [])
+    }
+  }
+  loadTasks()
+}
+
+// ListView Handlers
+function handleLoadMore() {
+  tasks.value.data.page_length_count += 20
+}
+
+function handleColumnWidthUpdated() {
+  // column width preference
+}
+
+function handleUpdatePageCount(count: number) {
+  tasks.value.data.page_length_count = count
+}
+
+function handleApplyLikeFilter() {
+  // Toggle liked filter
+}
+
+function handleLikeDoc(data: any) {
+  // Toggle like
+}
+
+function actions(itemName: string) {
   return [
+    {
+      label: __('Edit'),
+      icon: 'edit-2',
+      onClick: () => showTask(itemName),
+    },
     {
       label: __('Delete'),
       icon: 'trash-2',
-      onClick: () => {
-        deleteTask(name)
-        tasks.value.reload()
+      onClick: async () => {
+        await business.deleteTask(itemName)
+        await loadTasks()
       },
     },
   ]
 }
 
-async function deleteTask(name) {
-  await call('frappe.client.delete', {
-    doctype: 'CRM Task',
-    name,
-  })
-}
-
-function redirect(doctype, docname) {
+function redirect(doctype: string, docname: string) {
   if (!docname) return
-  let name = doctype == 'CRM Deal' ? 'Deal' : 'Lead'
-  let params = { leadId: docname }
-  if (name == 'Deal') {
-    params = { dealId: docname }
-  }
-  router.push({ name: name, params: params })
-}
-
-const openTaskFromURL = () => {
-  const searchParams = new URLSearchParams(window.location.search)
-  const taskName = searchParams.get('open')
-
-  if (taskName && rows.value?.length) {
-    showTask(parseInt(taskName))
-    searchParams.delete('open')
-    window.history.replaceState(null, '', window.location.pathname)
-  }
+  let name = doctype == 'CRM Deal' ? 'Deal' : doctype == 'CRM Lead' ? 'Lead' : 'Client'
+  let params: any = { leadId: docname }
+  if (name == 'Deal') params = { dealId: docname }
+  else if (name == 'Client') params = { clientId: docname }
+  router.push({ name, params })
 }
 </script>

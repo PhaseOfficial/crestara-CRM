@@ -108,7 +108,7 @@ export function formatNumber(v, format, decimals) {
   if (!format) {
     format = getNumberFormat()
     if (decimals == null)
-      decimals = cint(window.sysdefaults.float_precision || 3)
+      decimals = cint(window.sysdefaults?.float_precision || 3)
   }
 
   let info = getNumberFormatInfo(format)
@@ -170,7 +170,7 @@ export function formatCurrency(value, format, currency = 'USD', precision = 2) {
   value = value == null || value === '' ? 0 : value
 
   if (typeof precision != 'number') {
-    precision = cint(precision || window.sysdefaults.currency_precision || 2)
+    precision = cint(precision || window.sysdefaults?.currency_precision || 2)
   }
 
   // If you change anything below, it's going to hurt a company in UAE, a bit.
@@ -201,7 +201,7 @@ export function formatCurrency(value, format, currency = 'USD', precision = 2) {
 }
 
 function getNumberFormat(format = null) {
-  return format || window.sysdefaults.number_format || '#,###.##'
+  return format || window.sysdefaults?.number_format || '#,###.##'
 }
 
 function getCurrencySymbol(currencyCode) {
@@ -238,7 +238,7 @@ function getNumberFormatInfo(format) {
 function roundNumber(num, precision, roundingMethod) {
   roundingMethod =
     roundingMethod ||
-    window.sysdefaults.rounding_method ||
+    window.sysdefaults?.rounding_method ||
     "Banker's Rounding (legacy)"
 
   let isNegative = num < 0 ? true : false

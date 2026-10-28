@@ -78,12 +78,14 @@ export function getFormat(
   withDate = true,
 ) {
   if (!date && withDate) return ''
-  let dateFormat =
-    window.sysdefaults.date_format
+  const sysdefaults = (typeof window !== 'undefined' && window.sysdefaults) || {}
+  const rawDateFormat = sysdefaults.date_format || 'yyyy-mm-dd'
+  const dateFormat =
+    rawDateFormat
       .replace('mm', 'MM')
       .replace('yyyy', 'YYYY')
       .replace('dd', 'DD') || 'YYYY-MM-DD'
-  let timeFormat = window.sysdefaults.time_format || 'HH:mm:ss'
+  const timeFormat = sysdefaults.time_format || 'HH:mm:ss'
   format = format || 'ddd, MMM D, YYYY h:mm a'
 
   if (onlyDate) format = dateFormat

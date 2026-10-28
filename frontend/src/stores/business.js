@@ -12,6 +12,15 @@ import {
   deleteCalendarEvent,
   updateAttendingStatus as updateAttendingStatusEndpoint,
 } from '@/utils/calendarEndpoints'
+import {
+  fetchTasks,
+  createTask as createTaskEndpoint,
+  updateTask as updateTaskEndpoint,
+  deleteTask as deleteTaskEndpoint,
+  updateTaskColumn as updateTaskColumnEndpoint,
+  bulkUpdateTasks as bulkUpdateTasksEndpoint,
+  bulkDeleteTasks as bulkDeleteTasksEndpoint,
+} from '@/utils/taskEndpoints'
 const defaultSettings = {
   business_name: 'Crestara CRM',
   legal_name: 'Crestara Technologies Inc.',
@@ -114,6 +123,7 @@ export const useBusinessStore = defineStore('business-store', () => {
   const customers = ref(cleanStoredList('customers'))
   const changeRequests = ref(cleanStoredList('change_requests'))
   const events = ref(cleanStoredList('calendar_events'))
+  const tasks = ref(cleanStoredList('tasks'))
 
   // Role: 'Administrator' | 'Staff' | 'Customer'
   const currentRole = ref(localStorage.getItem('crestara_current_role') || 'Administrator')
@@ -2057,6 +2067,85 @@ export const useBusinessStore = defineStore('business-store', () => {
     return updated
   }
 
+  // ============================================================================
+  // TASKS & KANBAN MANAGEMENT (SUPABASE INTEGRATION)
+  // ============================================================================
+
+  async function fetchTasksFromSupabase(params = {}) {
+    const data = await fetchTasks(params)
+    tasks.value = Array.isArray(data) ? data : []
+    saveStorage('tasks', tasks.value)
+    return tasks.value
+  }
+
+  async function createTask(taskData) {
+    if (!Array.isArray(tasks.value)) tasks.value = []
+    const newTask = await createTaskEndpoint(taskData)
+    const idx = tasks.value.findIndex((t) => t.id === newTask.id)
+    if (idx !== -1) {
+      tasks.value[idx] = newTask
+    } else {
+      tasks.value.unshift(newTask)
+    }
+    saveStorage('tasks', tasks.value)
+    return newTask
+  }
+
+  async function updateTask(id, taskData) {
+    if (!Array.isArray(tasks.value)) tasks.value = []
+    const updated = await updateTaskEndpoint(id, taskData)
+    const idx = tasks.value.findIndex((t) => t.id === id || t.name === id)
+    if (idx !== -1) {
+      tasks.value[idx] = updated
+    } else {
+      tasks.value.unshift(updated)
+    }
+    saveStorage('tasks', tasks.value)
+    return updated
+  }
+
+  async function updateTaskColumn(taskId, toColumn) {
+    if (!Array.isArray(tasks.value)) tasks.value = []
+    const updated = await updateTaskColumnEndpoint(taskId, toColumn)
+    const idx = tasks.value.findIndex((t) => t.id === taskId || t.name === taskId)
+    if (idx !== -1) {
+      tasks.value[idx] = updated
+    }
+    saveStorage('tasks', tasks.value)
+    return updated
+  }
+
+  async function deleteTask(id) {
+    if (!Array.isArray(tasks.value)) tasks.value = []
+    const ok = await deleteTaskEndpoint(id)
+    tasks.value = tasks.value.filter((t) => t.id !== id && t.name !== id)
+    saveStorage('tasks', tasks.value)
+    return ok
+  }
+
+  async function bulkUpdateTasks(ids, updates) {
+    if (!Array.isArray(tasks.value)) tasks.value = []
+    const ok = await bulkUpdateTasksEndpoint(ids, updates)
+    const idSet = new Set(ids)
+    tasks.value = tasks.value.map((t) => {
+      if (idSet.has(t.id) || idSet.has(t.name)) {
+        return { ...t, ...updates, updated_at: new Date().toISOString() }
+      }
+      return t
+    })
+    saveStorage('tasks', tasks.value)
+    return ok
+  }
+
+  async function bulkDeleteTasks(ids) {
+    if (!Array.isArray(tasks.value)) tasks.value = []
+    const ok = await bulkDeleteTasksEndpoint(ids)
+    const idSet = new Set(ids)
+    tasks.value = tasks.value.filter((t) => !idSet.has(t.id) && !idSet.has(t.name))
+    saveStorage('tasks', tasks.value)
+    return ok
+  }
+
   return {
     settings,
     isFetchingSettings,
@@ -2132,6 +2221,15 @@ export const useBusinessStore = defineStore('business-store', () => {
     updateEvent,
     deleteEvent,
     updateEventAttendingStatus,
+    // Tasks & Kanban Management
+    tasks,
+    fetchTasksFromSupabase,
+    createTask,
+    updateTask,
+    updateTaskColumn,
+    deleteTask,
+    bulkUpdateTasks,
+    bulkDeleteTasks,
     // Computed Metrics
     totalRevenue,
     totalOutstanding,

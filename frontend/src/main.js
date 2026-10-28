@@ -38,6 +38,15 @@ window.boot = window.boot || {
 window.frappe_boot = window.frappe_boot || window.boot
 window.site_name = window.site_name || 'crm'
 window.csrf_token = window.csrf_token || ''
+window.sysdefaults = window.sysdefaults || {
+  date_format: 'yyyy-mm-dd',
+  time_format: 'HH:mm:ss',
+  currency: 'USD',
+  currency_precision: 2,
+  float_precision: 3,
+  number_format: '#,###.##',
+  rounding_method: "Banker's Rounding (legacy)",
+}
 
 let globalComponents = {
   Button,
