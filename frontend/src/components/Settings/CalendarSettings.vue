@@ -17,10 +17,10 @@
       </div>
       <div class="flex item-center space-x-2 w-3/12 justify-end">
         <Button
-          v-if="settings.isDirty"
+          v-if="isDirty"
           :label="__('Update')"
           variant="solid"
-          :loading="settings.loading"
+          :loading="isSaving"
           @click="updateSettings"
         />
       </div>
@@ -43,7 +43,7 @@
         </div>
         <div class="flex items-center gap-2">
           <FormControl
-            v-model="settings.doc.default_calendar_view"
+            v-model="localSettings.default_calendar_view"
             type="select"
             class="w-28"
             :options="[
@@ -74,7 +74,7 @@
           v-if="notifications?.length"
           class="rounded-lg flex flex-col gap-2 w-fit"
         >
-          <div v-for="notification in notifications" :key="notification.name">
+          <div v-for="(notification, idx) in notifications" :key="idx">
             <div class="flex items-center gap-2">
               <FormControl
                 v-model="notification.type"
@@ -131,9 +131,7 @@
               <Button
                 icon="lucide-x"
                 variant="ghost"
-                @click="
-                  notifications.splice(notifications.indexOf(notification), 1)
-                "
+                @click="notifications.splice(idx, 1)"
               />
             </div>
           </div>
@@ -171,8 +169,8 @@
           class="rounded-lg flex flex-col gap-2 w-fit"
         >
           <div
-            v-for="notification in allDayNotifications"
-            :key="notification.name"
+            v-for="(notification, idx) in allDayNotifications"
+            :key="idx"
           >
             <div class="flex items-center gap-2">
               <FormControl
@@ -228,12 +226,7 @@
               <Button
                 icon="lucide-x"
                 variant="ghost"
-                @click="
-                  allDayNotifications.splice(
-                    allDayNotifications.indexOf(notification),
-                    1,
-                  )
-                "
+                @click="allDayNotifications.splice(idx, 1)"
               />
             </div>
           </div>
@@ -256,29 +249,65 @@
   </div>
 </template>
 <script setup>
-import { getSettings } from '@/stores/settings'
 import { showSettings } from '@/composables/settings'
 import { min, max, handleIntervalChange } from '@/components/Calendar/utils'
-import { FormControl, TimePicker } from 'frappe-ui'
-import { computed } from 'vue'
+import { FormControl, TimePicker, toast } from 'frappe-ui'
+import { ref, computed, watch } from 'vue'
+import { useBusinessStore } from '@/stores/business'
 
-const { _settings: settings } = getSettings()
+const business = useBusinessStore()
+
+const localSettings = ref({
+  default_calendar_view: business.settings.default_calendar_view || 'Weekly',
+  calendar_notifications: JSON.parse(
+    JSON.stringify(business.settings.calendar_notifications || []),
+  ),
+  calendar_allday_notifications: JSON.parse(
+    JSON.stringify(business.settings.calendar_allday_notifications || []),
+  ),
+})
+
+const isDirty = ref(false)
+const isSaving = ref(false)
+
+watch(
+  localSettings,
+  () => {
+    isDirty.value = true
+  },
+  { deep: true },
+)
 
 const notifications = computed({
-  get: () => settings.doc.event_notifications || [],
-  set: (val) => (settings.doc.event_notifications = val),
+  get: () => localSettings.value.calendar_notifications,
+  set: (val) => {
+    localSettings.value.calendar_notifications = val
+  },
 })
 
 const allDayNotifications = computed({
-  get: () => settings.doc.all_day_event_notifications || [],
-  set: (val) => (settings.doc.all_day_event_notifications = val),
+  get: () => localSettings.value.calendar_allday_notifications,
+  set: (val) => {
+    localSettings.value.calendar_allday_notifications = val
+  },
 })
 
-function updateSettings() {
-  settings.save.submit(null, {
-    onSuccess: () => {
-      showSettings.value = false
-    },
-  })
+async function updateSettings() {
+  isSaving.value = true
+  try {
+    await business.updateBusinessSettings({
+      default_calendar_view: localSettings.value.default_calendar_view,
+      calendar_notifications: localSettings.value.calendar_notifications,
+      calendar_allday_notifications:
+        localSettings.value.calendar_allday_notifications,
+    })
+    isDirty.value = false
+    toast.success(__('Calendar settings updated successfully'))
+    showSettings.value = false
+  } catch (err) {
+    toast.error(__('Failed to update calendar settings'))
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>

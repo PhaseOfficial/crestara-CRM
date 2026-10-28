@@ -101,6 +101,15 @@
             @click="showReminderModal = true"
           />
 
+          <!-- Schedule Event / View in Calendar -->
+          <Button
+            v-if="!isNew"
+            variant="outline"
+            icon="calendar"
+            :tooltip="__('Schedule Meeting or View in Calendar')"
+            @click="openCalendarForInvoice"
+          />
+
           <!-- Cancel Invoice -->
           <Button
             v-if="!isNew && invoice.status !== 'Cancelled' && invoice.status !== 'Paid'"
@@ -947,6 +956,67 @@
           </div>
         </div>
 
+        <!-- Linked Calendar Events (Screen Only) -->
+        <div
+          v-if="!isNew"
+          class="bg-surface-gray-1/50 dark:bg-surface-gray-2/20 rounded-xl border border-outline-gray-1 p-4 sm:p-5 space-y-3 print:hidden"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="lucide-calendar size-4 text-emerald-600 dark:text-emerald-400" />
+              <h3 class="text-xs font-bold uppercase tracking-wider text-ink-gray-9">
+                {{ __('Linked Calendar Events & Meetings') }} ({{ linkedCalendarEvents.length }})
+              </h3>
+            </div>
+            <Button
+              size="sm"
+              variant="subtle"
+              iconLeft="plus"
+              :label="__('Schedule Meeting')"
+              @click="openCalendarForInvoice"
+            />
+          </div>
+
+          <div v-if="linkedCalendarEvents.length" class="space-y-2">
+            <div
+              v-for="ev in linkedCalendarEvents"
+              :key="ev.id"
+              class="flex items-center justify-between p-3 rounded-lg border border-outline-gray-1 bg-surface-base hover:border-outline-gray-2 transition-colors cursor-pointer"
+              @click="router.push(`/calendar?eventId=${ev.id}&date=${ev.fromDate}`)"
+            >
+              <div class="flex items-center gap-2.5">
+                <div
+                  class="size-2.5 rounded-full shrink-0"
+                  :style="{ backgroundColor: ev.status === 'Cancelled' ? '#9ca3af' : (ev.color || '#30A66D') }"
+                />
+                <div>
+                  <div
+                    class="text-xs font-semibold"
+                    :class="ev.status === 'Cancelled' ? 'line-through text-ink-gray-5' : 'text-ink-gray-9'"
+                  >
+                    {{ ev.title }}
+                    <span
+                      v-if="ev.status === 'Cancelled'"
+                      class="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-surface-red-2 text-ink-red-7 border border-outline-red-2 no-underline inline-block"
+                    >
+                      {{ __('Cancelled') }}
+                    </span>
+                  </div>
+                  <div class="text-[11px] text-ink-gray-6">
+                    {{ ev.fromDate }} <span v-if="!ev.isFullDay">• {{ ev.fromTime }} - {{ ev.toTime }}</span>
+                    <span v-if="ev.location"> • {{ ev.location }}</span>
+                    <span v-if="ev.event_participants && ev.event_participants.length"> • {{ ev.event_participants.length }} attendees</span>
+                  </div>
+                </div>
+              </div>
+              <Button size="xs" variant="ghost" icon="external-link" :label="__('Open in Calendar')" />
+            </div>
+          </div>
+          <p v-else class="text-xs text-ink-gray-5">
+            {{ __('No meetings or follow-up calls scheduled for this invoice yet.') }}
+          </p>
+        </div>
+
         <!-- Invoice Bottom Footer (Small Font) -->
         <div class="pt-6 border-t border-outline-gray-1 text-center space-y-1 print:pt-4">
           <p class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6">
@@ -1263,6 +1333,9 @@ onMounted(async () => {
     await business.fetchBusinessSettingsFromSupabase()
     await business.fetchClientsFromSupabase()
     await ensureSettingsLogo()
+    if (!business.events || !business.events.length) {
+      business.fetchEventsFromSupabase().catch(() => {})
+    }
   } catch (e) {
     // ignore
   }
@@ -1319,6 +1392,29 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+const linkedCalendarEvents = computed(() => {
+  if (!invoice.id) return []
+  return (business.events || []).filter(
+    (ev) =>
+      ev.referenceDoctype === 'Invoice' &&
+      (ev.referenceDocname === invoice.id || ev.referenceDocname === invoice.invoice_number),
+  )
+})
+
+function openCalendarForInvoice() {
+  router.push({
+    path: '/calendar',
+    query: {
+      action: 'new',
+      referenceDoctype: 'Invoice',
+      referenceDocname: invoice.id,
+      title: `Meeting: ${invoice.invoice_number} - ${invoice.client_name || 'Client'}`,
+      date: invoice.due_date || new Date().toISOString().split('T')[0],
+      email: invoice.billing_email || invoice.client_email || '',
+    },
+  })
+}
 
 function onClientSelect() {
   if (!selectedClientId.value) return

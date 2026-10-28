@@ -1,11 +1,30 @@
 import { usersStore } from '@/stores/users'
-import { dayjs, createListResource } from 'frappe-ui'
-import { sameArrayContents } from '@/utils'
-import { computed, ref } from 'vue'
-import { allTimeSlots } from '@/components/Calendar/utils'
+import dayjs from 'dayjs'
+import { computed, ref, reactive, onMounted } from 'vue'
+import {
+  allTimeSlots,
+  formatDuration,
+  buildEndTimeOptions,
+  computeAutoToTime,
+  validateTimeRange,
+  normalizeParticipants,
+  fetchCalendarEvents,
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+} from '@/utils/calendarEndpoints'
 
 export const showEventModal = ref(false)
 export const activeEvent = ref(null)
+
+export {
+  allTimeSlots,
+  formatDuration,
+  buildEndTimeOptions,
+  computeAutoToTime,
+  validateTimeRange,
+  normalizeParticipants,
+}
 
 export function useEvent({
   doctype,
@@ -13,146 +32,172 @@ export function useEvent({
   filters = null,
   participants = true,
   notifications = true,
-}) {
+} = {}) {
   const { getUser } = usersStore()
+  const rawEvents = ref([])
+  const isLoading = ref(false)
 
-  if (!filters) {
-    if (doctype && docname) {
-      filters = {
-        reference_doctype: doctype,
-        reference_docname: docname,
-      }
-    } else {
-      filters = {}
+  async function loadEvents() {
+    isLoading.value = true
+    try {
+      const params = {}
+      if (doctype) params.referenceDoctype = doctype
+      if (docname) params.referenceDocname = docname
+      const fetched = await fetchCalendarEvents(params)
+      rawEvents.value = fetched
+    } finally {
+      isLoading.value = false
     }
   }
 
-  const eventsResource = createListResource({
-    doctype: 'Event',
-    cache: ['calendar-events', docname],
-    fields: [
-      'name',
-      'status',
-      'subject',
-      'description',
-      'starts_on',
-      'ends_on',
-      'all_day',
-      'event_type',
-      'location',
-      'color',
-      'attending',
-      'owner',
-      'reference_doctype',
-      'reference_docname',
-      'creation',
-    ],
-    filters: filters,
-    auto: true,
-    limit: 50,
-    orderBy: 'creation desc',
-  })
-
-  const eventParticipantsResource = createListResource({
-    doctype: 'Event Participants',
-    fields: ['*'],
-    parent: 'Event',
-  })
-
-  const eventNotificationsResource = createListResource({
-    doctype: 'Event Notifications',
-    fields: ['*'],
-    parent: 'Event',
+  onMounted(() => {
+    loadEvents()
   })
 
   const events = computed(() => {
-    if (!eventsResource.data) return []
-    const eventNames = eventsResource.data.map((e) => e.name)
+    return rawEvents.value.map((ev) => {
+      const ownerLabel = typeof ev.owner === 'object'
+        ? ev.owner?.label || ev.owner?.value
+        : ev.owner ? getUser(ev.owner).full_name : 'Staff'
+      const ownerImage = typeof ev.owner === 'object'
+        ? ev.owner?.image
+        : ev.owner ? getUser(ev.owner).user_image : ''
 
-    // participants
-    if (participants) {
-      if (
-        !eventParticipantsResource.data?.length ||
-        eventsParticipantIsUpdated(eventNames)
-      ) {
-        eventParticipantsResource.update({
-          filters: {
-            parenttype: 'Event',
-            parentfield: 'event_participants',
-            parent: ['in', eventNames],
-          },
-        })
-      } else {
-        eventsResource.data.forEach((event) => {
-          if (typeof event.owner !== 'object') {
-            event.owner = {
-              label: getUser(event.owner).full_name,
-              image: getUser(event.owner).user_image,
-              name: event.owner,
-            }
-          }
+      const formattedParticipants = (ev.event_participants || []).map((p) => ({
+        label: p.full_name || p.label || p.email,
+        image: '',
+        name: p.email,
+        email: p.email,
+        attending: p.attending || 'Awaiting',
+      }))
 
-          event.event_participants = [
-            ...eventParticipantsResource.data.filter(
-              (participant) => participant.parent === event.name,
-            ),
-          ]
-
-          event.participants = [
-            event.owner,
-            ...eventParticipantsResource.data
-              .filter((participant) => participant.parent === event.name)
-              .map((participant) => ({
-                label:
-                  getUser(participant.email).full_name || participant.email,
-                image: getUser(participant.email).user_image || '',
-                name: participant.email,
-              })),
-          ]
-        })
+      return {
+        ...ev,
+        name: ev.id,
+        subject: ev.title,
+        starts_on: `${ev.fromDate} ${ev.fromTime || '09:00'}`,
+        ends_on: `${ev.toDate || ev.fromDate} ${ev.toTime || '10:00'}`,
+        all_day: ev.isFullDay,
+        creation: ev.created_at || new Date().toISOString(),
+        owner: {
+          label: ownerLabel,
+          image: ownerImage,
+          name: typeof ev.owner === 'object' ? ev.owner?.value : ev.owner,
+        },
+        participants: formattedParticipants,
+        event_participants: ev.event_participants || [],
+        notifications: ev.notifications || [],
       }
-    }
-
-    // notifications
-    if (notifications) {
-      if (!eventNotificationsResource.data?.length) {
-        eventNotificationsResource.update({
-          filters: {
-            parenttype: 'Event',
-            parentfield: 'notifications',
-            parent: ['in', eventNames],
-          },
-        })
-      } else {
-        eventsResource.data.forEach((event) => {
-          event.notifications = [
-            ...eventNotificationsResource.data.filter(
-              (notification) => notification.parent === event.name,
-            ),
-          ]
-        })
-      }
-    }
-
-    return eventsResource.data
+    })
   })
 
-  function eventsParticipantIsUpdated(eventNames) {
-    const parentFilter = eventParticipantsResource.filters?.parent?.[1]
+  // Frappe-compatible resource bridge for legacy callers
+  const eventsResource = reactive({
+    data: events,
+    loading: isLoading,
+    reload: async () => {
+      await loadEvents()
+    },
+    insert: {
+      loading: false,
+      submit: async (payload, { onSuccess, onError } = {}) => {
+        try {
+          eventsResource.insert.loading = true
+          const normalizedPayload = {
+            title: payload.subject || payload.title,
+            description: payload.description,
+            fromDate: payload.fromDate || payload.starts_on?.split(' ')[0],
+            toDate: payload.toDate || payload.ends_on?.split(' ')[0] || payload.fromDate,
+            fromTime: payload.fromTime || payload.starts_on?.split(' ')[1] || '09:00',
+            toTime: payload.toTime || payload.ends_on?.split(' ')[1] || '10:00',
+            isFullDay: Boolean(payload.all_day),
+            eventType: payload.event_type || 'Public',
+            location: payload.location,
+            color: payload.color,
+            referenceDoctype: payload.reference_doctype || doctype,
+            referenceDocname: payload.reference_docname || docname,
+            event_participants: payload.event_participants || [],
+            notifications: payload.notifications || [],
+          }
+          const created = await createCalendarEvent(normalizedPayload, {
+            sendInvites: payload.sendInvites !== false,
+          })
+          await loadEvents()
+          onSuccess?.(created)
+          return created
+        } catch (err) {
+          onError?.(err)
+          throw err
+        } finally {
+          eventsResource.insert.loading = false
+        }
+      },
+    },
+    setValue: {
+      loading: false,
+      submit: async (payload, { onSuccess, onError } = {}) => {
+        try {
+          eventsResource.setValue.loading = true
+          const eventId = payload.name || payload.id
+          const normalizedPayload = {
+            title: payload.subject || payload.title,
+            description: payload.description,
+            fromDate: payload.fromDate || payload.starts_on?.split(' ')[0],
+            toDate: payload.toDate || payload.ends_on?.split(' ')[0],
+            fromTime: payload.fromTime || payload.starts_on?.split(' ')[1],
+            toTime: payload.toTime || payload.ends_on?.split(' ')[1],
+            isFullDay: Boolean(payload.all_day),
+            eventType: payload.event_type,
+            location: payload.location,
+            color: payload.color,
+            referenceDoctype: payload.reference_doctype || payload.referenceDoctype,
+            referenceDocname: payload.reference_docname || payload.referenceDocname,
+            event_participants: payload.event_participants,
+            notifications: payload.notifications,
+          }
+          const updated = await updateCalendarEvent(eventId, normalizedPayload, {
+            sendInvites: payload.sendInvites === true,
+          })
+          await loadEvents()
+          onSuccess?.(updated)
+          return updated
+        } catch (err) {
+          onError?.(err)
+          throw err
+        } finally {
+          eventsResource.setValue.loading = false
+        }
+      },
+    },
+    delete: {
+      loading: false,
+      submit: async (id, { onSuccess, onError } = {}) => {
+        try {
+          eventsResource.delete.loading = true
+          await deleteCalendarEvent(id, { sendCancellation: true })
+          await loadEvents()
+          onSuccess?.()
+        } catch (err) {
+          onError?.(err)
+          throw err
+        } finally {
+          eventsResource.delete.loading = false
+        }
+      },
+    },
+  })
 
-    if (eventNames.length && !sameArrayContents(parentFilter, eventNames))
-      return true
+  const eventParticipantsResource = reactive({
+    data: [],
+    loading: false,
+    update: () => {},
+  })
 
-    let d = eventsResource.setValue.data
-    if (!d) return false
-
-    let newParticipants = d.event_participants.map((p) => p.name)
-    let oldParticipants = eventParticipantsResource.data
-      .filter((p) => p.parent === d.name)
-      .map((p) => p.name)
-
-    return !sameArrayContents(newParticipants, oldParticipants)
-  }
+  const eventNotificationsResource = reactive({
+    data: [],
+    loading: false,
+    update: () => {},
+  })
 
   const startEndTime = (
     startTime,
@@ -163,7 +208,7 @@ export function useEvent({
     const start = dayjs(startTime)
     const end = dayjs(endTime)
 
-    if (isFullDay) return __('All Day')
+    if (isFullDay) return 'All Day'
 
     return `${start.format(format)} - ${end.format(format)}`
   }
@@ -176,110 +221,47 @@ export function useEvent({
   return {
     eventsResource,
     eventParticipantsResource,
+    eventNotificationsResource,
     events,
     startEndTime,
     startDate,
+    reload: loadEvents,
   }
-}
-
-export function normalizeParticipants(list = []) {
-  const seen = new Set()
-  const out = []
-  for (const a of list || []) {
-    if (!a?.email || seen.has(a.email)) continue
-    seen.add(a.email)
-    out.push({
-      email: a.email,
-      reference_doctype: a.reference_doctype || 'Contact',
-      reference_docname: a.reference_docname || '',
-    })
-  }
-  return out
-}
-
-export function formatDuration(mins) {
-  if (mins < 60) return __('{0} mins', [mins])
-  let hours = mins / 60
-  if (hours % 1 !== 0 && hours % 1 !== 0.5) {
-    hours = hours.toFixed(2)
-  }
-  if (Number.isInteger(hours)) {
-    return hours === 1 ? __('1 hr') : __('{0} hrs', [hours])
-  }
-  return `${hours} hrs`
-}
-
-export function buildEndTimeOptions(fromTime) {
-  const timeSlots = allTimeSlots()
-  if (!fromTime) return timeSlots
-  const startIndex = timeSlots.findIndex((o) => o.value > fromTime)
-  if (startIndex === -1) return []
-  const [fh, fm] = fromTime.split(':').map((n) => parseInt(n))
-  const fromTotal = fh * 60 + fm
-  return timeSlots.slice(startIndex).map((o) => {
-    const [th, tm] = o.value.split(':').map((n) => parseInt(n))
-    const toTotal = th * 60 + tm
-    const duration = toTotal - fromTotal
-    return { ...o, label: `${o.label} (${formatDuration(duration)})` }
-  })
-}
-
-export function computeAutoToTime(fromTime) {
-  if (!fromTime) return ''
-  const [hour, minute] = fromTime.split(':').map((n) => parseInt(n))
-  let nh = hour + 1
-  let nm = minute
-  if (nh >= 24) {
-    nh = 23
-    nm = 59
-  }
-  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`
-}
-
-export function validateTimeRange({ fromDate, fromTime, toTime, isFullDay }) {
-  if (isFullDay) return { valid: true, error: null }
-  if (!fromTime || !toTime) {
-    return { valid: false, error: __('Start & End Time Are Required') }
-  }
-  const start = dayjs(fromDate + ' ' + fromTime)
-  const end = dayjs(fromDate + ' ' + toTime)
-  if (!start.isValid() || !end.isValid()) {
-    return { valid: false, error: __('Invalid Start Or End Time') }
-  }
-  if (end.diff(start, 'minute') <= 0) {
-    return { valid: false, error: __('End Time Should Be After Start Time') }
-  }
-  return { valid: true, error: null }
 }
 
 export function parseEventDoc(doc) {
   if (!doc) return {}
   const { getUser } = usersStore()
 
+  const start = doc.starts_on ? dayjs(doc.starts_on) : dayjs()
+  const end = doc.ends_on ? dayjs(doc.ends_on) : start
+
   return {
-    id: doc.name,
-    title: doc.subject,
-    description: doc.description,
-    status: doc.status,
-    fromDate: dayjs(doc.starts_on).format('YYYY-MM-DD'),
-    toDate: dayjs(doc.ends_on).format('YYYY-MM-DD'),
-    fromTime: dayjs(doc.starts_on).format('HH:mm'),
-    toTime: dayjs(doc.ends_on).format('HH:mm'),
-    isFullDay: doc.all_day,
-    eventType: doc.event_type,
+    id: doc.id || doc.name,
+    title: doc.subject || doc.title,
+    description: doc.description || '',
+    status: doc.status || 'Open',
+    fromDate: doc.fromDate || start.format('YYYY-MM-DD'),
+    toDate: doc.toDate || end.format('YYYY-MM-DD'),
+    fromTime: doc.fromTime || start.format('HH:mm'),
+    toTime: doc.toTime || end.format('HH:mm'),
+    isFullDay: Boolean(doc.all_day || doc.isFullDay),
+    eventType: doc.event_type || doc.eventType || 'Public',
     location: doc.location || '',
-    color: doc.color,
-    attending: doc.attending,
-    referenceDoctype: doc.reference_doctype,
-    referenceDocname: doc.reference_docname,
+    color: doc.color || '#30A66D',
+    attending: doc.attending || 'Yes',
+    referenceDoctype: doc.reference_doctype || doc.referenceDoctype || '',
+    referenceDocname: doc.reference_docname || doc.referenceDocname || '',
     event_participants: doc.event_participants || [],
     notifications: doc.notifications || [],
     owner: doc.owner
-      ? {
-          label: getUser(doc.owner).full_name,
-          image: getUser(doc.owner).user_image,
-          value: doc.owner,
-        }
+      ? typeof doc.owner === 'object'
+        ? doc.owner
+        : {
+            label: getUser(doc.owner).full_name,
+            image: getUser(doc.owner).user_image,
+            value: doc.owner,
+          }
       : null,
   }
 }

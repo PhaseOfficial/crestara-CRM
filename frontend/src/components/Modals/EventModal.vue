@@ -167,6 +167,18 @@
             />
           </div>
         </div>
+        <div class="flex items-start">
+          <div class="text-base text-ink-gray-7 mt-1.5 w-3/12">
+            {{ __('Linked Invoice') }}
+          </div>
+          <div class="w-9/12">
+            <InvoiceSelect
+              v-model="_event.referenceDocname"
+              :placeholder="__('Search & link an invoice (optional)...')"
+              @change="(inv) => (_event.referenceDoctype = inv ? 'Invoice' : '')"
+            />
+          </div>
+        </div>
         <div class="flex">
           <div class="mt-2 text-base text-ink-gray-7 w-3/12">
             {{ __('Description') }}
@@ -191,6 +203,20 @@
               v-model="_event.notifications"
               :isAllDay="_event.isFullDay"
             />
+          </div>
+        </div>
+        <div
+          v-if="_event.event_participants?.length"
+          class="flex items-center"
+        >
+          <div class="text-base text-ink-gray-7 w-3/12">
+            {{ __('Email Invites') }}
+          </div>
+          <div class="flex items-center gap-2 w-9/12">
+            <Switch v-model="sendEmailInvites" />
+            <span class="text-xs text-ink-gray-6">
+              {{ __('Include 1-click Google, Outlook & Apple .ICS links') }}
+            </span>
           </div>
         </div>
       </div>
@@ -230,6 +256,7 @@
 <script setup>
 import EventNotifications from '@/components/Calendar/EventNotifications.vue'
 import Attendee from '@/components/Calendar/Attendee.vue'
+import InvoiceSelect from '@/components/Controls/InvoiceSelect.vue'
 import {
   Switch,
   TextEditor,
@@ -241,6 +268,7 @@ import {
   Dropdown,
 } from 'frappe-ui'
 import { globalStore } from '@/stores/global'
+import { useBusinessStore } from '@/stores/business'
 import { validateEmail } from '@/utils'
 import {
   useEvent,
@@ -259,8 +287,10 @@ const props = defineProps({
 })
 
 const { $dialog } = globalStore()
+const business = useBusinessStore()
 
 const show = defineModel({ type: Boolean })
+const sendEmailInvites = ref(true)
 
 const { eventsResource } = useEvent({
   doctype: props.doctype,
@@ -407,10 +437,11 @@ function createEvent() {
       event_type: _event.value.eventType,
       location: _event.value.location || '',
       color: _event.value.color,
-      reference_doctype: props.doctype,
-      reference_docname: props.docname,
+      reference_doctype: props.doctype || _event.value.referenceDoctype,
+      reference_docname: props.docname || _event.value.referenceDocname,
       event_participants: _event.value.event_participants,
       notifications: _event.value.notifications,
+      sendInvites: sendEmailInvites.value,
     },
     {
       onSuccess: async () => {
@@ -438,10 +469,11 @@ function updateEvent() {
       event_type: _event.value.eventType,
       location: _event.value.location || '',
       color: _event.value.color,
-      reference_doctype: props.doctype,
-      reference_docname: props.docname,
+      reference_doctype: props.doctype || _event.value.referenceDoctype,
+      reference_docname: props.docname || _event.value.referenceDocname,
       event_participants: _event.value.event_participants,
       notifications: _event.value.notifications,
+      sendInvites: sendEmailInvites.value,
     },
     {
       onSuccess: async () => {

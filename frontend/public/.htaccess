@@ -20,4 +20,5 @@
   AddType application/font-woff .woff
   AddType application/json .json
   AddType image/svg+xml .svg
+  AddType text/calendar .ics
 </IfModule>

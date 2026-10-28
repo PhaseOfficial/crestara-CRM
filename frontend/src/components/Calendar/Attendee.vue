@@ -10,22 +10,42 @@
         @update:modelValue="onSelect"
       >
         <ComboboxAnchor
-          class="flex w-full text-base items-center gap-1 rounded border border-outline-gray-2 bg-surface-base hover:border-outline-gray-3 focus:border-outline-gray-4 focus:ring-0 focus-visible:ring-2 focus-visible:ring-outline-gray-3 px-2 py-1"
-          :class="[size === 'sm' ? 'h-7' : 'h-8 ', inputClass]"
+          class="flex w-full text-base items-center gap-2 rounded-lg border border-outline-gray-2 bg-surface-base hover:border-outline-gray-3 focus-within:border-outline-gray-4 focus-within:ring-2 focus-within:ring-outline-gray-3/20 px-2.5 py-1.5 transition-all shadow-2xs"
+          :class="[size === 'sm' ? 'h-8' : 'h-9', inputClass]"
           @click="showOptions = true"
         >
+          <span
+            v-if="!isSearching"
+            class="lucide-search size-4 text-ink-gray-5 shrink-0"
+            aria-hidden="true"
+          />
+          <span
+            v-else
+            class="lucide-loader-2 size-4 text-ink-gray-5 shrink-0 animate-spin"
+            aria-hidden="true"
+          />
           <ComboboxInput
             ref="search"
             autocomplete="off"
-            class="bg-transparent p-0 outline-none border-0 text-base text-ink-gray-8 h-full placeholder:text-ink-gray-4 w-full focus:outline-none focus:ring-0 focus:border-0"
+            class="bg-transparent p-0 outline-none border-0 text-sm text-ink-gray-9 h-full placeholder:text-ink-gray-4 w-full focus:outline-none focus:ring-0 focus:border-0"
             :placeholder="placeholder"
             :value="query"
             @input="onInput"
             @keydown.enter.prevent="handleEnter"
             @keydown.escape.stop="showOptions = false"
           />
+          <button
+            v-if="query"
+            type="button"
+            class="p-0.5 text-ink-gray-4 hover:text-ink-gray-7 rounded transition-colors shrink-0"
+            :title="__('Clear search')"
+            @click.stop="query = ''; onInput({ target: { value: '' } })"
+          >
+            <span class="lucide-x size-3.5" aria-hidden="true" />
+          </button>
           <span
-            class="lucide-chevron-down h-4 text-ink-gray-5 cursor-pointer"
+            class="lucide-chevron-down size-4 text-ink-gray-4 cursor-pointer shrink-0 transition-transform duration-150"
+            :class="showOptions ? 'rotate-180' : ''"
             aria-hidden="true"
             @click.stop="showOptions = !showOptions"
           />
@@ -101,7 +121,6 @@
 
 <script setup>
 import UserAvatar from '@/components/UserAvatar.vue'
-import { createResource } from 'frappe-ui'
 import {
   ComboboxRoot,
   ComboboxAnchor,
@@ -112,14 +131,18 @@ import {
   ComboboxItem,
   ComboboxEmpty,
 } from 'reka-ui'
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { watchDebounced } from '@vueuse/core'
+import { searchCalendarAttendees } from '@/utils/calendarEndpoints'
+import { useBusinessStore } from '@/stores/business'
+
+const business = useBusinessStore()
 
 const props = defineProps({
   validate: { type: Function, default: null },
   variant: { type: String, default: 'subtle' },
   size: { type: String, default: 'sm' },
-  placeholder: { type: String, default: __('Add Attendee') },
+  placeholder: { type: String, default: __('Search attendees by name or email...') },
   inputClass: { type: String, default: '' },
   errorMessage: {
     type: Function,
@@ -170,44 +193,43 @@ watchDebounced(
   { debounce: 300, immediate: true },
 )
 
-const filterOptions = createResource({
-  url: 'crm.api.contact.search_emails',
-  method: 'POST',
-  cache: [text.value, 'Contact'],
-  params: { txt: text.value },
-  transform: (data) => {
-    let allData = data.map((option) => {
-      let fullName = option[0]
-      let email = option[1]
-      let name = option[2]
-      return {
-        label: fullName || name || email,
-        name: name,
-        value: email,
-      }
-    })
+const searchedResults = ref([])
+const isSearching = ref(false)
 
-    // Filter out existing emails
-    if (props.existingEmails?.length) {
-      allData = allData.filter((option) => {
-        return !props.existingEmails.includes(option.value)
-      })
-    }
+async function reload(val = '') {
+  if (!props.fetchContacts) return
+  isSearching.value = true
+  try {
+    const res = await searchCalendarAttendees(
+      val,
+      props.existingEmails || [],
+      business,
+    )
+    searchedResults.value = res || []
+  } finally {
+    isSearching.value = false
+  }
+}
 
-    return allData
-  },
+onMounted(() => {
+  reload('')
 })
 
 const options = computed(() => {
-  let searchedContacts = props.fetchContacts ? filterOptions.data : []
-  if (!searchedContacts?.length && query.value) {
+  let searchedContacts = [...searchedResults.value]
+  if (
+    query.value &&
+    !searchedContacts.some(
+      (c) => c.value?.toLowerCase() === query.value?.toLowerCase(),
+    )
+  ) {
     searchedContacts.push({
       name: 'new',
       label: query.value,
       value: query.value,
     })
   }
-  return searchedContacts || []
+  return searchedContacts
 })
 
 const emptyStateText = computed(() =>
@@ -215,15 +237,6 @@ const emptyStateText = computed(() =>
     ? __('No results found')
     : __('Type an email address to add attendee'),
 )
-
-function reload(val) {
-  if (!props.fetchContacts) return
-
-  filterOptions.update({
-    params: { txt: val },
-  })
-  filterOptions.reload()
-}
 
 function onSelect(val, fullOption = null) {
   if (!val) return

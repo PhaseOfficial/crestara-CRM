@@ -68,11 +68,11 @@
           <div class="space-y-3 text-xs sm:text-sm">
             <div class="flex justify-between py-2 border-b border-outline-gray-1">
               <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Next Due Date:') }}</span>
-              <span class="font-semibold text-ink-gray-9">Nov 09, 2026</span>
+              <span class="font-semibold text-ink-gray-9">{{ nextDueDate }}</span>
             </div>
             <div class="flex justify-between py-2 border-b border-outline-gray-1">
               <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Next Renewal:') }}</span>
-              <span class="font-semibold text-ink-gray-9">Nov 15, 2026</span>
+              <span class="font-semibold text-ink-gray-9">{{ nextRenewalDate }}</span>
             </div>
             <div class="flex justify-between py-2">
               <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Billing Period:') }}</span>
@@ -96,47 +96,97 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useBusinessStore } from '@/stores/business'
 
 const business = useBusinessStore()
 
+onMounted(async () => {
+  await Promise.all([
+    business.fetchInvoicesFromSupabase?.(),
+    business.fetchEventsFromSupabase?.(),
+  ])
+})
+
 const customerEvents = computed(() => {
+  const list = []
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ]
+
+  // 1. Map Outstanding & Overdue Invoices
+  for (const inv of business.invoices || []) {
+    if (inv.status === 'Paid') continue
+    const date = inv.due_date ? new Date(inv.due_date) : new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    list.push({
+      id: `inv-${inv.id}`,
+      month: monthNames[date.getMonth()],
+      day: pad(date.getDate()),
+      title: `Invoice Payment Due (${inv.invoice_number || 'INV'})`,
+      type: 'Invoice Due',
+      description:
+        inv.notes ||
+        `Balance remittance due for ${inv.client_name || 'Customer'}.`,
+      amount: Number(inv.balance_due ?? inv.total_amount ?? 0),
+      ref: inv.invoice_number || 'INV',
+      status: inv.status === 'Overdue' ? 'Overdue' : 'Action Required',
+      timestamp: isNaN(date.getTime()) ? 0 : date.getTime(),
+    })
+  }
+
+  // 2. Map Client Appointments
+  for (const ev of business.events || []) {
+    const date = ev.fromDate ? new Date(ev.fromDate) : new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    list.push({
+      id: `evt-${ev.id}`,
+      month: monthNames[date.getMonth()],
+      day: pad(date.getDate()),
+      title: ev.title || 'Client Consultation',
+      type: 'Appointment',
+      description:
+        ev.description ||
+        (ev.location
+          ? `Location: ${ev.location}`
+          : 'Scheduled virtual conference with enterprise team.'),
+      amount: 0,
+      ref: `CAL-${ev.id ? ev.id.slice(0, 6).toUpperCase() : 'MTG'}`,
+      status: 'Confirmed',
+      timestamp: isNaN(date.getTime()) ? 0 : date.getTime(),
+    })
+  }
+
+  // Sort by date ascending
+  list.sort((a, b) => a.timestamp - b.timestamp)
+
+  if (list.length > 0) return list
+
   return [
     {
-      id: 'evt-1',
-      month: 'Nov',
-      day: '09',
-      title: 'Invoice Payment Due (INV-2026-1043)',
-      type: 'Invoice Due',
-      description: 'Crestara Core Router and VoIP desk phones hardware delivery balance.',
-      amount: 4296.6,
-      ref: 'INV-2026-1043',
-      status: 'Action Required',
-    },
-    {
-      id: 'evt-2',
+      id: 'evt-default-1',
       month: 'Nov',
       day: '15',
       title: 'Annual Platform License Renewal',
       type: 'Renewal',
-      description: 'Scheduled renewal for Crestara CRM Enterprise Platform License.',
+      description:
+        'Scheduled renewal for Crestara CRM Enterprise Platform License.',
       amount: 1200.0,
       ref: 'SUB-CRM-PRO',
       status: 'Auto-Renew',
     },
-    {
-      id: 'evt-3',
-      month: 'Dec',
-      day: '01',
-      title: 'Quarterly Infrastructure Review',
-      type: 'Appointment',
-      description: 'Scheduled virtual check-in with Crestara enterprise engineering team.',
-      amount: 0.0,
-      ref: 'CAL-MTG-09',
-      status: 'Confirmed',
-    },
   ]
+})
+
+const nextDueDate = computed(() => {
+  const nextInv = customerEvents.value.find((e) => e.type === 'Invoice Due')
+  return nextInv ? `${nextInv.month} ${nextInv.day}, 2026` : 'No Dues Pending'
+})
+
+const nextRenewalDate = computed(() => {
+  const nextRen = customerEvents.value.find((e) => e.type === 'Renewal')
+  return nextRen ? `${nextRen.month} ${nextRen.day}, 2026` : 'Nov 15, 2026'
 })
 
 function getEventBadge(type) {
@@ -153,6 +203,7 @@ function getEventBadge(type) {
 function getEventStatusBadge(status) {
   switch (status) {
     case 'Action Required':
+    case 'Overdue':
       return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border-outline-amber-2'
     case 'Auto-Renew':
       return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'

@@ -5,6 +5,13 @@ import { sessionStore } from './session'
 import { loadImageAsBase64 } from '@/utils/pdfGenerator'
 import { calculateCountdown } from '@/utils/reminders'
 import { sendPaymentReminderEmail } from '@/utils/mailer'
+import {
+  fetchCalendarEvents,
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+  updateAttendingStatus as updateAttendingStatusEndpoint,
+} from '@/utils/calendarEndpoints'
 const defaultSettings = {
   business_name: 'Crestara CRM',
   legal_name: 'Crestara Technologies Inc.',
@@ -48,6 +55,10 @@ const defaultSettings = {
   reminder_on_due_date: true,
   reminder_overdue_days: '3, 7',
   cron_secret_token: 'cr_rem_live_secret',
+  // Calendar Preferences
+  default_calendar_view: 'Weekly',
+  calendar_notifications: [],
+  calendar_allday_notifications: [],
 }
 
 export const useBusinessStore = defineStore('business-store', () => {
@@ -102,6 +113,7 @@ export const useBusinessStore = defineStore('business-store', () => {
   const users = ref(cleanStoredList('users'))
   const customers = ref(cleanStoredList('customers'))
   const changeRequests = ref(cleanStoredList('change_requests'))
+  const events = ref(cleanStoredList('calendar_events'))
 
   // Role: 'Administrator' | 'Staff' | 'Customer'
   const currentRole = ref(localStorage.getItem('crestara_current_role') || 'Administrator')
@@ -1983,6 +1995,68 @@ export const useBusinessStore = defineStore('business-store', () => {
     // ignore
   }
 
+  // ==========================================
+  // CALENDAR & SCHEDULING (SUPABASE INTEGRATION)
+  // ==========================================
+  async function fetchEventsFromSupabase(params = {}) {
+    const data = await fetchCalendarEvents(params)
+    events.value = data
+    saveStorage('calendar_events', data)
+    return data
+  }
+
+  async function createEvent(eventData, options = {}) {
+    const newEvent = await createCalendarEvent(eventData, {
+      ...options,
+      businessSettings: settings.value,
+    })
+    const idx = events.value.findIndex((e) => e.id === newEvent.id)
+    if (idx !== -1) {
+      events.value[idx] = newEvent
+    } else {
+      events.value.push(newEvent)
+    }
+    saveStorage('calendar_events', events.value)
+    return newEvent
+  }
+
+  async function updateEvent(id, eventData, options = {}) {
+    const updated = await updateCalendarEvent(id, eventData, {
+      ...options,
+      businessSettings: settings.value,
+    })
+    const idx = events.value.findIndex((e) => e.id === id)
+    if (idx !== -1) {
+      events.value[idx] = updated
+    } else {
+      events.value.push(updated)
+    }
+    saveStorage('calendar_events', events.value)
+    return updated
+  }
+
+  async function deleteEvent(id, options = {}) {
+    const ok = await deleteCalendarEvent(id, {
+      ...options,
+      businessSettings: settings.value,
+    })
+    events.value = events.value.filter((e) => e.id !== id)
+    saveStorage('calendar_events', events.value)
+    return ok
+  }
+
+  async function updateEventAttendingStatus(eventId, email, status) {
+    const updated = await updateAttendingStatusEndpoint(eventId, email, status)
+    if (updated) {
+      const idx = events.value.findIndex((e) => e.id === eventId)
+      if (idx !== -1) {
+        events.value[idx] = updated
+      }
+      saveStorage('calendar_events', events.value)
+    }
+    return updated
+  }
+
   return {
     settings,
     isFetchingSettings,
@@ -2051,6 +2125,13 @@ export const useBusinessStore = defineStore('business-store', () => {
     // Reminders
     sendReminder,
     sendManualInvoiceReminder,
+    // Calendar Events & Scheduling
+    events,
+    fetchEventsFromSupabase,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+    updateEventAttendingStatus,
     // Computed Metrics
     totalRevenue,
     totalOutstanding,

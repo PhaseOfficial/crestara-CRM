@@ -15,6 +15,17 @@
       </div>
       <div class="flex items-center gap-x-1">
         <ShortcutTooltip
+          v-if="mode == 'details' && !readonly && _event.status !== 'Cancelled'"
+          :label="__('Cancel Meeting')"
+        >
+          <Button
+            icon="lucide-calendar-x"
+            variant="ghost"
+            class="text-ink-red-7 hover:bg-surface-red-2"
+            @click="confirmCancelMeeting"
+          />
+        </ShortcutTooltip>
+        <ShortcutTooltip
           v-if="mode == 'details' && !readonly"
           :label="__('Edit Event')"
           combo="Enter"
@@ -58,12 +69,19 @@
           <div
             class="text-2xl-semibold"
             :class="
-              attending == 'No'
+              _event.status === 'Cancelled' || attending == 'No'
                 ? 'line-through text-ink-gray-7'
                 : 'text-ink-gray-8 '
             "
           >
             {{ _event.title || __('(No Title)') }}
+          </div>
+          <div
+            v-if="_event.status === 'Cancelled'"
+            class="inline-flex items-center gap-1.5 w-fit px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-red-2 text-ink-red-7 border border-outline-red-2"
+          >
+            <span class="lucide-calendar-x size-3" />
+            <span>{{ __('Meeting Cancelled') }}</span>
           </div>
           <div class="text-ink-gray-6 text-p-base">{{ formattedDateTime }}</div>
         </div>
@@ -107,17 +125,15 @@
         v-if="_event.referenceDocname"
         class="flex items-center px-4.5 py-1 text-ink-gray-7"
       >
-        <component
-          :is="_event.referenceDoctype == 'CRM Lead' ? LeadsIcon : DealsIcon"
-          class="size-4"
-        />
-        <Link
-          v-model="_event.referenceDocname"
-          class="[&_button]:bg-surface-base [&_button]:select-text [&_button]:text-ink-gray-7 [&_button]:cursor-text"
-          :doctype="_event.referenceDoctype"
-          :disabled="true"
-        />
-        <Button variant="ghost" @click="redirect">
+        <DocumentIcon class="size-4 mr-2 shrink-0 text-ink-gray-7" />
+        <div class="text-sm font-medium text-ink-gray-8 flex-1 truncate">
+          {{ linkedDocLabel }}
+        </div>
+        <Button
+          variant="ghost"
+          :tooltip="__('Open Linked Invoice')"
+          @click="redirect"
+        >
           <template #icon>
             <ArrowUpRightIcon class="size-4 text-ink-gray-7" />
           </template>
@@ -400,61 +416,22 @@
       <div class="my-2.5 border-t border-outline-gray-1" />
       <CollapsibleSection
         headerClass="mx-4.5 my-2.5"
-        :opened="false"
-        :label="__('Linked With')"
+        :opened="Boolean(_event.referenceDocname)"
+        :label="__('Linked Invoice')"
       >
         <div
           class="flex items-center justify-between gap-3 px-4.5 py-[7px] text-ink-gray-7"
         >
-          <span class="lucide-plus-circle size-4" aria-hidden="true" />
-          <div class="flex items-center gap-x-1.5 w-full">
-            <FormControl
-              v-model="_event.referenceDoctype"
-              class="w-full"
-              type="select"
-              :options="[
-                {
-                  label: '',
-                  value: '',
-                },
-                {
-                  label: __('Lead'),
-                  value: 'CRM Lead',
-                },
-                {
-                  label: __('Deal'),
-                  value: 'CRM Deal',
-                },
-              ]"
-              variant="outline"
-              :placeholder="__('Add Lead or Deal')"
-              @update:modelValue="
-                () => {
-                  _event.referenceDocname = ''
+          <div class="w-full">
+            <InvoiceSelect
+              v-model="_event.referenceDocname"
+              :placeholder="__('Search & link an invoice...')"
+              @change="
+                (inv) => {
+                  _event.referenceDoctype = inv ? 'Invoice' : ''
                   sync()
                 }
               "
-            />
-          </div>
-        </div>
-        <div
-          v-if="_event.referenceDoctype"
-          class="flex items-center justify-between gap-3 px-4.5 py-[7px] text-ink-gray-7"
-        >
-          <component
-            :is="_event.referenceDoctype == 'CRM Lead' ? LeadsIcon : DealsIcon"
-            class="size-4"
-          />
-          <div class="flex items-center gap-x-1.5 w-full">
-            <Link
-              v-model="_event.referenceDocname"
-              class="w-full"
-              :doctype="_event.referenceDoctype"
-              :filters="
-                _event.referenceDoctype === 'CRM Lead' ? { converted: 0 } : {}
-              "
-              variant="outline"
-              @update:model-value="sync"
             />
           </div>
         </div>
@@ -495,15 +472,37 @@
     </div>
 
     <div v-if="mode != 'details'" class="px-4.5 py-3">
+      <div
+        v-if="peoples.length"
+        class="flex items-center justify-between mb-3 text-sm text-ink-gray-7 bg-surface-gray-2 p-2.5 rounded-lg border border-outline-gray-1"
+      >
+        <div class="flex items-center gap-2">
+          <span class="lucide-mail size-4 text-blue-600" />
+          <div class="flex flex-col">
+            <span class="font-medium text-ink-gray-9">{{ __('Email Attendees') }}</span>
+            <span class="text-xs text-ink-gray-6">{{ __('Google, Outlook & Apple .ICS links') }}</span>
+          </div>
+        </div>
+        <Switch v-model="sendEmailInvites" />
+      </div>
+
       <ErrorMessage class="my-2" :message="error" />
-      <div class="w-full">
+      <div class="w-full flex flex-col gap-2">
+        <Button
+          v-if="mode === 'edit' && _event.id && _event.status !== 'Cancelled'"
+          variant="outline"
+          theme="red"
+          class="w-full"
+          iconLeft="calendar-x"
+          :label="__('Cancel Meeting')"
+          :loading="isCancelling"
+          @click="confirmCancelMeeting"
+        />
         <Button
           variant="solid"
           class="w-full"
           :disabled="!dirty"
-          :loading="
-            mode === 'edit' ? events.setValue.loading : events.insert.loading
-          "
+          :loading="isSaving"
           @click="saveEvent"
         >
           {{
@@ -517,29 +516,53 @@
       </div>
     </div>
     <div
-      v-else-if="_event.event_participants?.length"
-      class="flex flex-col gap-2 px-4.5 py-3"
+      v-else-if="mode === 'details' && !readonly"
+      class="flex flex-col gap-2.5 px-4.5 py-3 border-t border-outline-gray-1 bg-surface-gray-1/30"
     >
-      <div class="text-sm text-ink-gray-6">
-        {{ __('Going?') }}
+      <div v-if="_event.event_participants?.length" class="flex flex-col gap-1.5 pb-1">
+        <div class="text-sm text-ink-gray-6 font-medium">
+          {{ __('Going?') }}
+        </div>
+        <TabButtons
+          v-model="attending"
+          class="w-full [&_button]:w-full [&_div]:w-full [&_button>span]:w-full"
+          :buttons="[
+            {
+              label: __('Yes'),
+              value: 'Yes',
+            },
+            {
+              label: __('No'),
+              value: 'No',
+            },
+            {
+              label: __('Maybe'),
+              value: 'Maybe',
+            },
+          ]"
+        />
       </div>
-      <TabButtons
-        v-model="attending"
-        class="w-full [&_button]:w-full [&_div]:w-full [&_button>span]:w-full"
-        :buttons="[
-          {
-            label: __('Yes'),
-            value: 'Yes',
-          },
-          {
-            label: __('No'),
-            value: 'No',
-          },
-          {
-            label: __('Maybe'),
-            value: 'Maybe',
-          },
-        ]"
+
+      <!-- Cancel Meeting / Restore Button -->
+      <Button
+        v-if="_event.status !== 'Cancelled'"
+        variant="subtle"
+        theme="red"
+        class="w-full"
+        iconLeft="calendar-x"
+        :label="__('Cancel Meeting')"
+        :loading="isCancelling"
+        @click="confirmCancelMeeting"
+      />
+      <Button
+        v-else
+        variant="subtle"
+        theme="gray"
+        class="w-full"
+        iconLeft="rotate-ccw"
+        :label="__('Restore Meeting')"
+        :loading="isCancelling"
+        @click="restoreMeeting"
       />
     </div>
   </div>
@@ -552,14 +575,15 @@ import MapIcon from '@/components/Icons/MapIcon.vue'
 import ShieldIcon from '@/components/Icons/ShieldIcon.vue'
 import PeopleIcon from '@/components/Icons/PeopleIcon.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
-import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
-import DealsIcon from '@/components/Icons/DealsIcon.vue'
+import DocumentIcon from '@/components/Icons/DocumentIcon.vue'
 import Link from '@/components/Controls/Link.vue'
 import EditIcon from '@/components/Icons/EditIcon.vue'
 import DescriptionIcon from '@/components/Icons/DescriptionIcon.vue'
 import Attendee from '@/components/Calendar/Attendee.vue'
+import InvoiceSelect from '@/components/Controls/InvoiceSelect.vue'
 import EventNotifications from '@/components/Calendar/EventNotifications.vue'
 import ShortcutTooltip from '@/components/ShortcutTooltip.vue'
+import { sendCalendarCancellationEmails } from '@/utils/mailer'
 import { globalStore } from '@/stores/global'
 import { sessionStore } from '@/stores/session'
 import { validateEmail, deepClone, sanitizeHTML } from '@/utils'
@@ -582,13 +606,12 @@ import {
   dayjs,
   CalendarColorMap as colorMap,
   CalendarActiveEvent as activeEvent,
-  createDocumentResource,
   TabButtons,
   toast,
-  call,
 } from 'frappe-ui'
 import { ref, computed, watch, h, inject } from 'vue'
 import { useRouter } from 'vue-router'
+import { useBusinessStore } from '@/stores/business'
 
 const props = defineProps({
   mode: { type: String, default: 'details' },
@@ -607,11 +630,108 @@ const emit = defineEmits([
 const router = useRouter()
 const { $dialog } = globalStore()
 const { user } = sessionStore()
+const business = useBusinessStore()
+
+const linkedDocLabel = computed(() => {
+  if (!_event.value?.referenceDocname) return ''
+  if (_event.value.referenceDoctype === 'Invoice') {
+    const inv = (business.invoices || []).find(
+      (i) => i.id === _event.value.referenceDocname || i.invoice_number === _event.value.referenceDocname,
+    )
+    if (inv) {
+      return `${inv.invoice_number} • ${inv.client_name || 'Client'} (${inv.status || 'Active'})`
+    }
+    return `Invoice #${_event.value.referenceDocname}`
+  }
+  return _event.value.referenceDocname
+})
+
+const sendEmailInvites = ref(true)
+const isSaving = ref(false)
+const isCancelling = ref(false)
+
+function confirmCancelMeeting() {
+  const hasParticipants = Boolean(_event.value.event_participants?.length)
+
+  $dialog({
+    title: __('Cancel Meeting?'),
+    message: hasParticipants
+      ? __('Are you sure you want to cancel this meeting? Cancellation notifications with .ics calendar cancellation will be sent to all attendees.')
+      : __('Are you sure you want to mark this meeting as Cancelled?'),
+    actions: [
+      {
+        label: __('Keep Meeting'),
+        variant: 'subtle',
+      },
+      {
+        label: __('Yes, Cancel Meeting'),
+        variant: 'solid',
+        theme: 'red',
+        onClick: async (closeDialog) => {
+          closeDialog()
+          await executeCancelMeeting()
+        },
+      },
+    ],
+  })
+}
+
+async function executeCancelMeeting() {
+  if (!_event.value?.id) return
+  isCancelling.value = true
+  try {
+    await business.updateEvent(_event.value.id, {
+      ..._event.value,
+      status: 'Cancelled',
+    })
+
+    if (_event.value.event_participants?.length) {
+      try {
+        await sendCalendarCancellationEmails({
+          event: _event.value,
+          attendees: _event.value.event_participants,
+          businessSettings: business.settings,
+        })
+        toast.success(__('Meeting cancelled and notices sent to attendees'))
+      } catch (mailErr) {
+        console.warn('[Calendar] Failed to send cancellation emails:', mailErr)
+        toast.warning(__('Meeting cancelled, but emails could not be sent'))
+      }
+    } else {
+      toast.success(__('Meeting marked as Cancelled'))
+    }
+
+    _event.value.status = 'Cancelled'
+    sync()
+  } catch (err) {
+    toast.error(err.message || __('Failed to cancel meeting'))
+  } finally {
+    isCancelling.value = false
+  }
+}
+
+async function restoreMeeting() {
+  if (!_event.value?.id) return
+  isCancelling.value = true
+  try {
+    await business.updateEvent(_event.value.id, {
+      ..._event.value,
+      status: 'Open',
+    })
+    _event.value.status = 'Open'
+    toast.success(__('Meeting restored successfully'))
+    sync()
+  } catch (err) {
+    toast.error(err.message || __('Failed to restore meeting'))
+  } finally {
+    isCancelling.value = false
+  }
+}
 
 const show = defineModel({ type: Boolean })
 const event = defineModel('event', { type: Object, default: () => ({}) })
 
-const events = inject('events')
+const events = inject('events', { data: [], loading: false })
 
 const _event = ref({})
 
@@ -731,24 +851,40 @@ function fetchEvent(oldMode) {
     event.value.id !== 'new-event' &&
     event.value.id !== 'duplicate-event'
   ) {
-    eventResource.value = createDocumentResource({
-      doctype: 'Event',
-      name: event.value.id,
-      fields: ['*'],
-      onSuccess: (data) => {
-        _event.value = parseEventDoc(data)
-        oldEvent.value = deepClone(_event.value)
-        handleReadonlyEvent()
-      },
-    })
-    if (eventResource.value.doc && !event.value.reloadEvent) {
-      _event.value = parseEventDoc(eventResource.value.doc)
+    const found =
+      (business.events || []).find((e) => e.id === event.value.id) ||
+      (Array.isArray(events?.data)
+        ? events.data.find((e) => e.id === event.value.id)
+        : null)
+
+    if (found) {
+      _event.value = deepClone(found)
+      if (!_event.value.referenceDoctype && found.reference_doctype) {
+        _event.value.referenceDoctype = found.reference_doctype
+      }
+      if (!_event.value.referenceDocname && found.reference_docname) {
+        _event.value.referenceDocname = found.reference_docname
+      }
       oldEvent.value = deepClone(_event.value)
-    } else {
-      eventResource.value.reload()
+    } else if (event.value.title) {
+      _event.value = deepClone(event.value)
+      if (!_event.value.referenceDoctype && event.value.reference_doctype) {
+        _event.value.referenceDoctype = event.value.reference_doctype
+      }
+      if (!_event.value.referenceDocname && event.value.reference_docname) {
+        _event.value.referenceDocname = event.value.reference_docname
+      }
+      oldEvent.value = deepClone(event.value)
     }
+    handleReadonlyEvent()
   } else {
     _event.value = event.value
+    if (!_event.value.referenceDoctype && event.value.reference_doctype) {
+      _event.value.referenceDoctype = event.value.reference_doctype
+    }
+    if (!_event.value.referenceDocname && event.value.reference_docname) {
+      _event.value.referenceDocname = event.value.reference_docname
+    }
 
     if (oldMode !== props.mode) {
       oldEvent.value = deepClone(event.value)
@@ -760,8 +896,8 @@ function fetchEvent(oldMode) {
     if (event.value.id === 'duplicate-event' && oldMode !== 'duplicate') {
       _event.value.title = _event.value.title + ' (Copy)'
     }
+    handleReadonlyEvent()
   }
-  handleReadonlyEvent()
   showAllParticipants.value = false
 }
 
@@ -838,7 +974,10 @@ function saveEvent() {
 
   oldEvent.value = deepClone(_event.value)
   sync()
-  emit('save', _event.value)
+  emit('save', {
+    ..._event.value,
+    sendInvites: sendEmailInvites.value,
+  })
 }
 
 function editDetails() {
@@ -859,21 +998,16 @@ function deleteEvent() {
   emit('delete', _event.value.id)
 }
 
-function updateAttendingStatus(attendee, status) {
-  call('frappe.desk.doctype.event.event.update_attending_status', {
-    event_name: _event.value.id,
-    attendee,
-    status,
-  })
-    .then(() => {
-      toast.success(__('Attending status updated'))
-      oldEvent.value = deepClone(_event.value)
-      sync()
-    })
-    .catch((err) => {
-      error.value = err.messages[0] || __('Failed to update attending status')
-      toast.error(error.value)
-    })
+async function updateAttendingStatus(attendee, status) {
+  try {
+    await business.updateEventAttendingStatus(_event.value.id, attendee, status)
+    toast.success(__('Attending status updated'))
+    oldEvent.value = deepClone(_event.value)
+    sync()
+  } catch (err) {
+    error.value = err.message || __('Failed to update attending status')
+    toast.error(error.value)
+  }
 }
 
 function details() {
@@ -979,14 +1113,7 @@ const colors = Object.keys(colorMap).map((color) => ({
 
 function redirect() {
   if (_event.value.referenceDocname) {
-    let name = _event.value.referenceDoctype === 'CRM Lead' ? 'Lead' : 'Deal'
-
-    let params =
-      _event.value.referenceDoctype == 'CRM Lead'
-        ? { leadId: _event.value.referenceDocname }
-        : { dealId: _event.value.referenceDocname }
-
-    router.push({ name, params })
+    router.push(`/invoices/${_event.value.referenceDocname}`)
   }
 }
 
