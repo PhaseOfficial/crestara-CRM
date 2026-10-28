@@ -107,22 +107,6 @@
         </div>
 
         <div v-if="!mobile" class="mt-auto flex flex-col gap-1 pt-2">
-          <div class="mb-1 flex flex-col gap-2">
-            <SignupBanner
-              v-if="isDemoSite"
-              :isSidebarCollapsed="isCollapsed"
-              :afterSignup="() => capture('signup_from_demo_site')"
-            />
-            <TrialBanner
-              v-if="isFCSite"
-              :isSidebarCollapsed="isCollapsed"
-              :afterUpgrade="() => capture('upgrade_plan_from_trial_banner')"
-            />
-            <GettingStartedBanner
-              v-if="!isOnboardingStepsCompleted"
-              :isSidebarCollapsed="isCollapsed"
-            />
-          </div>
           <SidebarItem
             v-if="isManager() && isDemoDataCreated"
             :label="__('Clear Demo Data')"
@@ -134,7 +118,6 @@
             </template>
           </SidebarItem>
           <SidebarItem
-            v-if="isOnboardingStepsCompleted"
             :label="__('Help')"
             @click="toggleHelpModal"
           >
@@ -161,16 +144,9 @@
 
   <template v-if="!mobile">
     <Settings />
-    <HelpModal
+    <CrmHelpModal
       v-if="showHelpModal"
       v-model="showHelpModal"
-      v-model:articles="articles"
-      :logo="CRMLogo"
-      :afterSkip="(step) => capture('onboarding_step_skipped_' + step)"
-      :afterSkipAll="() => capture('onboarding_steps_skipped')"
-      :afterReset="(step) => capture('onboarding_step_reset_' + step)"
-      :afterResetAll="() => capture('onboarding_steps_reset')"
-      docsLink="https://docs.frappe.io/crm"
     />
     <IntermediateStepModal
       v-model="showIntermediateModal"
@@ -230,16 +206,8 @@ import { recordNavClick } from '@/composables/navFrequency'
 import { showChangePasswordModal } from '@/composables/modals'
 import { useBroadcast } from '@/composables/useBroadcast.js'
 import { call, Sidebar, SidebarItem, SidebarLabel, Tooltip } from 'frappe-ui'
-import {
-  SignupBanner,
-  TrialBanner,
-  HelpModal,
-  GettingStartedBanner,
-  useOnboarding,
-  showHelpModal,
-  minimize,
-  useTelemetry,
-} from 'frappe-ui/frappe'
+import { useTelemetry } from 'frappe-ui/frappe'
+import CrmHelpModal from '@/components/Modals/CrmHelpModal.vue'
 import IntermediateStepModal from '@/components/Modals/IntermediateStepModal.vue'
 import router from '@/router'
 import { useStorage } from '@vueuse/core'
@@ -519,9 +487,10 @@ function onNotificationsClick(event) {
   }
 }
 
+const showHelpModal = ref(false)
+
 function toggleHelpModal() {
-  showHelpModal.value = minimize.value ? true : !showHelpModal.value
-  minimize.value = !showHelpModal.value
+  showHelpModal.value = !showHelpModal.value
 }
 
 // onboarding
