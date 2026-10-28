@@ -450,6 +450,10 @@ watch(() => route.params.viewType, () => {
   loadTasks()
 })
 
+watch(() => (business.tasks || []).length, () => {
+  loadTasks()
+})
+
 onMounted(() => {
   loadTasks()
 })

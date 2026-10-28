@@ -23,6 +23,24 @@
              pad the content back in so the shadow has room. -->
         <div class="-mx-2 mt-2 flex flex-1 flex-col gap-1 overflow-y-auto px-2">
           <SidebarItem
+            id="search-btn"
+            :label="__('Search & Commands')"
+            @click="openCommandPalette"
+          >
+            <template #prefix>
+              <span class="lucide-search size-4 text-ink-gray-7" />
+            </template>
+            <template #suffix>
+              <kbd
+                v-if="!isCollapsed"
+                class="rounded border border-outline-gray-2 bg-surface-base px-1.5 py-0.5 font-mono text-[10px] text-ink-gray-5"
+              >
+                ⌘K
+              </kbd>
+            </template>
+          </SidebarItem>
+
+          <SidebarItem
             id="notifications-btn"
             :label="__('Notifications')"
             :to="mobile ? { name: 'Notifications' } : undefined"
@@ -144,10 +162,6 @@
 
   <template v-if="!mobile">
     <Settings />
-    <CrmHelpModal
-      v-if="showHelpModal"
-      v-model="showHelpModal"
-    />
     <IntermediateStepModal
       v-model="showIntermediateModal"
       :currentStep="currentStep"
@@ -203,11 +217,14 @@ import {
   mobileSidebarOpened,
 } from '@/composables/settings'
 import { recordNavClick } from '@/composables/navFrequency'
-import { showChangePasswordModal } from '@/composables/modals'
+import {
+  showChangePasswordModal,
+  openCommandPalette,
+  toggleHelpModal,
+} from '@/composables/modals'
 import { useBroadcast } from '@/composables/useBroadcast.js'
 import { call, Sidebar, SidebarItem, SidebarLabel, Tooltip } from 'frappe-ui'
 import { useTelemetry } from 'frappe-ui/frappe'
-import CrmHelpModal from '@/components/Modals/CrmHelpModal.vue'
 import IntermediateStepModal from '@/components/Modals/IntermediateStepModal.vue'
 import router from '@/router'
 import { useStorage } from '@vueuse/core'
@@ -485,12 +502,6 @@ function onNotificationsClick(event) {
   } else {
     toggleNotificationPanel()
   }
-}
-
-const showHelpModal = ref(false)
-
-function toggleHelpModal() {
-  showHelpModal.value = !showHelpModal.value
 }
 
 // onboarding

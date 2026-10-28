@@ -46,16 +46,28 @@
             {{ __('Productivity Shortcuts') }}
           </h5>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            <div class="flex items-center justify-between p-2 rounded-lg bg-surface-gray-2 border border-outline-gray-1">
-              <span class="text-ink-gray-7">{{ __('Command Bar') }}</span>
+            <div
+              class="flex items-center justify-between p-2 rounded-lg bg-surface-gray-2 border border-outline-gray-1 cursor-pointer hover:bg-surface-gray-3 transition-colors group"
+              :title="__('Click to open Command Bar (Ctrl+K)')"
+              @click="show = false; openCommandPalette()"
+            >
+              <span class="text-ink-gray-7 group-hover:text-ink-gray-9 font-medium">{{ __('Command Bar') }}</span>
               <kbd class="px-1.5 py-0.5 rounded bg-surface-base border border-outline-gray-2 font-mono text-[11px] font-semibold">Ctrl+K</kbd>
             </div>
-            <div class="flex items-center justify-between p-2 rounded-lg bg-surface-gray-2 border border-outline-gray-1">
-              <span class="text-ink-gray-7">{{ __('New Task') }}</span>
+            <div
+              class="flex items-center justify-between p-2 rounded-lg bg-surface-gray-2 border border-outline-gray-1 cursor-pointer hover:bg-surface-gray-3 transition-colors group"
+              :title="__('Click to create a new task (T)')"
+              @click="show = false; openNewTaskModal()"
+            >
+              <span class="text-ink-gray-7 group-hover:text-ink-gray-9 font-medium">{{ __('New Task') }}</span>
               <kbd class="px-1.5 py-0.5 rounded bg-surface-base border border-outline-gray-2 font-mono text-[11px] font-semibold">T</kbd>
             </div>
-            <div class="flex items-center justify-between p-2 rounded-lg bg-surface-gray-2 border border-outline-gray-1">
-              <span class="text-ink-gray-7">{{ __('Global Search') }}</span>
+            <div
+              class="flex items-center justify-between p-2 rounded-lg bg-surface-gray-2 border border-outline-gray-1 cursor-pointer hover:bg-surface-gray-3 transition-colors group"
+              :title="__('Click to open Global Search (/)')"
+              @click="show = false; openCommandPalette()"
+            >
+              <span class="text-ink-gray-7 group-hover:text-ink-gray-9 font-medium">{{ __('Global Search') }}</span>
               <kbd class="px-1.5 py-0.5 rounded bg-surface-base border border-outline-gray-2 font-mono text-[11px] font-semibold">/</kbd>
             </div>
           </div>
@@ -82,6 +94,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Dialog, Button } from 'frappe-ui'
+import { openCommandPalette, openNewTaskModal } from '@/composables/modals'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
