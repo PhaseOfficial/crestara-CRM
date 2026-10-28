@@ -281,6 +281,7 @@ const links = [
    * - Deals: route commented out in src/router.js (lines ~52-60)
    * - Contacts: route commented out in src/router.js (lines ~71-82)
    * - Call Logs: route commented out in src/router.js (lines ~106-110)
+   * - Notes: route commented out in src/router.js (lines ~70-75)
    * Uncomment these objects along with their corresponding routes in src/router.js to re-enable.
   {
     label: 'Leads',
@@ -303,11 +304,13 @@ const links = [
     icon: OrganizationsIcon,
     to: 'Clients',
   },
+  /*
   {
     label: 'Notes',
     icon: NoteIcon,
     to: 'Notes',
   },
+  */
   {
     label: 'Tasks',
     icon: TaskIcon,
@@ -630,6 +633,7 @@ const steps = reactive([
       router.push({ name: 'Tasks' })
     },
   },
+  /*
   {
     name: 'create_first_note',
     title: __('Create your first note'),
@@ -641,6 +645,7 @@ const steps = reactive([
       router.push({ name: 'Notes' })
     },
   },
+  */
   /*
   {
     name: 'add_first_comment',

@@ -67,12 +67,20 @@ const routes = [
     props: true,
   },
   */
+  // ============================================================================
+  // RETIRED INTO BACKGROUND: Notes
+  // (Temporarily retired from active user routing and commented out)
+  // Components:
+  //   - '@/pages/Notes.vue'
+  // ============================================================================
+  /*
   {
     alias: '/notes',
     path: '/notes/view/:viewType?',
     name: 'Notes',
     component: () => import('@/pages/Notes.vue'),
   },
+  */
   {
     alias: '/tasks',
     path: '/tasks/view/:viewType?',
@@ -386,8 +394,8 @@ router.beforeEach(async (to, from, next) => {
       // 'Contacts',  // Retired into background
       // 'Organizations', // Redirects to /clients; handled as bespoke page
       // 'Clients',       // Bespoke clients page, not standard DocType view
-      'Notes',
-      'Tasks',
+      // 'Tasks',         // Native tasks page, decoupled from Frappe viewsStore
+      // 'Notes',         // Retired into background
       // 'Call Logs', // Retired into background
     ].includes(to.name) &&
     !to.query?.view

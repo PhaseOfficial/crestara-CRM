@@ -314,11 +314,13 @@ const tabs = computed(() => {
       label: __('Tasks'),
       icon: TaskIcon,
     },
+    /*
     {
       name: 'Notes',
       label: __('Notes'),
       icon: NoteIcon,
     },
+    */
     {
       name: 'Attachments',
       label: __('Attachments'),

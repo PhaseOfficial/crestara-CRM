@@ -66,7 +66,7 @@ export function useStaffNavFrequency() {
   const business = useBusinessStore()
 
   // Full catalog of available staff candidate destinations
-  // Note: Leads, Deals, Contacts, and Call Logs are temporarily retired into the background for current users.
+  // Note: Leads, Deals, Contacts, Call Logs, and Notes are temporarily retired into the background for current users.
   // Routes are commented out in src/router.js. Re-enable here when re-enabling routing.
   const candidateItems = [
     /*
@@ -131,6 +131,7 @@ export function useStaffNavFrequency() {
       matchPath: (path) => path.startsWith('/contacts'),
     },
     */
+    /*
     {
       key: 'Notes',
       label: 'Notes',
@@ -138,6 +139,7 @@ export function useStaffNavFrequency() {
       icon: 'lucide-file-text',
       matchPath: (path) => path.startsWith('/notes'),
     },
+    */
     {
       key: 'Reminders',
       label: 'Reminders',
