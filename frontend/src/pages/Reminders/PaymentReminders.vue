@@ -22,7 +22,7 @@
             :tooltip="__('Simulate automated reminder run without sending emails')"
             @click="runCronDryRun"
           />
-          <router-link to="/settings">
+          <router-link to="/business-settings">
             <Button
               size="sm"
               variant="outline"

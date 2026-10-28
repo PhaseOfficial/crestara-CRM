@@ -176,11 +176,6 @@ const routes = [
     name: 'Onboarding',
     component: () => import('@/pages/PersonaForm.vue'),
   },
-  {
-    path: '/:invalidpath',
-    name: 'Invalid Page',
-    component: () => import('@/pages/InvalidPage.vue'),
-  },
   // Business Management & Invoicing Modules
   {
     path: '/invoices',
@@ -217,6 +212,7 @@ const routes = [
   */
   {
     path: '/business-settings',
+    alias: '/settings',
     name: 'BusinessSettings',
     component: () => import('@/pages/BusinessSettings/BusinessSettings.vue'),
   },
@@ -251,6 +247,11 @@ const routes = [
     path: '/not-permitted',
     name: 'Not Permitted',
     component: () => import('@/pages/NotPermitted.vue'),
+  },
+  {
+    path: '/:invalidpath(.*)*',
+    name: 'Invalid Page',
+    component: () => import('@/pages/InvalidPage.vue'),
   },
 ]
 
