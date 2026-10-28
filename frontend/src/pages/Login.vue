@@ -58,7 +58,13 @@
       </div>
 
       <!-- Form -->
-      <form class="space-y-4" @submit.prevent="handleSubmit">
+      <form
+        class="space-y-4"
+        @submit.prevent="handleSubmit"
+        method="POST"
+        action="javascript:void(0);"
+        autocomplete="on"
+      >
         <ErrorMessage v-if="errorMessage" :message="errorMessage" />
         <Alert
           v-if="infoMessage"
@@ -67,12 +73,15 @@
         />
 
         <div v-if="authMode === 'signup'">
-          <label class="block text-sm font-medium text-ink-gray-7 mb-1">
+          <label for="full-name" class="block text-sm font-medium text-ink-gray-7 mb-1">
             {{ __('Full Name') }}
           </label>
           <TextInput
+            id="full-name"
+            name="name"
             v-model="fullName"
             type="text"
+            autocomplete="name"
             placeholder="John Doe"
             required
             :disabled="loading"
@@ -80,12 +89,15 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-ink-gray-7 mb-1">
+          <label for="email" class="block text-sm font-medium text-ink-gray-7 mb-1">
             {{ __('Email address') }}
           </label>
           <TextInput
+            id="email"
+            :name="authMode === 'signup' ? 'email' : 'username'"
             v-model="email"
             type="email"
+            :autocomplete="authMode === 'signup' ? 'email' : 'username'"
             placeholder="name@company.com"
             required
             :disabled="loading"
@@ -93,22 +105,15 @@
         </div>
 
         <div v-if="authMode !== 'forgot'">
-          <div class="flex items-center justify-between mb-1">
-            <label class="block text-sm font-medium text-ink-gray-7">
-              {{ __('Password') }}
-            </label>
-            <button
-              v-if="authMode === 'signin'"
-              type="button"
-              class="text-xs font-medium text-ink-blue-6 hover:underline"
-              @click="setMode('forgot')"
-            >
-              {{ __('Forgot password?') }}
-            </button>
-          </div>
+          <label for="password" class="block text-sm font-medium text-ink-gray-7 mb-1">
+            {{ __('Password') }}
+          </label>
           <TextInput
+            id="password"
+            name="password"
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
+            :autocomplete="authMode === 'signup' ? 'new-password' : 'current-password'"
             placeholder="••••••••"
             required
             minlength="6"
@@ -127,14 +132,35 @@
           </TextInput>
         </div>
 
+        <!-- Remember Me and Forgot Password for Sign In -->
+        <div v-if="authMode === 'signin'" class="flex items-center justify-between pt-0.5">
+          <Checkbox
+            v-model="rememberMe"
+            id="remember-me"
+            name="remember-me"
+            :label="__('Remember me')"
+            class="cursor-pointer select-none"
+          />
+          <button
+            type="button"
+            class="text-xs font-medium text-ink-blue-6 hover:underline focus:outline-none"
+            @click="setMode('forgot')"
+          >
+            {{ __('Forgot password?') }}
+          </button>
+        </div>
+
         <!-- Confirm Password Field for Sign Up -->
         <div v-if="authMode === 'signup'">
-          <label class="block text-sm font-medium text-ink-gray-7 mb-1">
+          <label for="confirm-password" class="block text-sm font-medium text-ink-gray-7 mb-1">
             {{ __('Confirm Password') }}
           </label>
           <TextInput
+            id="confirm-password"
+            name="confirm-password"
             v-model="confirmPassword"
             :type="showConfirmPassword ? 'text' : 'password'"
+            autocomplete="new-password"
             placeholder="••••••••"
             required
             minlength="6"
@@ -191,11 +217,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { sessionStore } from '@/stores/session'
 import { useBusinessStore } from '@/stores/business'
-import { Button, TextInput, ErrorMessage, Alert, FeatherIcon } from 'frappe-ui'
+import {
+  Button,
+  TextInput,
+  Checkbox,
+  ErrorMessage,
+  Alert,
+  FeatherIcon,
+} from 'frappe-ui'
+import { getSavedLoginState, saveLoginState } from '@/utils/authHelpers'
 
 const router = useRouter()
 const session = sessionStore()
@@ -206,11 +240,22 @@ const fullName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const rememberMe = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
 const infoMessage = ref('')
+
+onMounted(() => {
+  const saved = getSavedLoginState()
+  if (saved.remember) {
+    rememberMe.value = true
+    if (saved.email) {
+      email.value = saved.email
+    }
+  }
+})
 
 function setMode(mode) {
   authMode.value = mode
@@ -224,6 +269,18 @@ function setMode(mode) {
 async function handleSubmit() {
   errorMessage.value = ''
   infoMessage.value = ''
+
+  // Fallback sync for browser autofill engines that directly populate inputs without triggering Vue events
+  if (typeof document !== 'undefined') {
+    const emailEl = document.getElementById('email')
+    const passwordEl = document.getElementById('password')
+    if (emailEl?.value && !email.value) {
+      email.value = emailEl.value
+    }
+    if (passwordEl?.value && !password.value) {
+      password.value = passwordEl.value
+    }
+  }
 
   if (authMode.value === 'signup' && password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match. Please make sure both passwords match.'
@@ -243,8 +300,9 @@ async function handleSubmit() {
     }
 
     if (authMode.value === 'signup') {
+      const emailVal = email.value.trim()
       const { data, error } = await session.signUp({
-        email: email.value.trim(),
+        email: emailVal,
         password: password.value,
         data: {
           full_name: fullName.value.trim(),
@@ -255,25 +313,29 @@ async function handleSubmit() {
       if (error) throw error
 
       if (data?.session) {
+        saveLoginState(emailVal, rememberMe.value)
         if (data.user?.id) {
           await session.fetchProfile(data.user.id)
         }
-        business.resolveUserRole(email.value.trim())
+        business.resolveUserRole(emailVal)
         redirectByRole()
       } else {
         infoMessage.value = 'Account created! Please check your email to confirm your registration, or sign in.'
         authMode.value = 'signin'
       }
     } else {
+      const emailVal = email.value.trim()
       const res = await session.login.submit({
-        email: email.value.trim(),
+        email: emailVal,
         password: password.value,
       })
+
+      saveLoginState(emailVal, rememberMe.value)
 
       if (res?.user?.id) {
         await session.fetchProfile(res.user.id)
       }
-      business.resolveUserRole(email.value.trim())
+      business.resolveUserRole(emailVal)
       redirectByRole()
     }
   } catch (err) {
