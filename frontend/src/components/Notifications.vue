@@ -3,91 +3,173 @@
   <div
     v-if="visible"
     ref="target"
-    class="absolute z-20 h-screen bg-surface-base transition-all duration-300 ease-in-out"
+    class="absolute z-20 h-screen bg-surface-base border-r border-outline-gray-1 transition-all duration-300 ease-in-out shadow-2xl"
     :style="{
-      'box-shadow': '8px 0px 8px rgba(0, 0, 0, 0.1)',
-      'max-width': '400px',
+      'max-width': '420px',
       'min-width': '400px',
       left: 'calc(100% + 1px)',
     }"
   >
     <div class="flex h-screen flex-col text-ink-gray-9">
-      <div class="flex justify-between items-center">
-        <div class="text-lg-medium text-ink-gray-8 px-4 pt-[15px] pb-3">
-          {{ __('Notifications') }}
+      <!-- Header -->
+      <div class="flex justify-between items-center px-4 pt-[15px] pb-3 border-b border-outline-gray-1">
+        <div class="flex items-center gap-2">
+          <div class="text-lg-medium text-ink-gray-8">
+            {{ __('Notifications') }}
+          </div>
+          <Badge
+            v-if="unreadCount > 0"
+            :label="unreadCount"
+            theme="red"
+            variant="subtle"
+            size="sm"
+          />
         </div>
-        <div class="flex gap-1 mr-3">
+        <div class="flex items-center gap-1">
           <Button
-            v-if="activeTab == 'all' && notifications.data?.length"
+            v-if="unreadCount > 0 && activeTab !== 'events'"
             :tooltip="__('Mark all as read')"
             :icon="MarkAsDoneIcon"
             variant="ghost"
+            class="text-xs"
             @click="markAllAsRead"
+          />
+          <Button
+            icon="lucide-x"
+            variant="ghost"
+            class="size-7"
+            @click="toggle"
           />
         </div>
       </div>
+
+      <!-- Navigation Tabs -->
       <TabButtons
         v-model="activeTab"
         :buttons="tabs"
-        class="flex px-4 py-0.5 [&_button]:w-full [&_div]:w-full [&_button>span]:w-full"
+        class="flex px-4 py-2 border-b border-outline-gray-1 [&_button]:w-full [&_div]:w-full [&_button>span]:w-full"
       />
-      <div v-if="activeTab == 'all'" class="flex h-full">
+
+      <!-- Tab Content: All or Unread Notifications -->
+      <div v-if="activeTab !== 'events'" class="flex-1 overflow-y-auto">
         <div
-          v-if="notifications.data?.length"
-          class="divide-y divide-outline-elevation-2 overflow-auto text-base"
+          v-if="displayedNotifications.length"
+          class="divide-y divide-outline-gray-1 text-base"
         >
-          <RouterLink
-            v-for="n in notifications.data"
-            :key="n.comment"
-            :to="getRoute(n)"
-            class="flex cursor-pointer items-start gap-2.5 px-4 py-2.5 hover:bg-surface-gray-2"
-            @click="markAsRead(n.comment || n.notification_type_doc)"
+          <div
+            v-for="n in displayedNotifications"
+            :key="n.id || n.comment"
+            class="flex cursor-pointer items-start justify-between gap-3 px-4 py-3 hover:bg-surface-gray-2 group transition"
+            @click="handleNotificationClick(n)"
           >
-            <div class="mt-1 flex items-center gap-2.5">
-              <div
-                class="size-[5px] rounded-full"
-                :class="[n.read ? 'bg-transparent' : 'bg-surface-gray-10']"
-              />
-              <WhatsAppIcon v-if="n.type == 'WhatsApp'" class="size-7" />
-              <UserAvatar v-else :user="n.from_user.name" size="lg" />
-            </div>
-            <div>
-              <div
-                v-if="n.notification_text"
-                v-html="sanitizeHTML(n.notification_text)"
-              />
-              <div v-else class="mb-2 space-x-1 leading-5 text-ink-gray-5">
-                <span class="font-medium text-ink-gray-9">
-                  {{ n.from_user.full_name }}
-                </span>
-                <span>
-                  {{ __('mentioned you in {0}', [n.reference_doctype]) }}
-                </span>
-                <span class="font-medium text-ink-gray-9">
-                  {{ n.reference_name }}
-                </span>
+            <!-- Left: Unread indicator & Icon Badge / Avatar -->
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+              <div class="mt-1 flex items-center gap-2 shrink-0">
+                <div
+                  class="size-[6px] rounded-full shrink-0"
+                  :class="[n.read ? 'bg-transparent' : 'bg-surface-red-7']"
+                />
+
+                <!-- WhatsApp Notification Icon -->
+                <WhatsAppIcon v-if="n.type === 'WhatsApp'" class="size-8 shrink-0" />
+
+                <!-- Custom Type Icon Badge -->
+                <div
+                  v-else-if="n.icon"
+                  class="size-8 rounded-lg flex items-center justify-center shrink-0 border border-outline-gray-1"
+                  :class="n.badge_bg || 'bg-surface-gray-2'"
+                >
+                  <component
+                    :is="resolveIcon(n.type)"
+                    class="size-4.5"
+                    :class="n.icon_color || 'text-ink-gray-7'"
+                  />
+                </div>
+
+                <!-- User Avatar Fallback -->
+                <UserAvatar
+                  v-else-if="n.from_user?.name || n.from_user?.email"
+                  :user="n.from_user?.email || n.from_user?.name"
+                  size="lg"
+                  class="shrink-0"
+                />
+
+                <!-- Generic Notification Icon -->
+                <div
+                  v-else
+                  class="size-8 rounded-lg bg-surface-gray-2 flex items-center justify-center shrink-0 border border-outline-gray-1"
+                >
+                  <NotificationsIcon class="size-4.5 text-ink-gray-6" />
+                </div>
               </div>
-              <div class="text-sm text-ink-gray-5">
-                {{ __(timeAgo(n.creation)) }}
+
+              <!-- Center: Text, Badges, and Metadata -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <span class="text-sm font-semibold text-ink-gray-9 truncate">
+                    {{ n.title }}
+                  </span>
+                  <Badge
+                    v-if="n.type"
+                    :label="n.type"
+                    :theme="getBadgeTheme(n.type)"
+                    size="sm"
+                    variant="subtle"
+                    class="shrink-0"
+                  />
+                </div>
+
+                <div
+                  v-if="n.notification_text"
+                  class="text-xs text-ink-gray-7 line-clamp-2 leading-relaxed"
+                  v-html="sanitizeHTML(n.notification_text)"
+                />
+                <div v-else class="text-xs text-ink-gray-7 line-clamp-2 leading-relaxed">
+                  {{ n.subject }}
+                </div>
+
+                <div class="text-[11px] text-ink-gray-4 mt-1.5 flex items-center gap-2">
+                  <span>{{ timeAgo(n.creation) }}</span>
+                  <span v-if="n.from_user?.full_name" class="before:content-['•'] before:mr-1">
+                    {{ n.from_user.full_name }}
+                  </span>
+                </div>
               </div>
             </div>
-          </RouterLink>
+
+            <!-- Right: Dismiss Action (Hover) -->
+            <button
+              class="opacity-0 group-hover:opacity-100 p-1 text-ink-gray-4 hover:text-ink-gray-8 hover:bg-surface-gray-3 rounded transition shrink-0"
+              :title="__('Dismiss')"
+              @click.stop="handleDismiss(n.id)"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
+
+        <!-- Empty State -->
         <EmptyState
           v-else
           title="No New Notifications"
-          description="You have no new notifications"
+          description="You are completely caught up!"
           :icon="NotificationsIcon"
           width="lg"
+          class="py-12"
         />
       </div>
-      <div v-else-if="activeTab == 'events'" class="flex h-full">
+
+      <!-- Tab Content: Calendar Events -->
+      <div v-else-if="activeTab === 'events'" class="flex-1 overflow-y-auto">
         <EventNotificationsArea />
       </div>
-      <div v-else class="flex h-full"></div>
     </div>
   </div>
 </template>
+
 <script setup>
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import MarkAsDoneIcon from '@/components/Icons/MarkAsDoneIcon.vue'
@@ -104,67 +186,156 @@ import { useEventNotificationAlert } from '@/data/notifications'
 import { globalStore } from '@/stores/global'
 import { timeAgo, sanitizeHTML } from '@/utils'
 import { onClickOutside } from '@vueuse/core'
-import { useTelemetry } from 'frappe-ui/frappe'
-import { TabButtons } from 'frappe-ui'
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { TabButtons, Badge, Button } from 'frappe-ui'
+import { ref, computed, onMounted, onBeforeUnmount, h } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const { $socket } = globalStore()
-const { mark_as_read, toggle, mark_doc_as_read } = notificationsStore()
+const store = notificationsStore()
 const { handleEventNotification } = useEventNotificationAlert()
-const { capture } = useTelemetry()
 
 const activeTab = ref('all')
 const tabs = [
   { label: __('All'), value: 'all' },
+  { label: __('Unread'), value: 'unread' },
   { label: __('Events'), value: 'events' },
-  // { label: __('Mentions'), value: 'mentions' },
 ]
 
 const target = ref(null)
 onClickOutside(
   target,
   () => {
-    if (visible.value) toggle()
+    if (visible.value) store.toggle()
   },
   {
     ignore: ['#notifications-btn'],
   },
 )
 
-function markAsRead(doc) {
-  capture('notification_mark_as_read')
-  mark_doc_as_read(doc)
+const unreadCount = computed(() => {
+  return (notifications.data || []).filter((n) => !n.read).length
+})
+
+const displayedNotifications = computed(() => {
+  const list = notifications.data || []
+  if (activeTab.value === 'unread') {
+    return list.filter((n) => !n.read)
+  }
+  return list
+})
+
+function getBadgeTheme(type) {
+  switch (type) {
+    case 'Alert':
+      return 'red'
+    case 'Warning':
+      return 'amber'
+    case 'Action':
+      return 'blue'
+    case 'Task':
+      return 'purple'
+    case 'Event':
+      return 'green'
+    default:
+      return 'gray'
+  }
+}
+
+function resolveIcon(type) {
+  return {
+    render() {
+      switch (type) {
+        case 'Alert':
+          return h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+            h('circle', { cx: '12', cy: '12', r: '10' }),
+            h('line', { x1: '12', y1: '8', x2: '12', y2: '12' }),
+            h('line', { x1: '12', y1: '16', x2: '12.01', y2: '16' }),
+          ])
+        case 'Warning':
+          return h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+            h('path', { d: 'M16.5 9.4 7.55 4.24a1.78 1.78 0 0 0-2.5 1.55v12.42a1.78 1.78 0 0 0 2.5 1.55L16.5 14.6a1.78 1.78 0 0 0 0-3.2z' }),
+            h('polyline', { points: '3.29 7 12 12 20.71 7' }),
+          ])
+        case 'Action':
+          return h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+            h('path', { d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' }),
+            h('circle', { cx: '9', cy: '7', r: '4' }),
+            h('polyline', { points: '16 11 18 13 22 9' }),
+          ])
+        case 'Task':
+          return h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+            h('path', { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14' }),
+            h('polyline', { points: '22 4 12 14.01 9 11.01' }),
+          ])
+        default:
+          return h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+            h('path', { d: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9' }),
+            h('path', { d: 'M10.3 21a1.94 1.94 0 0 0 3.4 0' }),
+          ])
+      }
+    },
+  }
+}
+
+function handleNotificationClick(n) {
+  store.markAsRead(n.id || n.comment || n.name)
+  store.toggle()
+  const targetRoute = getRoute(n)
+  if (targetRoute) {
+    router.push(targetRoute)
+  }
+}
+
+function handleDismiss(id) {
+  store.dismissNotification(id)
 }
 
 function markAllAsRead() {
-  capture('notification_mark_all_as_read')
-  mark_as_read.reload()
+  store.markAllAsRead()
+}
+
+function toggle() {
+  store.toggle()
 }
 
 onBeforeUnmount(() => {
-  $socket.off('crm_notification')
-  $socket.off('event_notification')
+  if ($socket?.off) {
+    $socket.off('crm_notification')
+    $socket.off('event_notification')
+  }
 })
 
 onMounted(() => {
-  $socket.on('crm_notification', () => notifications.reload())
-  $socket.on('event_notification', (data) => handleEventNotification(data))
+  store.refreshNotifications()
+  if ($socket?.on) {
+    $socket.on('crm_notification', () => notifications.reload())
+    $socket.on('event_notification', (data) => handleEventNotification(data))
+  }
 })
 
 function getRoute(notification) {
-  let params = {
-    leadId: notification.reference_name,
-  }
-  if (notification.route_name === 'Deal') {
-    params = {
-      dealId: notification.reference_name,
+  if (notification.route) return notification.route
+  if (notification.route_name) {
+    let params = notification.params || {}
+    if (notification.reference_name) {
+      if (notification.route_name === 'Deal') params.dealId = notification.reference_name
+      else if (notification.route_name === 'Lead') params.leadId = notification.reference_name
     }
+    return { name: notification.route_name, params, hash: notification.hash }
   }
-
-  return {
-    name: notification.route_name,
-    params: params,
-    hash: notification.hash,
+  if (notification.reference_doctype === 'Invoice' || notification.type === 'Alert') {
+    return { name: 'Invoices' }
   }
+  if (notification.reference_doctype === 'Inventory' || notification.type === 'Warning') {
+    return { name: 'Inventory' }
+  }
+  if (notification.reference_doctype === 'CRM Task' || notification.type === 'Task') {
+    return { name: 'Tasks' }
+  }
+  if (notification.reference_doctype === 'Change Request' || notification.type === 'Action') {
+    return { name: 'BusinessSettings' }
+  }
+  return { name: 'Dashboard' }
 }
 </script>
