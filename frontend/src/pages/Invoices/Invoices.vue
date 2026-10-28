@@ -152,7 +152,18 @@
                   <div v-if="inv.contact_name" class="text-xs text-ink-gray-6 dark:text-ink-gray-4">{{ inv.contact_name }}</div>
                 </td>
                 <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">{{ inv.issue_date }}</td>
-                <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">{{ inv.due_date }}</td>
+                <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">
+                  <div class="font-medium text-ink-gray-9">{{ inv.due_date }}</div>
+                  <div v-if="getInvoiceCountdown(inv)" class="mt-1">
+                    <span
+                      class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border shadow-2xs"
+                      :class="getInvoiceCountdown(inv).classes"
+                    >
+                      <span :class="getInvoiceCountdown(inv).icon" class="size-2.5" />
+                      <span>{{ getInvoiceCountdown(inv).label }}</span>
+                    </span>
+                  </div>
+                </td>
                 <td class="py-4 px-6 text-right font-mono font-bold text-ink-gray-9">
                   {{ business.formatCurrency(inv.total_amount, inv.currency) }}
                 </td>
@@ -185,6 +196,15 @@
                       :label="__('Pay')"
                       iconLeft="credit-card"
                       @click="openPaymentModal(inv)"
+                    />
+                    <Button
+                      v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
+                      size="xs"
+                      variant="outline"
+                      :label="__('Remind')"
+                      iconLeft="bell"
+                      :tooltip="__('Send Payment Reminder')"
+                      @click="openReminderModal(inv)"
                     />
                     <Button
                       v-if="inv.status === 'Paid' || inv.balance_due <= 0"
@@ -253,6 +273,15 @@
               <div>
                 <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-4 block">{{ __('Due Date') }}</span>
                 <span class="font-medium text-ink-gray-9">{{ inv.due_date }}</span>
+                <div v-if="getInvoiceCountdown(inv)" class="mt-0.5">
+                  <span
+                    class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border shadow-2xs"
+                    :class="getInvoiceCountdown(inv).classes"
+                  >
+                    <span :class="getInvoiceCountdown(inv).icon" class="size-2.5" />
+                    <span>{{ getInvoiceCountdown(inv).label }}</span>
+                  </span>
+                </div>
                 <span class="text-[10px] text-ink-gray-6 dark:text-ink-gray-4 block mt-0.5">Issued: {{ inv.issue_date }}</span>
               </div>
               <div class="text-right">
@@ -285,6 +314,14 @@
                 iconLeft="credit-card"
                 :label="__('Pay')"
                 @click="openPaymentModal(inv)"
+              />
+              <Button
+                v-if="inv.balance_due > 0 && inv.status !== 'Cancelled'"
+                size="sm"
+                variant="outline"
+                iconLeft="bell"
+                :label="__('Remind')"
+                @click="openReminderModal(inv)"
               />
               <Button
                 v-if="inv.status === 'Paid' || inv.balance_due <= 0"
@@ -327,6 +364,12 @@
       :invoice="selectedInvoice"
       :payment="selectedPayment"
     />
+
+    <!-- Send Payment Reminder Modal -->
+    <SendReminderModal
+      v-model="showReminderModal"
+      :invoice="selectedInvoice"
+    />
   </div>
 </template>
 
@@ -338,6 +381,8 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import { isMobileView } from '@/composables/settings'
 import RecordPaymentModal from '@/components/Invoices/RecordPaymentModal.vue'
 import CommercialReceiptModal from '@/components/Common/CommercialReceiptModal.vue'
+import SendReminderModal from '@/components/Invoices/SendReminderModal.vue'
+import { calculateCountdown } from '@/utils/reminders'
 import { Button, TextInput } from 'frappe-ui'
 
 const router = useRouter()
@@ -348,6 +393,7 @@ const selectedCustomer = ref('')
 const searchQuery = ref('')
 const showPaymentModal = ref(false)
 const showReceiptModal = ref(false)
+const showReminderModal = ref(false)
 const selectedInvoice = ref(null)
 const selectedPayment = ref(null)
 const refreshing = ref(false)
@@ -404,6 +450,37 @@ function goToDetail(id) {
 function openPaymentModal(inv) {
   selectedInvoice.value = inv
   showPaymentModal.value = true
+}
+
+function openReminderModal(inv) {
+  selectedInvoice.value = inv
+  showReminderModal.value = true
+}
+
+function getInvoiceCountdown(inv) {
+  if (inv.status === 'Paid' || inv.status === 'Cancelled' || Number(inv.balance_due) <= 0) {
+    return null
+  }
+  const cd = calculateCountdown(inv)
+  if (cd.isDueToday) {
+    return {
+      label: 'Due Today',
+      icon: 'lucide-bell-ring',
+      classes: 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2',
+    }
+  }
+  if (cd.isOverdue) {
+    return {
+      label: `${cd.daysPastDue}d overdue`,
+      icon: 'lucide-alert-circle',
+      classes: 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2',
+    }
+  }
+  return {
+    label: `Due in ${cd.daysUntilDue}d`,
+    icon: 'lucide-clock',
+    classes: 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2',
+  }
 }
 
 async function markAsPaidQuick(inv) {

@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   buildInvoiceEmailHtml,
   buildReceiptEmailHtml,
+  buildPaymentReminderEmailHtml,
   sendInvoiceEmail,
   sendReceiptEmail,
+  sendPaymentReminderEmail,
   sendTestEmail,
 } from '@/utils/mailer'
 
@@ -150,18 +152,52 @@ describe('cPanel Mailer Client & Email Templates', () => {
     })
   })
 
-  describe('sendTestEmail', () => {
-    it('sends test verification email without attachments', async () => {
-      const res = await sendTestEmail({
-        recipientEmail: 'test@crestara.com',
+  describe('sendPaymentReminderEmail & buildPaymentReminderEmailHtml', () => {
+    it('builds upcoming countdown email with badge', () => {
+      const html = buildPaymentReminderEmailHtml({
+        invoice: mockInvoice,
+        businessSettings: mockSettings,
+        countdownStage: 'upcoming',
+        daysMetric: 5,
+        personalMessage: 'Kindly note your upcoming deadline.',
+      })
+
+      expect(html).toContain('5 DAYS UNTIL DEADLINE')
+      expect(html).toContain('Kindly note your upcoming deadline.')
+      expect(html).toContain('INV-2026-9001')
+      expect(html).toContain('$3,000.00')
+    })
+
+    it('builds gentle overdue notice with respectful tone', () => {
+      const html = buildPaymentReminderEmailHtml({
+        invoice: mockInvoice,
+        businessSettings: mockSettings,
+        countdownStage: 'overdue',
+        daysMetric: 3,
+        personalMessage: 'We know schedules can get hectic.',
+      })
+
+      expect(html).toContain('GENTLE REMINDER • 3 DAYS PAST DEADLINE')
+      expect(html).toContain('We know schedules can get hectic.')
+    })
+
+    it('dispatches payment reminder with PDF attachment to API endpoint', async () => {
+      const res = await sendPaymentReminderEmail({
+        invoice: mockInvoice,
+        recipientEmail: 'ap@megacorp.com',
+        countdownStage: 'upcoming',
+        daysMetric: 7,
+        attachPdf: true,
         businessSettings: mockSettings,
       })
 
       expect(res.success).toBe(true)
       const [, req] = globalThis.fetch.mock.calls[0]
       const body = JSON.parse(req.body)
-      expect(body.recipient).toBe('test@crestara.com')
-      expect(body.subject).toContain('Test Delivery')
+      expect(body.recipient).toBe('ap@megacorp.com')
+      expect(body.subject).toContain('Payment Reminder')
+      expect(body.attachments).toHaveLength(1)
+      expect(body.attachments[0].filename).toBe('INV-2026-9001.pdf')
     })
   })
 })

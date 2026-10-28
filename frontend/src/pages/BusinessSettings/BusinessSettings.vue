@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col flex-1 h-full w-full overflow-hidden">
+  <div class="flex flex-col flex-1 h-full min-h-0 w-full overflow-hidden">
     <!-- Header -->
     <LayoutHeader>
       <template #left-header>
@@ -314,16 +314,16 @@
         </div>
       </div>
 
-      <!-- cPanel Server-Side Email Delivery Configuration -->
+      <!-- Server-Side Email Delivery Configuration -->
       <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">
               <span class="lucide-mail size-4 text-ink-gray-5 dark:text-ink-gray-4" />
-              {{ __('Email Delivery & cPanel Webmail Integration') }}
+              {{ __('Email Delivery Integration') }}
             </h2>
             <p class="text-xs text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">
-              {{ __('Automated invoice & commercial receipt dispatch with vector PDF attachments via cPanel.') }}
+              {{ __('Automated invoice & commercial receipt dispatch with vector PDF attachments.') }}
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -344,7 +344,7 @@
           <div class="space-y-1">
             <p class="font-semibold">{{ __('Server-Side Security Enabled') }}</p>
             <p class="text-[11px] opacity-90">
-              {{ __('Sensitive SMTP credentials and email server options are managed securely on your cPanel server in /api/send_email.php. Passwords are never sent across or stored in the browser.') }}
+              {{ __('Sensitive SMTP credentials and email server options are managed securely on your server in /api/send_email.php. Passwords are never sent across or stored in the browser.') }}
             </p>
           </div>
         </div>
@@ -372,6 +372,124 @@
             type="email"
             placeholder="billing@crestara.com"
           />
+        </div>
+      </div>
+
+      <!-- Automated Payment Reminders Configuration Card -->
+      <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">
+              <span class="lucide-bell size-4 text-ink-gray-5 dark:text-ink-gray-4" />
+              {{ __('Automated Payment Reminders') }}
+            </h2>
+            <p class="text-xs text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">
+              {{ __('Scheduled countdown reminders before deadline and gentle follow-ups after deadline.') }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              iconLeft="play"
+              :label="__('Test Automated Reminders')"
+              :loading="testingCron"
+              @click="handleTestCron"
+            />
+          </div>
+        </div>
+
+        <!-- Master Switch -->
+        <div class="p-3.5 rounded-xl bg-surface-gray-1/70 dark:bg-surface-gray-2/30 border border-outline-gray-1 flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="text-xs font-semibold text-ink-gray-9 block">{{ __('Automated Daily Reminders') }}</span>
+            <span class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4">
+              {{ __('When enabled, scheduled daily checks will evaluate unpaid invoices and send email notices.') }}
+            </span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input
+              v-model="form.reminder_enabled"
+              type="checkbox"
+              class="sr-only peer"
+            />
+            <div class="w-9 h-5 bg-surface-gray-3 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+
+        <!-- Feedback Alert from Cron Test -->
+        <div
+          v-if="cronTestResult"
+          class="p-3 rounded-xl text-xs flex items-center gap-2 border"
+          :class="cronTestResult.success ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-red-2 text-ink-red-7 border-outline-red-2'"
+        >
+          <span :class="cronTestResult.success ? 'lucide-check-circle size-4' : 'lucide-alert-circle size-4'" />
+          <span class="font-medium">{{ cronTestResult.message }}</span>
+        </div>
+
+        <!-- Schedule Inputs Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <FormControl
+            v-model="form.reminder_days_before"
+            :label="__('Pre-Deadline Countdown Days')"
+            type="text"
+            placeholder="7, 3, 1"
+            :description="__('Comma-separated days before due date (e.g. 7, 3, 1)')"
+          />
+
+          <FormControl
+            v-model="form.reminder_overdue_days"
+            :label="__('Gentle Overdue Notice Days')"
+            type="text"
+            placeholder="3, 7"
+            :description="__('Days after deadline passes to send gentle follow-ups')"
+          />
+
+          <FormControl
+            v-model="form.cron_secret_token"
+            :label="__('Automation Security Token')"
+            type="text"
+            placeholder="cr_rem_live_secret"
+            :description="__('Security token required to trigger automated reminders')"
+          />
+        </div>
+
+        <div class="pt-1">
+          <label class="flex items-center gap-2 text-xs text-ink-gray-8 dark:text-ink-gray-2 cursor-pointer select-none">
+            <input
+              v-model="form.reminder_on_due_date"
+              type="checkbox"
+              class="rounded border-outline-gray-2 text-ink-blue-7 focus:ring-ink-blue-7 size-4"
+            />
+            <span class="font-medium">{{ __('Also send an urgent reminder on the exact day of the payment deadline (Day 0)') }}</span>
+          </label>
+        </div>
+
+        <!-- Server Automation Setup Instructions Box with Copyable Snippet -->
+        <div class="p-4 rounded-xl bg-surface-gray-1/60 dark:bg-surface-gray-2/20 border border-outline-gray-1 space-y-2.5 text-xs text-ink-gray-7 dark:text-ink-gray-4">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-ink-gray-9 text-xs flex items-center gap-1.5">
+              <span class="lucide-terminal size-3.5 text-ink-blue-7 dark:text-ink-blue-4" />
+              {{ __('Server Automated Schedule Setup') }}
+            </span>
+            <Button
+              size="sm"
+              variant="subtle"
+              :iconLeft="cronCopied ? 'check' : 'copy'"
+              :label="cronCopied ? __('Copied!') : __('Copy Command')"
+              @click="copyCronCommand"
+            />
+          </div>
+          <p class="text-[11px] leading-relaxed">
+            {{ __('In your hosting control panel, schedule a task to run') }} <strong>{{ __('Once Per Day (08:00 AM)') }}</strong>, {{ __('using this command:') }}
+          </p>
+          <div class="p-2.5 rounded-lg bg-surface-gray-2 dark:bg-surface-gray-1 font-mono text-[11px] text-ink-gray-9 overflow-x-auto border border-outline-gray-2 select-all">
+            /usr/local/bin/php /home/USERNAME/public_html/api/cron_reminders.php &gt;&gt; /home/USERNAME/cron_reminders.log 2&gt;&amp;1
+          </div>
+          <p class="text-[10px] text-ink-gray-5">
+            {{ __('Note: Replace USERNAME with your server username. Alternatively, use web automation with your security token:') }}
+            <code class="font-mono text-ink-blue-7 dark:text-ink-blue-3">curl -s "https://yourdomain.com/api/cron_reminders.php?token={{ form.cron_secret_token || 'cr_rem_live_secret' }}"</code>
+          </p>
         </div>
       </div>
 
@@ -767,11 +885,64 @@ const form = reactive({
   default_low_stock_threshold: 5,
   from_email: '',
   from_name: '',
+  reminder_enabled: true,
+  reminder_days_before: '7, 3, 1',
+  reminder_on_due_date: true,
+  reminder_overdue_days: '3, 7',
+  cron_secret_token: 'cr_rem_live_secret',
   ...(business.settings || {}),
 })
 
 const testingEmail = ref(false)
 const testResult = ref(null)
+
+const testingCron = ref(false)
+const cronTestResult = ref(null)
+const cronCopied = ref(false)
+
+function copyCronCommand() {
+  const cmd = `0 8 * * * /usr/local/bin/php /home/USERNAME/public_html/api/cron_reminders.php >> /home/USERNAME/cron_reminders.log 2>&1`
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(cmd).then(() => {
+      cronCopied.value = true
+      setTimeout(() => {
+        cronCopied.value = false
+      }, 2500)
+    }).catch(() => {})
+  }
+}
+
+async function handleTestCron() {
+  testingCron.value = true
+  cronTestResult.value = null
+
+  try {
+    // Persist current settings first
+    await business.updateBusinessSettings(form)
+    const token = encodeURIComponent(form.cron_secret_token || 'cr_rem_live_secret')
+    const res = await fetch(`/api/cron_reminders.php?token=${token}&dry_run=1`)
+    const data = await res.json().catch(() => ({}))
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || `Cron dry-run request failed (HTTP ${res.status})`)
+    }
+
+    cronTestResult.value = {
+      success: true,
+      message: `Automated service verified! Scanned ${data.invoices_scanned} invoices, ${data.reminders_triggered} reminders matched today's schedule.`,
+    }
+  } catch (err) {
+    cronTestResult.value = {
+      success: false,
+      message: err.message || 'Failed to connect to automated reminder service. Verify /api/cron_reminders.php is accessible.',
+    }
+  } finally {
+    testingCron.value = false
+    setTimeout(() => {
+      cronTestResult.value = null
+    }, 10000)
+  }
+}
 
 async function handleTestEmail() {
   const targetEmail = prompt('Enter recipient email address to send test dispatch:', form.business_email || form.from_email || '')
@@ -789,12 +960,12 @@ async function handleTestEmail() {
     })
     testResult.value = {
       success: true,
-      message: `Test email successfully dispatched to ${targetEmail} via cPanel mailer!`,
+      message: `Test email successfully dispatched to ${targetEmail}!`,
     }
   } catch (err) {
     testResult.value = {
       success: false,
-      message: err.message || 'Failed to dispatch test email. Please verify cPanel SMTP credentials or server logs.',
+      message: err.message || 'Failed to dispatch test email. Please verify server SMTP credentials or server logs.',
     }
   } finally {
     testingEmail.value = false

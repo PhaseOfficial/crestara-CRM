@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen w-screen flex-col overflow-hidden">
+  <div class="flex h-screen w-full flex-col overflow-hidden">
     <div class="flex flex-1 overflow-hidden">
       <MobileSidebar />
       <div class="flex h-full flex-1 flex-col overflow-auto bg-surface-base pb-20">

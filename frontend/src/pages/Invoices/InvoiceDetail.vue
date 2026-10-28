@@ -18,6 +18,15 @@
             >
               {{ invoice.status }}
             </span>
+            <!-- Live Countdown Badge in Top Bar -->
+            <span
+              v-if="!isNew && headerCountdownBadge"
+              class="text-xs px-2.5 py-0.5 rounded-full font-semibold border shrink-0 inline-flex items-center gap-1.5 shadow-2xs"
+              :class="headerCountdownBadge.classes"
+            >
+              <span :class="headerCountdownBadge.icon" class="size-3" />
+              <span>{{ headerCountdownBadge.label }}</span>
+            </span>
           </div>
         </div>
       </template>
@@ -81,6 +90,15 @@
             icon="mail"
             :tooltip="invoice.status === 'Paid' ? __('Email Official Receipt') : __('Email Invoice to Client')"
             @click="openInvoiceEmailModal"
+          />
+
+          <!-- Send Payment Reminder -->
+          <Button
+            v-if="!isNew && invoice.status !== 'Paid' && invoice.status !== 'Cancelled' && Number(invoice.balance_due) > 0"
+            variant="outline"
+            icon="bell"
+            :tooltip="__('Send Payment Reminder to Client')"
+            @click="showReminderModal = true"
           />
 
           <!-- Cancel Invoice -->
@@ -852,6 +870,83 @@
           </div>
         </div>
 
+        <!-- Payment Reminders & Schedule Preferences (Screen Only) -->
+        <div
+          v-if="!isNew"
+          class="bg-surface-gray-1/50 dark:bg-surface-gray-2/20 rounded-xl border border-outline-gray-1 p-4 sm:p-5 space-y-4 print:hidden"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="lucide-bell size-4 text-ink-blue-7 dark:text-ink-blue-3" />
+              <h3 class="text-xs font-bold uppercase tracking-wider text-ink-gray-9">
+                {{ __('Payment Reminders & Schedule') }}
+              </h3>
+            </div>
+            <!-- Quick Send Reminder Button -->
+            <Button
+              v-if="invoice.status !== 'Paid' && invoice.status !== 'Cancelled' && Number(invoice.balance_due) > 0"
+              size="sm"
+              variant="subtle"
+              iconLeft="bell"
+              :label="__('Send Reminder Now')"
+              @click="showReminderModal = true"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-ink-gray-7 dark:text-ink-gray-4 block">
+                {{ __('Automated Reminders') }}
+              </label>
+              <label class="flex items-center gap-2 text-xs text-ink-gray-8 dark:text-ink-gray-2 cursor-pointer pt-1">
+                <input
+                  v-model="invoice.reminders_enabled"
+                  type="checkbox"
+                  class="rounded border-outline-gray-2 text-ink-blue-7 focus:ring-ink-blue-7 size-4"
+                />
+                <span>{{ invoice.reminders_enabled !== false ? __('Enabled for this invoice') : __('Disabled for this invoice') }}</span>
+              </label>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-ink-gray-7 dark:text-ink-gray-4 block">
+                {{ __('Custom Countdown Days') }}
+              </label>
+              <input
+                v-model="invoice.custom_reminder_days"
+                type="text"
+                :placeholder="__('Default: {0}', [business.settings.reminder_days_before || '7, 3, 1'])"
+                class="w-full bg-surface-base border border-outline-gray-2 rounded-lg px-3 py-1.5 text-xs text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <span class="text-[10px] text-ink-gray-5 block">{{ __('Days before due date (e.g. 14, 7, 2)') }}</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-ink-gray-7 dark:text-ink-gray-4 block">
+                {{ __('Gentle Overdue Days') }}
+              </label>
+              <input
+                v-model="invoice.custom_overdue_days"
+                type="text"
+                :placeholder="__('Default: {0}', [business.settings.reminder_overdue_days || '3, 7'])"
+                class="w-full bg-surface-base border border-outline-gray-2 rounded-lg px-3 py-1.5 text-xs text-ink-gray-9 placeholder:text-ink-gray-4 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <span class="text-[10px] text-ink-gray-5 block">{{ __('Days after deadline for gentle follow-up') }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-outline-gray-1 text-[11px] text-ink-gray-5">
+            <span>
+              {{ __('Last reminder sent:') }}
+              <strong class="text-ink-gray-7 dark:text-ink-gray-3">{{ invoice.last_reminder_sent_at ? new Date(invoice.last_reminder_sent_at).toLocaleString() : __('Never') }}</strong>
+            </span>
+            <span>
+              {{ __('Total reminders sent:') }}
+              <strong class="text-ink-gray-7 dark:text-ink-gray-3">{{ invoice.reminders_sent_count || 0 }}</strong>
+            </span>
+          </div>
+        </div>
+
         <!-- Invoice Bottom Footer (Small Font) -->
         <div class="pt-6 border-t border-outline-gray-1 text-center space-y-1 print:pt-4">
           <p class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6">
@@ -908,6 +1003,13 @@
       :payment="activePayment"
       :isReceipt="whatsappModalIsReceipt"
     />
+
+    <!-- Send Payment Reminder Modal -->
+    <SendReminderModal
+      v-model="showReminderModal"
+      :invoice="invoice"
+      @sent="onReminderDispatched"
+    />
   </div>
 </template>
 
@@ -922,7 +1024,9 @@ import DocumentPreviewModal from '@/components/Common/DocumentPreviewModal.vue'
 import CommercialReceiptModal from '@/components/Common/CommercialReceiptModal.vue'
 import EmailInvoiceModal from '@/components/Invoices/EmailInvoiceModal.vue'
 import WhatsAppInvoiceModal from '@/components/Invoices/WhatsAppInvoiceModal.vue'
+import SendReminderModal from '@/components/Invoices/SendReminderModal.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
+import { calculateCountdown } from '@/utils/reminders'
 import {
   generateInvoicePdf,
   generateReceiptPdf,
@@ -944,6 +1048,7 @@ const showPreviewModal = ref(false)
 const showReceiptModal = ref(false)
 const showEmailModal = ref(false)
 const showWhatsAppModal = ref(false)
+const showReminderModal = ref(false)
 const previewIsReceipt = ref(false)
 const emailModalIsReceipt = ref(false)
 const whatsappModalIsReceipt = ref(false)
@@ -1084,6 +1189,32 @@ function handleClickOutside(event) {
 
 const currencySymbol = computed(() => business.getCurrencySymbol(invoice.currency))
 
+const headerCountdownBadge = computed(() => {
+  if (isNew.value || invoice.status === 'Paid' || invoice.status === 'Cancelled' || Number(invoice.balance_due) <= 0) {
+    return null
+  }
+  const cd = calculateCountdown(invoice)
+  if (cd.isDueToday) {
+    return {
+      label: 'Due Today',
+      icon: 'lucide-bell-ring',
+      classes: 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2',
+    }
+  }
+  if (cd.isOverdue) {
+    return {
+      label: `${cd.daysPastDue}d overdue`,
+      icon: 'lucide-alert-circle',
+      classes: 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2',
+    }
+  }
+  return {
+    label: `Due in ${cd.daysUntilDue}d`,
+    icon: 'lucide-clock',
+    classes: 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2',
+  }
+})
+
 const invoice = reactive({
   id: '',
   invoice_number: '',
@@ -1117,6 +1248,12 @@ const invoice = reactive({
   ],
   payments: [],
   notes: '',
+  reminders_enabled: true,
+  custom_reminder_days: '',
+  custom_overdue_days: '',
+  last_reminder_sent_at: null,
+  reminders_sent_count: 0,
+  reminder_history: [],
 })
 
 onMounted(async () => {
@@ -1349,6 +1486,15 @@ function onEmailRequested({ payment, isReceipt }) {
   if (payment) activePayment.value = payment
   emailModalIsReceipt.value = Boolean(isReceipt)
   showEmailModal.value = true
+}
+
+function onReminderDispatched() {
+  const updatedInv = business.invoices.find((i) => i.id === invoice.id)
+  if (updatedInv) {
+    invoice.last_reminder_sent_at = updatedInv.last_reminder_sent_at
+    invoice.reminders_sent_count = updatedInv.reminders_sent_count
+    invoice.reminder_history = updatedInv.reminder_history
+  }
 }
 
 async function printInvoice() {

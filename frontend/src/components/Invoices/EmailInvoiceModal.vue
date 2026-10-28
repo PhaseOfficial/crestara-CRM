@@ -21,7 +21,7 @@
           <div class="min-w-0 flex-1">
             <span class="font-bold block">{{ attachmentFilename }}</span>
             <span class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4">
-              {{ __('LaTeX Vector PDF attachment compiled on demand via cPanel Mailer') }}
+              {{ __('Official commercial PDF compiled and attached automatically') }}
             </span>
           </div>
         </div>
@@ -179,7 +179,7 @@ async function handleSend() {
       show.value = false
     }, 1400)
   } catch (err) {
-    errorMessage.value = err.message || 'Unable to connect to cPanel mail service.'
+    errorMessage.value = err.message || 'Unable to connect to email delivery service.'
   } finally {
     sending.value = false
   }

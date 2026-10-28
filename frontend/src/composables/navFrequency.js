@@ -66,7 +66,10 @@ export function useStaffNavFrequency() {
   const business = useBusinessStore()
 
   // Full catalog of available staff candidate destinations
+  // Note: Leads, Deals, Contacts, and Call Logs are temporarily retired into the background for current users.
+  // Routes are commented out in src/router.js. Re-enable here when re-enabling routing.
   const candidateItems = [
+    /*
     {
       key: 'Leads',
       label: 'Leads',
@@ -81,6 +84,7 @@ export function useStaffNavFrequency() {
       icon: 'lucide-badge-dollar-sign',
       matchPath: (path) => path.startsWith('/deals'),
     },
+    */
     {
       key: 'Clients',
       label: 'Clients',
@@ -118,6 +122,7 @@ export function useStaffNavFrequency() {
       icon: 'lucide-check-square',
       matchPath: (path) => path.startsWith('/tasks'),
     },
+    /*
     {
       key: 'Contacts',
       label: 'Contacts',
@@ -125,6 +130,7 @@ export function useStaffNavFrequency() {
       icon: 'lucide-users',
       matchPath: (path) => path.startsWith('/contacts'),
     },
+    */
     {
       key: 'Notes',
       label: 'Notes',
@@ -138,7 +144,10 @@ export function useStaffNavFrequency() {
       to: '/reminders',
       icon: 'lucide-bell-ring',
       matchPath: (path) => path.startsWith('/reminders'),
+      badge: () => business.overdueInvoicesCount || 0,
+      badgeTheme: 'red',
     },
+    /*
     {
       key: 'Analytics',
       label: 'Analytics',
@@ -146,6 +155,8 @@ export function useStaffNavFrequency() {
       icon: 'lucide-bar-chart-3',
       matchPath: (path) => path.startsWith('/analytics'),
     },
+    */
+    /*
     {
       key: 'Call Logs',
       label: 'Calls',
@@ -153,6 +164,7 @@ export function useStaffNavFrequency() {
       icon: 'lucide-phone',
       matchPath: (path) => path.startsWith('/call-logs'),
     },
+    */
   ]
 
   // Top 4 items dynamically ranked by click count

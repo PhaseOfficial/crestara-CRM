@@ -32,6 +32,16 @@ const routes = [
     name: 'Dashboard',
     component: () => import('@/pages/Dashboard.vue'),
   },
+  // ============================================================================
+  // RETIRED INTO BACKGROUND: Leads & Deals
+  // (Temporarily retired from active user routing and commented out)
+  // Components:
+  //   - '@/pages/Leads.vue'
+  //   - '@/pages/Lead.vue' / '@/pages/MobileLead.vue'
+  //   - '@/pages/Deals.vue'
+  //   - '@/pages/Deal.vue' / '@/pages/MobileDeal.vue'
+  // ============================================================================
+  /*
   {
     alias: '/leads',
     path: '/leads/view/:viewType?',
@@ -56,6 +66,7 @@ const routes = [
     component: () => import(`@/pages/${handleMobileView('Deal')}.vue`),
     props: true,
   },
+  */
   {
     alias: '/notes',
     path: '/notes/view/:viewType?',
@@ -68,6 +79,14 @@ const routes = [
     name: 'Tasks',
     component: () => import('@/pages/Tasks.vue'),
   },
+  // ============================================================================
+  // RETIRED INTO BACKGROUND: Contacts
+  // (Temporarily retired from active user routing and commented out)
+  // Components:
+  //   - '@/pages/Contacts.vue'
+  //   - '@/pages/Contact.vue' / '@/pages/MobileContact.vue'
+  // ============================================================================
+  /*
   {
     alias: '/contacts',
     path: '/contacts/view/:viewType?',
@@ -80,6 +99,7 @@ const routes = [
     component: () => import(`@/pages/${handleMobileView('Contact')}.vue`),
     props: true,
   },
+  */
   {
     alias: ['/organizations', '/organizations/view/:viewType?', '/clients/view/:viewType?'],
     path: '/clients',
@@ -102,12 +122,20 @@ const routes = [
     component: () => import('@/pages/Client.vue'),
     props: true,
   },
+  // ============================================================================
+  // RETIRED INTO BACKGROUND: Call Logs
+  // (Temporarily retired from active user routing and commented out)
+  // Component:
+  //   - '@/pages/CallLogs.vue'
+  // ============================================================================
+  /*
   {
     alias: '/call-logs',
     path: '/call-logs/view/:viewType?',
     name: 'Call Logs',
     component: () => import('@/pages/CallLogs.vue'),
   },
+  */
   {
     path: '/calendar',
     name: 'Calendar',
@@ -172,11 +200,13 @@ const routes = [
     name: 'PaymentReminders',
     component: () => import('@/pages/Reminders/PaymentReminders.vue'),
   },
+  /*
   {
     path: '/analytics',
     name: 'Analytics',
     component: () => import('@/pages/Analytics/Analytics.vue'),
   },
+  */
   {
     path: '/business-settings',
     name: 'BusinessSettings',
@@ -315,14 +345,20 @@ router.beforeEach(async (to, from, next) => {
 
     let defaultView = getDefaultView()
     if (!defaultView) {
-      next({ name: 'Leads' })
+      // Formerly routed to 'Leads'. Since Leads is retired to the background, fallback to 'Dashboard'.
+      next({ name: 'Dashboard' })
       return
     }
 
     let { route_name, type, name, is_standard } = defaultView
-    route_name = route_name || 'Leads'
+    // If route_name was one of the retired modules, fallback to Dashboard
+    if (['Leads', 'Deals', 'Contacts', 'Call Logs'].includes(route_name)) {
+      route_name = 'Dashboard'
+    } else {
+      route_name = route_name || 'Dashboard'
+    }
 
-    if (name && !is_standard) {
+    if (name && !is_standard && route_name !== 'Dashboard') {
       next({
         name: route_name,
         params: { viewType: type },
@@ -335,20 +371,24 @@ router.beforeEach(async (to, from, next) => {
     next({ name: 'Login' })
   } else if (to.matched.length === 0) {
     next({ name: 'Invalid Page' })
+  // Deal & Lead tab hash persistence (commented out as modules are retired)
+  /*
   } else if (['Deal', 'Lead'].includes(to.name) && !to.hash) {
     let storageKey = to.name === 'Deal' ? 'lastDealTab' : 'lastLeadTab'
     const activeTab = localStorage.getItem(storageKey) || 'activity'
     const hash = '#' + activeTab
     next({ ...to, hash })
+  */
   } else if (
     [
-      'Leads',
-      'Deals',
-      'Contacts',
-      'Organizations',
+      // 'Leads',     // Retired into background
+      // 'Deals',     // Retired into background
+      // 'Contacts',  // Retired into background
+      // 'Organizations', // Redirects to /clients; handled as bespoke page
+      // 'Clients',       // Bespoke clients page, not standard DocType view
       'Notes',
       'Tasks',
-      'Call Logs',
+      // 'Call Logs', // Retired into background
     ].includes(to.name) &&
     !to.query?.view
   ) {

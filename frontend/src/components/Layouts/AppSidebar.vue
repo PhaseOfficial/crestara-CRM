@@ -275,6 +275,13 @@ const links = [
     to: 'Dashboard',
     condition: () => !props.mobile,
   },
+  /*
+   * RETIRED MODULES (Backgrounded for current users):
+   * - Leads: route commented out in src/router.js (lines ~35-50)
+   * - Deals: route commented out in src/router.js (lines ~52-60)
+   * - Contacts: route commented out in src/router.js (lines ~71-82)
+   * - Call Logs: route commented out in src/router.js (lines ~106-110)
+   * Uncomment these objects along with their corresponding routes in src/router.js to re-enable.
   {
     label: 'Leads',
     icon: LeadsIcon,
@@ -290,6 +297,7 @@ const links = [
     icon: ContactsIcon,
     to: 'Contacts',
   },
+  */
   {
     label: 'Clients',
     icon: OrganizationsIcon,
@@ -311,11 +319,13 @@ const links = [
     to: 'Calendar',
     condition: () => !props.mobile,
   },
+  /*
   {
     label: 'Call Logs',
     icon: PhoneIcon,
     to: 'Call Logs',
   },
+  */
 ]
 
 const business = useBusinessStore()
@@ -341,11 +351,13 @@ const businessLinks = [
     icon: LucideBellRing,
     to: 'PaymentReminders',
   },
+  /*
   {
     label: 'Analytics & Reports',
     icon: LucideBarChart3,
     to: 'Analytics',
   },
+  */
   {
     label: 'Business Settings',
     icon: LucideSlidersHorizontal,
@@ -548,6 +560,9 @@ const steps = reactive([
       capture('onboarding_step_clicked_setup_password')
     },
   },
+  /*
+   * RETIRED ONBOARDING STEPS (Leads & Deals backgrounded):
+   * Uncomment when Leads & Deals routes are re-enabled in src/router.js
   {
     name: 'create_first_lead',
     title: __('Create your first lead'),
@@ -560,6 +575,7 @@ const steps = reactive([
       capture('onboarding_step_clicked_create_first_lead')
     },
   },
+  */
   {
     name: 'invite_your_team',
     title: __('Invite your team'),
@@ -573,6 +589,7 @@ const steps = reactive([
     },
     condition: () => isManager(),
   },
+  /*
   {
     name: 'convert_lead_to_deal',
     title: __('Convert lead to deal'),
@@ -601,6 +618,7 @@ const steps = reactive([
       showIntermediateModal.value = true
     },
   },
+  */
   {
     name: 'create_first_task',
     title: __('Create your first task'),
@@ -608,18 +626,8 @@ const steps = reactive([
     completed: false,
     onClick: async () => {
       minimize.value = true
-      let deal = await getFirstDeal()
       capture('onboarding_step_clicked_create_first_task')
-
-      if (deal) {
-        router.push({
-          name: 'Deal',
-          params: { dealId: deal },
-          hash: '#tasks',
-        })
-      } else {
-        router.push({ name: 'Tasks' })
-      }
+      router.push({ name: 'Tasks' })
     },
   },
   {
@@ -629,20 +637,11 @@ const steps = reactive([
     completed: false,
     onClick: async () => {
       minimize.value = true
-      let deal = await getFirstDeal()
       capture('onboarding_step_clicked_create_first_note')
-
-      if (deal) {
-        router.push({
-          name: 'Deal',
-          params: { dealId: deal },
-          hash: '#notes',
-        })
-      } else {
-        router.push({ name: 'Notes' })
-      }
+      router.push({ name: 'Notes' })
     },
   },
+  /*
   {
     name: 'add_first_comment',
     title: __('Add your first comment'),
@@ -720,6 +719,7 @@ const steps = reactive([
       showIntermediateModal.value = true
     },
   },
+  */
 ])
 
 onMounted(async () => {

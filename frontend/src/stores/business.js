@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { supabase } from '@/utils/supabase'
 import { sessionStore } from './session'
 import { loadImageAsBase64 } from '@/utils/pdfGenerator'
+import { calculateCountdown } from '@/utils/reminders'
+import { sendPaymentReminderEmail } from '@/utils/mailer'
 const defaultSettings = {
   business_name: 'Crestara CRM',
   legal_name: 'Crestara Technologies Inc.',
@@ -40,6 +42,12 @@ const defaultSettings = {
   smtp_secure: 'ssl',
   from_email: '',
   from_name: '',
+  // Automated Payment Reminders & cPanel Cron
+  reminder_enabled: true,
+  reminder_days_before: '7, 3, 1',
+  reminder_on_due_date: true,
+  reminder_overdue_days: '3, 7',
+  cron_secret_token: 'cr_rem_live_secret',
 }
 
 export const useBusinessStore = defineStore('business-store', () => {
@@ -454,6 +462,12 @@ export const useBusinessStore = defineStore('business-store', () => {
           items: Array.isArray(inv.items) ? inv.items : [],
           payments: Array.isArray(inv.payments) ? inv.payments : [],
           notes: inv.notes || '',
+          reminders_enabled: inv.reminders_enabled !== false,
+          custom_reminder_days: inv.custom_reminder_days || '',
+          custom_overdue_days: inv.custom_overdue_days || '',
+          last_reminder_sent_at: inv.last_reminder_sent_at || null,
+          reminders_sent_count: Number(inv.reminders_sent_count) || 0,
+          reminder_history: Array.isArray(inv.reminder_history) ? inv.reminder_history : [],
           created_at: inv.created_at,
           updated_at: inv.updated_at,
         }))
@@ -589,6 +603,12 @@ export const useBusinessStore = defineStore('business-store', () => {
       items,
       payments: [],
       notes: invoiceData.notes || settings.value.notes_template || '',
+      reminders_enabled: invoiceData.reminders_enabled !== false,
+      custom_reminder_days: invoiceData.custom_reminder_days || null,
+      custom_overdue_days: invoiceData.custom_overdue_days || null,
+      last_reminder_sent_at: null,
+      reminders_sent_count: 0,
+      reminder_history: [],
     }
 
     let createdId = `inv-${Date.now()}`
@@ -653,6 +673,12 @@ export const useBusinessStore = defineStore('business-store', () => {
             items: invoices.value[idx].items,
             payments: invoices.value[idx].payments,
             notes: invoices.value[idx].notes,
+            reminders_enabled: invoices.value[idx].reminders_enabled !== false,
+            custom_reminder_days: invoices.value[idx].custom_reminder_days || null,
+            custom_overdue_days: invoices.value[idx].custom_overdue_days || null,
+            last_reminder_sent_at: invoices.value[idx].last_reminder_sent_at || null,
+            reminders_sent_count: Number(invoices.value[idx].reminders_sent_count) || 0,
+            reminder_history: invoices.value[idx].reminder_history || [],
           })
           .eq('id', id)
       } catch (err) {
@@ -760,8 +786,12 @@ export const useBusinessStore = defineStore('business-store', () => {
     try {
       await supabase.from('payments').insert({
         receipt_number: receiptNumber,
+        transaction_ref: receiptNumber,
         invoice_id: inv.id,
+        invoice_number: inv.invoice_number,
         customer_id: inv.customer_id || null,
+        client_name: inv.client_name,
+        client_email: inv.client_email || '',
         amount: payAmount,
         currency: inv.currency,
         payment_method: payMethod,
@@ -968,6 +998,56 @@ export const useBusinessStore = defineStore('business-store', () => {
     }
   }
 
+  async function sendManualInvoiceReminder(invoiceId, { recipientEmail, subject, personalMessage, attachPdf = true } = {}) {
+    const inv = invoices.value.find((i) => i.id === invoiceId)
+    if (!inv) throw new Error('Invoice not found')
+
+    const countdown = calculateCountdown(inv)
+    const metricDays = countdown.stage === 'overdue' ? countdown.daysPastDue : countdown.daysUntilDue
+
+    const res = await sendPaymentReminderEmail({
+      invoice: inv,
+      recipientEmail: recipientEmail || inv.client_email,
+      subject,
+      personalMessage,
+      countdownStage: countdown.stage,
+      daysMetric: metricDays,
+      attachPdf,
+      businessSettings: settings.value,
+    })
+
+    const nowIso = new Date().toISOString()
+    inv.last_reminder_sent_at = nowIso
+    inv.reminders_sent_count = (Number(inv.reminders_sent_count) || 0) + 1
+    if (!Array.isArray(inv.reminder_history)) {
+      inv.reminder_history = []
+    }
+    inv.reminder_history.push({
+      sent_at: nowIso,
+      stage: countdown.stage,
+      metric_days: metricDays,
+      recipient: recipientEmail || inv.client_email,
+      channel: 'manual_email',
+    })
+
+    saveStorage('invoices', invoices.value)
+
+    try {
+      await supabase
+        .from('invoices')
+        .update({
+          last_reminder_sent_at: inv.last_reminder_sent_at,
+          reminders_sent_count: inv.reminders_sent_count,
+          reminder_history: inv.reminder_history,
+        })
+        .eq('id', invoiceId)
+    } catch (err) {
+      console.warn('[Business] Supabase reminder update notice:', err)
+    }
+
+    return res
+  }
+
   // ==========================================
   // CUSTOMER MASTER DATA & ONBOARDING
   // ==========================================
@@ -1136,10 +1216,20 @@ export const useBusinessStore = defineStore('business-store', () => {
     isFetchingClients.value = true
     try {
       // Fetch directly from customers master table with associated contacts
-      const { data: customerData, error: customerErr } = await supabase
+      let { data: customerData, error: customerErr } = await supabase
         .from('customers')
         .select('*, contacts(*)')
         .order('created_at', { ascending: false })
+
+      if (customerErr) {
+        // Fallback to customers select('*') if relationship embedding encounters ambiguity or missing FK
+        const fallback = await supabase
+          .from('customers')
+          .select('*')
+          .order('created_at', { ascending: false })
+        customerData = fallback.data
+        customerErr = fallback.error
+      }
 
       if (!customerErr && customerData) {
         customers.value = customerData.map((c) => {
@@ -1217,11 +1307,22 @@ export const useBusinessStore = defineStore('business-store', () => {
   async function fetchCustomerFromSupabase(customerId) {
     if (!customerId) return null
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('customers')
         .select('*, contacts(*)')
         .eq('id', customerId)
         .maybeSingle()
+
+      if (error) {
+        // Fallback to select('*') without relationship embedding
+        const fallback = await supabase
+          .from('customers')
+          .select('*')
+          .eq('id', customerId)
+          .maybeSingle()
+        data = fallback.data
+        error = fallback.error
+      }
 
       if (!error && data) {
         const contactList = (data.contacts && data.contacts.length > 0)
@@ -1801,15 +1902,36 @@ export const useBusinessStore = defineStore('business-store', () => {
         bank_routing_iban: settings.value.bank_routing_iban || '',
         swift_bic: settings.value.swift_bic || '',
         payment_instructions: settings.value.payment_instructions || '',
+        receipt_prefix: settings.value.receipt_prefix || 'REC-2026-',
+        next_receipt_number: Number(settings.value.next_receipt_number) || 5001,
+        from_name: settings.value.from_name || '',
+        from_email: settings.value.from_email || '',
         auto_deduct_inventory: Boolean(settings.value.auto_deduct_inventory),
         allow_negative_stock: Boolean(settings.value.allow_negative_stock),
         default_low_stock_threshold: Number(settings.value.default_low_stock_threshold) || 5,
+        reminder_enabled: settings.value.reminder_enabled !== false,
+        reminder_days_before: settings.value.reminder_days_before || '7, 3, 1',
+        reminder_on_due_date: settings.value.reminder_on_due_date !== false,
+        reminder_overdue_days: settings.value.reminder_overdue_days || '3, 7',
+        cron_secret_token: settings.value.cron_secret_token || 'cr_rem_live_secret',
         updated_at: nowIso,
       }
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('business_settings')
         .upsert(payload, { onConflict: 'id' })
+
+      // If Supabase schema cache doesn't yet have reminder columns, fallback to base payload
+      if (error && error.message && error.message.includes('column')) {
+        const fallbackPayload = { ...payload }
+        delete fallbackPayload.reminder_enabled
+        delete fallbackPayload.reminder_days_before
+        delete fallbackPayload.reminder_on_due_date
+        delete fallbackPayload.reminder_overdue_days
+        delete fallbackPayload.cron_secret_token
+        const retryRes = await supabase.from('business_settings').upsert(fallbackPayload, { onConflict: 'id' })
+        error = retryRes.error
+      }
 
       if (error) {
         console.warn('[Business] Supabase sync notice:', error.message)
@@ -1928,6 +2050,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     adjustStock,
     // Reminders
     sendReminder,
+    sendManualInvoiceReminder,
     // Computed Metrics
     totalRevenue,
     totalOutstanding,

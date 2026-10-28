@@ -871,7 +871,14 @@ watch(() => currentId.value, (newId) => {
 
 const client = computed(() => {
   if (!currentId.value) return null
-  return business.customers.find((c) => c.id === currentId.value) || null
+  const target = String(currentId.value).toLowerCase()
+  return (
+    business.customers.find(
+      (c) =>
+        String(c.id).toLowerCase() === target ||
+        (c.company_name && c.company_name.toLowerCase() === target)
+    ) || null
+  )
 })
 
 const pendingChangeRequest = computed(() => {
