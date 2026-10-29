@@ -78,7 +78,7 @@ const DesktopLayout = defineAsyncComponent(
 const Layout = computed(() => (isMobileView.value ? MobileLayout : DesktopLayout))
 
 // Empty layout wrapper for standalone pages (Login, Onboarding, Not Permitted)
-const EmptyLayout = (props, { slots }) => h('div', { class: 'h-full w-full' }, slots.default?.())
+const EmptyLayout = (props, { slots }) => h('div', { class: 'h-full w-full overflow-y-auto' }, slots.default?.())
 
 const isStandaloneRoute = computed(() => {
   return route.name === 'Login' || route.name === 'Onboarding' || route.name === 'Not Permitted'

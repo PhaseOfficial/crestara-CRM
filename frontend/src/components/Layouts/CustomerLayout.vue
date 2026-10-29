@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-surface-base flex flex-col text-ink-gray-9">
+  <div class="h-full w-full overflow-y-auto bg-surface-base flex flex-col text-ink-gray-9 overscroll-contain">
     <!-- Customer Portal Navigation Header -->
     <header class="bg-surface-base border-b border-outline-gray-1 sticky top-0 z-30 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
