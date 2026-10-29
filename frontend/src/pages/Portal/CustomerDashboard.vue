@@ -272,13 +272,10 @@ const selectedInvoice = ref(null)
 
 const customerInvoices = computed(() => {
   const currentEmail = business.currentUser?.email?.toLowerCase()
-  if (currentEmail) {
-    const matching = business.invoices.filter(
-      (inv) => inv.status !== 'Draft' && inv.client_email?.toLowerCase() === currentEmail
-    )
-    if (matching.length > 0) return matching
-  }
-  return business.invoices.filter((inv) => inv.status !== 'Draft')
+  if (!currentEmail) return []
+  return business.invoices.filter(
+    (inv) => inv.status !== 'Draft' && inv.client_email?.toLowerCase() === currentEmail
+  )
 })
 
 const customerBalance = computed(() => {

@@ -1,24 +1,79 @@
 # ==============================================================================
-# cPanel Apache Rewrite Rules for Single Page Application (Vue Router History Mode)
+# cPanel Apache Configuration for Crestara CRM (Vue Router SPA + PHP API)
 # ==============================================================================
+
+# Protect sensitive environment, git, and config files from direct browser access
+<FilesMatch "^(\.env|\.git|\.htaccess|\.htpasswd)">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  
-  # Allow direct access to API endpoint scripts and existing files
+
+  # ----------------------------------------------------------------------------
+  # 1. Allow ACME & cPanel AutoSSL domain control validation passes directly
+  # ----------------------------------------------------------------------------
+  RewriteRule ^\.well-known/ - [L]
+
+  # ----------------------------------------------------------------------------
+  # 2. Canonical Redirection: Redirect www.crm to https://crm
+  # ----------------------------------------------------------------------------
+  RewriteCond %{HTTP_HOST} ^www\.crm\.crestaraadvisorygroup\.com$ [NC]
+  RewriteRule ^(.*)$ https://crm.crestaraadvisorygroup.com/$1 [R=301,L]
+
+  # ----------------------------------------------------------------------------
+  # 3. Force HTTPS: Redirect all insecure HTTP traffic to HTTPS
+  # Works safely with direct LiteSpeed/Apache and Cloudflare Edge Proxy
+  # ----------------------------------------------------------------------------
+  RewriteCond %{HTTPS} !on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteCond %{HTTP:CF-Visitor} !'"scheme":"https"'
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  # ----------------------------------------------------------------------------
+  # 4. Allow direct access to API endpoint scripts and existing files/directories
+  # ----------------------------------------------------------------------------
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Route all other web requests to index.html for Vue Router
+  # ----------------------------------------------------------------------------
+  # 5. Prevent rewrite loops for api directory
+  # ----------------------------------------------------------------------------
+  RewriteRule ^api/ - [L]
+
+  # ----------------------------------------------------------------------------
+  # 6. Route all other web requests to index.html for Vue Router history mode
+  # ----------------------------------------------------------------------------
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# MIME type headers for modern fonts and assets
+# MIME type headers for modern fonts, assets, and calendar files
 <IfModule mod_mime.c>
   AddType application/font-woff2 .woff2
   AddType application/font-woff .woff
   AddType application/json .json
   AddType image/svg+xml .svg
   AddType text/calendar .ics
+</IfModule>
+
+# Security headers & HTTP Strict Transport Security (HSTS)
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Enable GZIP compression for static text/js/css assets if mod_deflate is available
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json application/font-woff application/font-woff2 image/svg+xml
 </IfModule>

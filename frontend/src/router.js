@@ -279,7 +279,12 @@ router.beforeEach(async (to, from, next) => {
   const { isLoggedIn, user } = session
   const { users, isCrmUser, isAdmin } = usersStore()
   const business = useBusinessStore()
-  const currentRole = business.currentRole
+  let currentRole = business.currentRole
+  if (isLoggedIn && (session.user || session.currentUser?.email)) {
+    currentRole = business.resolveUserRole(session.user || session.currentUser?.email)
+  } else if (isLoggedIn) {
+    currentRole = session.userRole || business.currentRole || 'Customer'
+  }
 
   if (to.name === 'Login') {
     if (isLoggedIn) {
@@ -347,8 +352,14 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (isLoggedIn && to.name !== 'Not Permitted' && !isCrmUser()) {
+    if (currentRole === 'Customer') {
+      return next({ path: '/portal' })
+    }
     next({ name: 'Not Permitted' })
   } else if (to.name === 'Home' && isLoggedIn) {
+    if (currentRole === 'Customer') {
+      return next({ path: '/portal' })
+    }
     const { views, getDefaultView } = viewsStore()
     await views.promise
 

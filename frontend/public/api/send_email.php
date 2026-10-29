@@ -30,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $SERVER_CONFIG = [
     // Business Identity & Sender Address
     'business_name'   => 'Crestara Advisory Group',
-    'from_email'      => 'billing@' . ($_SERVER['SERVER_NAME'] ?? 'crestara.com'),
+    'from_email'      => 'billing@' . ($_SERVER['SERVER_NAME'] ?? 'crestaraadvisorygroup.com'),
     'from_name'       => 'Crestara Billing',
-    'reply_to'        => 'billing@' . ($_SERVER['SERVER_NAME'] ?? 'crestara.com'),
+    'reply_to'        => 'billing@' . ($_SERVER['SERVER_NAME'] ?? 'crestaraadvisorygroup.com'),
     
     // Optional SMTP credentials if routing via external SMTP rather than local sendmail
     'use_smtp'        => false,
@@ -64,7 +64,7 @@ $htmlBody = !empty($payload['html']) ? $payload['html'] : '';
 $attachments = !empty($payload['attachments']) && is_array($payload['attachments']) ? $payload['attachments'] : [];
 
 // Sender details managed securely on the server
-$fromEmail = !empty($SERVER_CONFIG['from_email']) ? trim($SERVER_CONFIG['from_email']) : ('billing@' . ($_SERVER['SERVER_NAME'] ?? 'crestara.com'));
+$fromEmail = !empty($SERVER_CONFIG['from_email']) ? trim($SERVER_CONFIG['from_email']) : ('billing@' . ($_SERVER['SERVER_NAME'] ?? 'crestaraadvisorygroup.com'));
 $fromName = !empty($SERVER_CONFIG['from_name']) ? trim($SERVER_CONFIG['from_name']) : $SERVER_CONFIG['business_name'];
 $replyTo = !empty($SERVER_CONFIG['reply_to']) ? trim($SERVER_CONFIG['reply_to']) : $fromEmail;
 

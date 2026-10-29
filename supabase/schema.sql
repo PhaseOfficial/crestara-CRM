@@ -330,6 +330,23 @@ ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
 
+-- ----------------------------------------------------------------------------
+-- Helper function to check if the authenticated user has elevated roles
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.is_admin_or_staff()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid()
+      AND role IN ('Administrator', 'Staff', 'System Manager')
+  );
+$$;
+
 -- Allow authenticated users to view profiles
 CREATE POLICY "Allow authenticated read profiles"
   ON public.profiles FOR SELECT
@@ -418,6 +435,48 @@ CREATE INDEX IF NOT EXISTS idx_customers_national_id ON public.customers(nationa
 CREATE INDEX IF NOT EXISTS idx_customers_industry ON public.customers(industry);
 CREATE INDEX IF NOT EXISTS idx_customers_segment ON public.customers(customer_segment);
 CREATE INDEX IF NOT EXISTS idx_change_requests_customer ON public.client_change_requests(customer_id);
+
+-- Enable RLS for client change requests
+ALTER TABLE public.client_change_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Staff and Admin full access change requests" ON public.client_change_requests;
+CREATE POLICY "Staff and Admin full access change requests"
+  ON public.client_change_requests FOR ALL
+  TO authenticated
+  USING (public.is_admin_or_staff())
+  WITH CHECK (public.is_admin_or_staff());
+
+DROP POLICY IF EXISTS "Customers view own change requests" ON public.client_change_requests;
+CREATE POLICY "Customers view own change requests"
+  ON public.client_change_requests FOR SELECT
+  TO authenticated
+  USING (
+    requested_by = auth.uid()
+    OR customer_id = auth.uid()
+    OR customer_id IN (
+      SELECT id FROM public.customers
+      WHERE lower(primary_email) = lower(auth.jwt() ->> 'email')
+         OR lower(billing_email) = lower(auth.jwt() ->> 'email')
+    )
+  );
+
+DROP POLICY IF EXISTS "Customers insert own change requests" ON public.client_change_requests;
+CREATE POLICY "Customers insert own change requests"
+  ON public.client_change_requests FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    status = 'Pending'
+    AND (
+      requested_by = auth.uid()
+      OR customer_id = auth.uid()
+      OR customer_id IN (
+        SELECT id FROM public.customers
+        WHERE lower(primary_email) = lower(auth.jwt() ->> 'email')
+           OR lower(billing_email) = lower(auth.jwt() ->> 'email')
+      )
+    )
+  );
+
 
 -- ============================================================================
 -- 14. BUSINESS SETTINGS & ATOMIC INVOICE NUMBER RPC
@@ -607,17 +666,29 @@ CREATE INDEX IF NOT EXISTS idx_invoices_client_email ON public.invoices(client_e
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow authenticated full access to invoices" ON public.invoices;
-CREATE POLICY "Allow authenticated full access to invoices"
+DROP POLICY IF EXISTS "Allow anon read invoices" ON public.invoices;
+DROP POLICY IF EXISTS "Staff and Admin full access to invoices" ON public.invoices;
+DROP POLICY IF EXISTS "Customers read own invoices" ON public.invoices;
+
+-- Staff and Admin full operational access (CRUD)
+CREATE POLICY "Staff and Admin full access to invoices"
   ON public.invoices FOR ALL
   TO authenticated
-  USING (true)
-  WITH CHECK (true);
+  USING (public.is_admin_or_staff())
+  WITH CHECK (public.is_admin_or_staff());
 
-DROP POLICY IF EXISTS "Allow anon read invoices" ON public.invoices;
-CREATE POLICY "Allow anon read invoices"
+-- Customers can ONLY view invoices issued to their email or matching customer record
+CREATE POLICY "Customers read own invoices"
   ON public.invoices FOR SELECT
-  TO anon
-  USING (true);
+  TO authenticated
+  USING (
+    lower(client_email) = lower(auth.jwt() ->> 'email')
+    OR customer_id IN (
+      SELECT id FROM public.customers
+      WHERE lower(primary_email) = lower(auth.jwt() ->> 'email')
+         OR lower(billing_email) = lower(auth.jwt() ->> 'email')
+    )
+  );
 
 -- ============================================================================
 -- 16. SUPABASE STORAGE BUCKETS & MEDIA ASSETS
@@ -872,17 +943,26 @@ GRANT EXECUTE ON FUNCTION public.get_next_receipt_number() TO authenticated, ano
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow authenticated full access to payments" ON public.payments;
-CREATE POLICY "Allow authenticated full access to payments"
+DROP POLICY IF EXISTS "Allow anon read payments" ON public.payments;
+DROP POLICY IF EXISTS "Staff and Admin full access to payments" ON public.payments;
+DROP POLICY IF EXISTS "Customers read own payments" ON public.payments;
+
+CREATE POLICY "Staff and Admin full access to payments"
   ON public.payments FOR ALL
   TO authenticated
-  USING (true)
-  WITH CHECK (true);
+  USING (public.is_admin_or_staff())
+  WITH CHECK (public.is_admin_or_staff());
 
-DROP POLICY IF EXISTS "Allow anon read payments" ON public.payments;
-CREATE POLICY "Allow anon read payments"
+CREATE POLICY "Customers read own payments"
   ON public.payments FOR SELECT
-  TO anon
-  USING (true);
+  TO authenticated
+  USING (
+    lower(client_email) = lower(auth.jwt() ->> 'email')
+    OR invoice_id IN (
+      SELECT id FROM public.invoices
+      WHERE lower(client_email) = lower(auth.jwt() ->> 'email')
+    )
+  );
 
 -- ============================================================================
 -- 18. CALENDAR EVENTS & SCHEDULING (DECOUPLED FROM FRAPPE)
@@ -916,17 +996,29 @@ CREATE INDEX IF NOT EXISTS idx_events_status ON public.events(status);
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow authenticated full access to events" ON public.events;
-CREATE POLICY "Allow authenticated full access to events"
+DROP POLICY IF EXISTS "Allow anon read events" ON public.events;
+DROP POLICY IF EXISTS "Staff and Admin full access to events" ON public.events;
+DROP POLICY IF EXISTS "Customers read own events" ON public.events;
+
+CREATE POLICY "Staff and Admin full access to events"
   ON public.events FOR ALL
   TO authenticated
-  USING (true)
-  WITH CHECK (true);
+  USING (public.is_admin_or_staff())
+  WITH CHECK (public.is_admin_or_staff());
 
-DROP POLICY IF EXISTS "Allow anon read events" ON public.events;
-CREATE POLICY "Allow anon read events"
+CREATE POLICY "Customers read own events"
   ON public.events FOR SELECT
-  TO anon
-  USING (true);
+  TO authenticated
+  USING (
+    event_type = 'Public'
+    OR (
+      auth.jwt() ->> 'email' IS NOT NULL
+      AND (
+        lower(owner) = lower(auth.jwt() ->> 'email')
+        OR COALESCE(event_participants::text, '') ILIKE '%' || (auth.jwt() ->> 'email') || '%'
+      )
+    )
+  );
 
 ALTER TABLE public.business_settings
   ADD COLUMN IF NOT EXISTS default_calendar_view TEXT DEFAULT 'Weekly',

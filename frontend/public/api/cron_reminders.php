@@ -35,23 +35,33 @@ if (!$isCli) {
 // ============================================================================
 // CONFIGURATION & CREDENTIAL RESOLUTION
 // ============================================================================
-$envFile = __DIR__ . '/../../.env';
+$candidateEnvFiles = [
+    __DIR__ . '/.env',
+    __DIR__ . '/../.env',
+    __DIR__ . '/../../.env',
+    dirname(__DIR__, 2) . '/.env',
+];
+
 $envConfig = [];
-if (file_exists($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        if (strpos($line, '=') !== false) {
-            list($k, $v) = explode('=', $line, 2);
-            $envConfig[trim($k)] = trim(trim($v), '"\'');
+foreach ($candidateEnvFiles as $candidate) {
+    if (file_exists($candidate)) {
+        $lines = file($candidate, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) continue;
+            if (strpos($line, '=') !== false) {
+                list($k, $v) = explode('=', $line, 2);
+                $envConfig[trim($k)] = trim(trim($v), '"\'');
+            }
         }
+        break;
     }
 }
 
-$supabaseUrl = getenv('SUPABASE_URL') ?: ($envConfig['VITE_SUPABASE_URL'] ?? '');
+$supabaseUrl = getenv('SUPABASE_URL') 
+    ?: ($envConfig['VITE_SUPABASE_URL'] ?? 'https://svvqqmljgmgrcijkmjsk.supabase.co');
 $supabaseKey = getenv('SUPABASE_SERVICE_ROLE_KEY') 
     ?: getenv('SUPABASE_ANON_KEY') 
-    ?: ($envConfig['VITE_SUPABASE_PUBLISHABLE_KEY'] ?? ($envConfig['VITE_SUPABASE_ANON_KEY'] ?? ''));
+    ?: ($envConfig['VITE_SUPABASE_PUBLISHABLE_KEY'] ?? ($envConfig['VITE_SUPABASE_ANON_KEY'] ?? 'sb_publishable_FzlvHScSdhbugbIKIGGnnQ_I3Y6oRVV'));
 
 // Fallback Cron Secret Token
 $defaultCronSecret = 'cr_rem_live_secret';

@@ -115,9 +115,12 @@ const customerEvents = computed(() => {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ]
 
-  // 1. Map Outstanding & Overdue Invoices
+  const currentEmail = business.currentUser?.email?.toLowerCase()
+
+  // 1. Map Outstanding & Overdue Invoices for THIS client only
   for (const inv of business.invoices || []) {
     if (inv.status === 'Paid') continue
+    if (!currentEmail || inv.client_email?.toLowerCase() !== currentEmail) continue
     const date = inv.due_date ? new Date(inv.due_date) : new Date()
     const pad = (n) => String(n).padStart(2, '0')
     list.push({
@@ -136,8 +139,13 @@ const customerEvents = computed(() => {
     })
   }
 
-  // 2. Map Client Appointments
+  // 2. Map Client Appointments for THIS client only
   for (const ev of business.events || []) {
+    if (!currentEmail) continue
+    const attendee = (ev.attendee_email || '').toLowerCase()
+    const client = (ev.client_email || '').toLowerCase()
+    if (attendee !== currentEmail && client !== currentEmail) continue
+
     const date = ev.fromDate ? new Date(ev.fromDate) : new Date()
     const pad = (n) => String(n).padStart(2, '0')
     list.push({

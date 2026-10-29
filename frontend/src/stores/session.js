@@ -60,7 +60,7 @@ export const sessionStore = defineStore('crm-session', () => {
         id: currentUser.value.id,
         email: currentUser.value.email,
         full_name: meta.full_name || currentUser.value.email?.split('@')[0] || 'User',
-        role: meta.role || 'Administrator',
+        role: meta.role || 'Customer',
       }
     }
     return userProfile.value

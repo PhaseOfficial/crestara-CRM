@@ -46,19 +46,22 @@ export const usersStore = defineStore('crm-users', () => {
   }
 
   function isAdmin(email) {
-    return true
+    const role = session.userRole
+    return role === 'Administrator' || role === 'System Manager'
   }
 
   function isManager(email) {
-    return true
+    const role = session.userRole
+    return role === 'Administrator' || role === 'System Manager' || role === 'Staff'
   }
 
   function isWebsiteUser(email) {
-    return false
+    return session.userRole === 'Customer'
   }
 
   function isSalesUser(email) {
-    return true
+    const role = session.userRole
+    return role === 'Administrator' || role === 'Staff' || role === 'System Manager'
   }
 
   function isTelephonyAgent(email) {
@@ -66,12 +69,12 @@ export const usersStore = defineStore('crm-users', () => {
   }
 
   function getUserRole(email) {
-    return 'System Manager'
+    return session.userRole || 'Customer'
   }
 
   const isCrmUser = (user) => {
-    user = user || session.user
-    return Boolean(user)
+    const role = session.userRole
+    return role === 'Administrator' || role === 'Staff' || role === 'System Manager'
   }
 
   const allUsers = computed(() => {

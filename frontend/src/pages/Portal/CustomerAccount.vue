@@ -579,8 +579,14 @@ async function onAvatarUpdated(newUrl) {
 
 const customerRequests = computed(() => {
   const email = clientProfile.value.email?.toLowerCase()
-  return business.changeRequests.filter(
-    (r) => (email && r.client_email?.toLowerCase() === email) || r.client_id === clientProfile.value.id || r.customer_id === clientProfile.value.id
+  const custId = customer.value?.id
+  const profId = clientProfile.value?.id
+  if (!email && !custId && !profId) return []
+  return (business.changeRequests || []).filter(
+    (r) =>
+      (email && r.client_email?.toLowerCase() === email) ||
+      (custId && (r.customer_id === custId || r.client_id === custId)) ||
+      (profId && (r.requested_by === profId || r.client_id === profId))
   )
 })
 
@@ -667,7 +673,12 @@ function getRequestStatusBadge(status) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    await business.fetchChangeRequestsFromSupabase()
+  } catch (err) {
+    // ignore
+  }
   if (route.query.request_change === 'true') {
     openChangeModal()
   }

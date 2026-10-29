@@ -126,7 +126,7 @@ export const useBusinessStore = defineStore('business-store', () => {
   const tasks = ref(cleanStoredList('tasks'))
 
   // Role: 'Administrator' | 'Staff' | 'Customer'
-  const currentRole = ref(localStorage.getItem('crestara_current_role') || 'Administrator')
+  const currentRole = ref(localStorage.getItem('crestara_current_role') || 'Customer')
 
   function setRole(role) {
     if (['Administrator', 'Staff', 'Customer'].includes(role)) {
@@ -320,7 +320,7 @@ export const useBusinessStore = defineStore('business-store', () => {
   }
 
   function resolveUserRole(email) {
-    if (!email) return currentRole.value || 'Administrator'
+    if (!email) return currentRole.value || 'Customer'
 
     // Check if sessionStore has a confirmed Supabase profile role
     try {
@@ -351,8 +351,8 @@ export const useBusinessStore = defineStore('business-store', () => {
       setRole('Staff')
       return 'Staff'
     }
-    setRole('Administrator')
-    return 'Administrator'
+    setRole('Customer')
+    return 'Customer'
   }
 
   const CURRENCY_SYMBOLS = {
@@ -450,10 +450,23 @@ export const useBusinessStore = defineStore('business-store', () => {
   // ==========================================
   async function fetchInvoicesFromSupabase() {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('invoices')
         .select('*')
         .order('created_at', { ascending: false })
+
+      try {
+        const session = sessionStore()
+        const role = session.userRole || currentRole.value
+        const userEmail = session.currentUser?.email || currentUser.value?.email
+        if (role === 'Customer' && userEmail) {
+          query = query.ilike('client_email', userEmail)
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.warn('[Business] Supabase fetchInvoices error:', error)
@@ -1399,22 +1412,32 @@ export const useBusinessStore = defineStore('business-store', () => {
         .order('requested_at', { ascending: false })
 
       if (!error && data) {
-        changeRequests.value = data.map((r) => ({
-          id: r.id,
-          customer_id: r.customer_id,
-          client_id: r.customer_id,
-          client_name: r.requested_data?.full_name || r.current_data?.full_name || 'Client',
-          client_email: r.requested_data?.email || r.current_data?.email || '',
-          organization: r.requested_data?.company || r.current_data?.company || 'Organization',
-          requested_date: r.requested_at ? r.requested_at.split('T')[0] : new Date().toISOString().split('T')[0],
-          status: r.status,
-          reason: r.reason,
-          current_details: r.current_data || {},
-          requested_details: r.requested_data || {},
-          review_notes: r.review_notes || '',
-          reviewed_by: r.reviewer_name || null,
-          reviewed_date: r.reviewed_at ? r.reviewed_at.split('T')[0] : null,
-        }))
+        changeRequests.value = data.map((r) => {
+          const custRecord = customers.value.find((c) => c.id === r.customer_id)
+          const resolvedEmail =
+            r.requested_data?.email ||
+            r.current_data?.email ||
+            custRecord?.primary_email ||
+            custRecord?.billing_email ||
+            ''
+          return {
+            id: r.id,
+            customer_id: r.customer_id,
+            client_id: r.customer_id,
+            requested_by: r.requested_by,
+            client_name: r.requested_data?.full_name || r.current_data?.full_name || custRecord?.company_name || 'Client',
+            client_email: resolvedEmail,
+            organization: r.requested_data?.company || r.current_data?.company || custRecord?.company_name || 'Organization',
+            requested_date: r.requested_at ? r.requested_at.split('T')[0] : new Date().toISOString().split('T')[0],
+            status: r.status,
+            reason: r.reason,
+            current_details: r.current_data || {},
+            requested_details: r.requested_data || {},
+            review_notes: r.review_notes || '',
+            reviewed_by: r.reviewer_name || null,
+            reviewed_date: r.reviewed_at ? r.reviewed_at.split('T')[0] : null,
+          }
+        })
         saveStorage('change_requests', changeRequests.value)
       }
     } catch (err) {
@@ -1426,11 +1449,13 @@ export const useBusinessStore = defineStore('business-store', () => {
     const activeClient = currentUser.value || {}
     const activeCustomer = currentCustomerRecord.value || {}
     const fallbackName = activeClient.email ? activeClient.email.split('@')[0] : 'Client'
-    const customerId = activeClient.id || activeCustomer.id || 'usr-client-01'
+    const customerId = activeCustomer.id || activeClient.id || 'usr-client-01'
+    const clientEmail = activeClient.email || activeCustomer.primary_email || ''
 
     const currentSnapshot = {
       company: activeCustomer.company_name || activeClient.organization || '',
       full_name: activeClient.full_name || fallbackName,
+      email: clientEmail,
       phone: activeCustomer.phone || activeClient.phone || '',
       address: activeCustomer.billing_address_line1 || activeClient.address || '',
       city: activeCustomer.billing_city || activeClient.city || '',
@@ -1443,18 +1468,25 @@ export const useBusinessStore = defineStore('business-store', () => {
       date_of_birth: activeCustomer.date_of_birth || '',
     }
 
+    const mergedRequestedDetails = {
+      ...currentSnapshot,
+      ...requested_details,
+      email: clientEmail,
+    }
+
     const newReq = {
       id: `cr-${Date.now()}`,
       customer_id: customerId,
       client_id: customerId,
+      requested_by: activeClient.id,
       client_name: activeClient.full_name || fallbackName,
-      client_email: activeClient.email || '',
+      client_email: clientEmail,
       organization: activeCustomer.company_name || activeClient.organization || 'Client Organization',
       requested_date: new Date().toISOString().split('T')[0],
       status: 'Pending',
       reason: reason || 'Customer requested information updates.',
       current_details: currentSnapshot,
-      requested_details: { ...currentSnapshot, ...requested_details },
+      requested_details: mergedRequestedDetails,
       review_notes: '',
       reviewed_by: null,
       reviewed_date: null,
@@ -1465,15 +1497,27 @@ export const useBusinessStore = defineStore('business-store', () => {
 
     // Sync to Supabase client_change_requests if connected
     try {
-      await supabase.from('client_change_requests').insert({
-        id: newReq.id.startsWith('cr-') ? undefined : newReq.id,
+      const payload = {
         customer_id: customerId,
         requested_by: activeClient.id,
         status: 'Pending',
         reason: newReq.reason,
         current_data: currentSnapshot,
-        requested_data: newReq.requested_details,
-      })
+        requested_data: mergedRequestedDetails,
+      }
+      if (!newReq.id.startsWith('cr-')) {
+        payload.id = newReq.id
+      }
+      const { data, error } = await supabase
+        .from('client_change_requests')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (!error && data?.id) {
+        newReq.id = data.id
+        saveStorage('change_requests', changeRequests.value)
+      }
     } catch (err) {
       console.warn('[Business] Could not write change request to Supabase:', err)
     }
@@ -1531,7 +1575,8 @@ export const useBusinessStore = defineStore('business-store', () => {
 
     // Sync approval to Supabase
     try {
-      if (targetCustomerId) {
+      const finalCustomerId = cust?.id || targetCustomerId
+      if (finalCustomerId) {
         await supabase
           .from('customers')
           .update({
@@ -1547,7 +1592,18 @@ export const useBusinessStore = defineStore('business-store', () => {
             gender: req.requested_details.gender,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', targetCustomerId)
+          .eq('id', finalCustomerId)
+      }
+
+      if (req.requested_by && req.requested_details.full_name) {
+        await supabase
+          .from('profiles')
+          .update({
+            full_name: req.requested_details.full_name,
+            phone: req.requested_details.phone || undefined,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', req.requested_by)
       }
 
       await supabase
