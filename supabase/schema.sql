@@ -24,10 +24,29 @@ RETURNS TRIGGER AS $$
 DECLARE
   user_count INTEGER;
   assigned_role TEXT;
+  existing_role TEXT;
   raw_name TEXT;
+  raw_company TEXT;
 BEGIN
-  raw_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
+  -- A. If triggered by an UPDATE on auth.users (e.g. sign-in timestamp or email change):
+  IF TG_OP = 'UPDATE' THEN
+    UPDATE public.profiles
+    SET
+      email = NEW.email,
+      full_name = COALESCE(NEW.raw_user_meta_data->>'full_name', public.profiles.full_name),
+      avatar_url = COALESCE(NEW.raw_user_meta_data->>'avatar_url', public.profiles.avatar_url),
+      updated_at = NOW()
+    WHERE id = NEW.id;
+    RETURN NEW;
+  END IF;
 
+  -- B. If profile already exists in public.profiles, do NOT recalculate role or touch customers
+  SELECT role INTO existing_role FROM public.profiles WHERE id = NEW.id;
+  IF existing_role IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- C. Determine role: first registered user is Administrator; subsequent default to Customer
   SELECT COUNT(*) INTO user_count FROM public.profiles;
 
   IF user_count = 0 THEN
@@ -37,11 +56,21 @@ BEGIN
       NULLIF(NEW.raw_user_meta_data->>'role', ''),
       'Customer'
     );
+    -- Enforce only valid roles: Administrator, Staff, Customer
     IF assigned_role NOT IN ('Administrator', 'Staff', 'Customer') THEN
       assigned_role := 'Customer';
     END IF;
   END IF;
 
+  raw_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
+  raw_company := COALESCE(
+    NEW.raw_user_meta_data->>'company_name',
+    NEW.raw_user_meta_data->>'organization',
+    NEW.raw_user_meta_data->>'company',
+    raw_name
+  );
+
+  -- D. Insert new profile into public.profiles
   INSERT INTO public.profiles (
     id,
     email,
@@ -52,7 +81,7 @@ BEGIN
     NEW.id,
     NEW.email,
     raw_name,
-    NEW.raw_user_meta_data->>'avatar_url',
+    COALESCE(NEW.raw_user_meta_data->>'avatar_url', ''),
     assigned_role
   )
   ON CONFLICT (id) DO UPDATE SET
@@ -61,13 +90,39 @@ BEGIN
     avatar_url = COALESCE(EXCLUDED.avatar_url, public.profiles.avatar_url),
     updated_at = NOW();
 
+  -- E. Provision public.customers ONLY if role is strictly 'Customer'
+  IF assigned_role = 'Customer' THEN
+    INSERT INTO public.customers (
+      id,
+      primary_email,
+      company_name,
+      first_name,
+      status,
+      customer_type,
+      created_at,
+      updated_at
+    ) VALUES (
+      NEW.id,
+      NEW.email,
+      raw_company,
+      split_part(raw_name, ' ', 1),
+      'Active',
+      'Business',
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      primary_email = EXCLUDED.primary_email,
+      updated_at = NOW();
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
-  AFTER INSERT OR UPDATE ON auth.users
+  AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- 3. CUSTOMERS MASTER TABLE (Clients / Organizations Single Source of Truth)
@@ -322,6 +377,7 @@ CREATE TABLE IF NOT EXISTS public.activities (
 
 -- 10. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
@@ -358,6 +414,39 @@ CREATE POLICY "Allow individual update profile"
   ON public.profiles FOR UPDATE
   TO authenticated
   USING (auth.uid() = id);
+
+-- Customer Master RLS Policies
+DROP POLICY IF EXISTS "Staff and Admin full access to customers" ON public.customers;
+CREATE POLICY "Staff and Admin full access to customers"
+  ON public.customers FOR ALL
+  TO authenticated
+  USING (public.is_admin_or_staff())
+  WITH CHECK (public.is_admin_or_staff());
+
+DROP POLICY IF EXISTS "Customers read own customer profile" ON public.customers;
+CREATE POLICY "Customers read own customer profile"
+  ON public.customers FOR SELECT
+  TO authenticated
+  USING (
+    id = auth.uid()
+    OR lower(primary_email) = lower(auth.jwt() ->> 'email')
+    OR lower(billing_email) = lower(auth.jwt() ->> 'email')
+  );
+
+DROP POLICY IF EXISTS "Customers update own customer profile" ON public.customers;
+CREATE POLICY "Customers update own customer profile"
+  ON public.customers FOR UPDATE
+  TO authenticated
+  USING (
+    id = auth.uid()
+    OR lower(primary_email) = lower(auth.jwt() ->> 'email')
+    OR lower(billing_email) = lower(auth.jwt() ->> 'email')
+  )
+  WITH CHECK (
+    id = auth.uid()
+    OR lower(primary_email) = lower(auth.jwt() ->> 'email')
+    OR lower(billing_email) = lower(auth.jwt() ->> 'email')
+  );
 
 -- Universal workspace access for authenticated CRM team members
 CREATE POLICY "Allow authenticated full access organizations"

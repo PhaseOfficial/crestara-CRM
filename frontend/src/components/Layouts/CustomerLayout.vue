@@ -40,20 +40,6 @@
 
           <!-- Right: Workspace Switch & Account -->
           <div class="flex items-center gap-2 sm:gap-3">
-            <!-- Guide & Walkthrough Button -->
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-2 dark:bg-surface-blue-2/60 border border-outline-blue-2 hover:bg-surface-blue-3 transition focus:outline-none"
-              :title="__('Explore Getting Started Guide')"
-              @click="showGuideModal = true"
-            >
-              <span class="lucide-compass size-4 shrink-0" />
-              <span class="hidden sm:inline">{{ __('Guide') }}</span>
-              <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-surface-blue-3 text-ink-blue-8 dark:bg-blue-900/60 dark:text-blue-200 border border-outline-blue-3/60">
-                {{ business.completedOnboardingStepsCount }}/{{ business.customerOnboardingSteps.length }}
-              </span>
-            </button>
-
             <!-- Theme Toggle -->
             <button
               type="button"
@@ -143,10 +129,6 @@
       v-model="showProfileModal"
       @open-change-modal="handleOpenProfileChange"
     />
-    <CustomerGuideModal
-      v-model="showGuideModal"
-      @open-profile-change="handleOpenProfileChange"
-    />
 
     <!-- Mobile Bottom Navigation Bar -->
     <CustomerBottomNav />
@@ -167,7 +149,6 @@ import { useBusinessStore } from '@/stores/business'
 import { sessionStore } from '@/stores/session'
 import { Dropdown, Avatar, useTheme } from 'frappe-ui'
 import ProfileCompletionModal from '@/components/Modals/ProfileCompletionModal.vue'
-import CustomerGuideModal from '@/components/Modals/CustomerGuideModal.vue'
 import CustomerBottomNav from '@/components/Layouts/CustomerBottomNav.vue'
 import { recordNavClick } from '@/composables/navFrequency'
 
@@ -175,7 +156,6 @@ const router = useRouter()
 const business = useBusinessStore()
 const session = sessionStore()
 const mobileMenuOpen = ref(false)
-const showGuideModal = ref(false)
 const showProfileModal = ref(false)
 const { currentTheme, setTheme } = useTheme()
 

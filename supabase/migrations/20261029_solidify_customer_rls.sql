@@ -100,7 +100,8 @@ CREATE POLICY "Customers read own customer profile"
   ON public.customers FOR SELECT
   TO authenticated
   USING (
-    lower(primary_email) = lower(auth.jwt() ->> 'email')
+    id = auth.uid()
+    OR lower(primary_email) = lower(auth.jwt() ->> 'email')
     OR lower(billing_email) = lower(auth.jwt() ->> 'email')
   );
 
@@ -108,11 +109,13 @@ CREATE POLICY "Customers update own customer profile"
   ON public.customers FOR UPDATE
   TO authenticated
   USING (
-    lower(primary_email) = lower(auth.jwt() ->> 'email')
+    id = auth.uid()
+    OR lower(primary_email) = lower(auth.jwt() ->> 'email')
     OR lower(billing_email) = lower(auth.jwt() ->> 'email')
   )
   WITH CHECK (
-    lower(primary_email) = lower(auth.jwt() ->> 'email')
+    id = auth.uid()
+    OR lower(primary_email) = lower(auth.jwt() ->> 'email')
     OR lower(billing_email) = lower(auth.jwt() ->> 'email')
   );
 

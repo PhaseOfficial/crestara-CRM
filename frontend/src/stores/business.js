@@ -1404,6 +1404,91 @@ export const useBusinessStore = defineStore('business-store', () => {
     return null
   }
 
+  async function fetchCurrentCustomerFromSupabase() {
+    const user = currentUser.value
+    if (!user || (!user.id && !user.email)) return null
+
+    try {
+      let query = supabase.from('customers').select('*, contacts(*)')
+      if (user.id) {
+        query = query.eq('id', user.id)
+      } else {
+        query = query.ilike('primary_email', user.email)
+      }
+
+      let { data, error } = await query.maybeSingle()
+      if (error) {
+        let fallbackQuery = supabase.from('customers').select('*')
+        if (user.id) {
+          fallbackQuery = fallbackQuery.eq('id', user.id)
+        } else {
+          fallbackQuery = fallbackQuery.ilike('primary_email', user.email)
+        }
+        const fallback = await fallbackQuery.maybeSingle()
+        data = fallback.data
+        error = fallback.error
+      }
+
+      // If still not found by id, attempt lookup by email
+      if (!data && user.email && user.id) {
+        const emailFallback = await supabase
+          .from('customers')
+          .select('*')
+          .ilike('primary_email', user.email)
+          .maybeSingle()
+        if (emailFallback.data) {
+          data = emailFallback.data
+        }
+      }
+
+      if (data) {
+        const contactList = (data.contacts && data.contacts.length > 0)
+          ? data.contacts.map((ct) => ({
+              id: ct.id,
+              first_name: ct.first_name || '',
+              last_name: ct.last_name || '',
+              name: ct.full_name || `${ct.first_name} ${ct.last_name || ''}`.trim(),
+              email: ct.email || '',
+              phone: ct.phone || ct.mobile_no || '',
+              role: ct.job_title || 'Contact Person',
+              is_primary: ct.is_primary || false,
+            }))
+          : [
+              {
+                id: `ct-${data.id}`,
+                first_name: data.first_name || '',
+                last_name: data.last_name || '',
+                name: data.first_name ? `${data.first_name} ${data.last_name || ''}`.trim() : (data.primary_email ? data.primary_email.split('@')[0] : 'Primary Contact'),
+                email: data.primary_email || data.billing_email || '',
+                phone: data.phone || data.mobile_no || '',
+                role: data.job_title || 'Primary Representative',
+                is_primary: true,
+              },
+            ]
+
+        const clientObj = {
+          ...data,
+          company_name: data.company_name || data.legal_name || user.organization || user.company || 'Client Organization',
+          contacts: contactList,
+        }
+
+        const idx = customers.value.findIndex(
+          (c) => c.id === data.id || (user.email && c.primary_email?.toLowerCase() === user.email.toLowerCase())
+        )
+        if (idx !== -1) {
+          customers.value[idx] = { ...customers.value[idx], ...clientObj }
+        } else {
+          customers.value.unshift(clientObj)
+        }
+        saveStorage('customers', customers.value)
+        return clientObj
+      }
+    } catch (err) {
+      console.warn('[Business] Could not fetch current customer from Supabase:', err)
+    }
+    return null
+  }
+
   async function fetchChangeRequestsFromSupabase() {
     try {
       const { data, error } = await supabase
@@ -1533,6 +1618,19 @@ export const useBusinessStore = defineStore('business-store', () => {
     req.reviewed_by = reviewer
     req.reviewed_date = new Date().toISOString().split('T')[0]
 
+    // Sanitize gender and date_of_birth to prevent Postgres check/syntax constraints
+    const validGenders = ['Male', 'Female', 'Non-Binary', 'Other', 'Prefer Not to Say']
+    const sanitizedGender = validGenders.includes(req.requested_details.gender)
+      ? req.requested_details.gender
+      : null
+    const sanitizedDob = req.requested_details.date_of_birth && req.requested_details.date_of_birth.trim()
+      ? req.requested_details.date_of_birth.trim()
+      : null
+
+    const nameParts = (req.requested_details.full_name || '').trim().split(/\s+/)
+    const firstName = nameParts[0] || undefined
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined
+
     // Apply the changes to the customer master record
     const targetCustomerId = req.customer_id || req.client_id
     let cust = customers.value.find((c) => c.id === targetCustomerId)
@@ -1550,9 +1648,36 @@ export const useBusinessStore = defineStore('business-store', () => {
       if (req.requested_details.tax_id) cust.tin = req.requested_details.tax_id
       if (req.requested_details.company_registration_number) cust.company_registration_number = req.requested_details.company_registration_number
       if (req.requested_details.national_id_number) cust.national_id_number = req.requested_details.national_id_number
-      if (req.requested_details.gender) cust.gender = req.requested_details.gender
-      if (req.requested_details.date_of_birth) cust.date_of_birth = req.requested_details.date_of_birth
+      if (req.requested_details.gender !== undefined) cust.gender = sanitizedGender || ''
+      if (req.requested_details.date_of_birth !== undefined) cust.date_of_birth = sanitizedDob || null
+      if (firstName) cust.first_name = firstName
+      if (lastName) cust.last_name = lastName
       cust.is_profile_complete = true
+      saveStorage('customers', customers.value)
+    } else if (targetCustomerId) {
+      cust = {
+        id: targetCustomerId,
+        customer_type: 'Business',
+        status: 'Active',
+        company_name: req.requested_details.company || 'Client Organization',
+        first_name: firstName || '',
+        last_name: lastName || '',
+        primary_email: req.client_email || '',
+        billing_email: req.client_email || '',
+        phone: req.requested_details.phone || '',
+        billing_address_line1: req.requested_details.address || '',
+        billing_city: req.requested_details.city || '',
+        billing_state_province: req.requested_details.state || '',
+        billing_postal_code: req.requested_details.zip || '',
+        tin: req.requested_details.tax_id || '',
+        company_registration_number: req.requested_details.company_registration_number || '',
+        national_id_number: req.requested_details.national_id_number || '',
+        gender: sanitizedGender || '',
+        date_of_birth: sanitizedDob || null,
+        is_profile_complete: true,
+        contacts: [],
+      }
+      customers.value.unshift(cust)
       saveStorage('customers', customers.value)
     }
 
@@ -1573,40 +1698,58 @@ export const useBusinessStore = defineStore('business-store', () => {
     // Mark step 1 in onboarding completed
     markOnboardingStep('complete_profile', true)
 
-    // Sync approval to Supabase
+    // Sync approval to Supabase using upsert to guarantee persistence
     try {
       const finalCustomerId = cust?.id || targetCustomerId
       if (finalCustomerId) {
-        await supabase
+        const customerUpsertPayload = {
+          id: finalCustomerId,
+          company_name: req.requested_details.company || cust?.company_name || 'Client Organization',
+          phone: req.requested_details.phone || cust?.phone || null,
+          billing_address_line1: req.requested_details.address || cust?.billing_address_line1 || null,
+          billing_city: req.requested_details.city || cust?.billing_city || null,
+          billing_state_province: req.requested_details.state || cust?.billing_state_province || null,
+          billing_postal_code: req.requested_details.zip || cust?.billing_postal_code || null,
+          tin: req.requested_details.tax_id || cust?.tin || null,
+          company_registration_number: req.requested_details.company_registration_number || cust?.company_registration_number || null,
+          national_id_number: req.requested_details.national_id_number || cust?.national_id_number || null,
+          gender: sanitizedGender,
+          date_of_birth: sanitizedDob,
+          is_profile_complete: true,
+          updated_at: new Date().toISOString(),
+        }
+
+        if (firstName) customerUpsertPayload.first_name = firstName
+        if (lastName) customerUpsertPayload.last_name = lastName
+        if (req.client_email) customerUpsertPayload.primary_email = req.client_email
+
+        const { error: custErr } = await supabase
           .from('customers')
-          .update({
-            company_name: req.requested_details.company,
-            phone: req.requested_details.phone,
-            billing_address_line1: req.requested_details.address,
-            billing_city: req.requested_details.city,
-            billing_state_province: req.requested_details.state,
-            billing_postal_code: req.requested_details.zip,
-            tin: req.requested_details.tax_id,
-            company_registration_number: req.requested_details.company_registration_number,
-            national_id_number: req.requested_details.national_id_number,
-            gender: req.requested_details.gender,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', finalCustomerId)
+          .upsert(customerUpsertPayload, { onConflict: 'id' })
+
+        if (custErr) {
+          console.error('[Business] Could not upsert customer on approval in Supabase:', custErr)
+        }
       }
 
-      if (req.requested_by && req.requested_details.full_name) {
-        await supabase
+      const profileId = req.requested_by || targetCustomerId
+      if (profileId) {
+        const profileUpdates = {
+          updated_at: new Date().toISOString(),
+        }
+        if (req.requested_details.full_name) profileUpdates.full_name = req.requested_details.full_name
+        if (req.requested_details.phone) profileUpdates.phone = req.requested_details.phone
+        const { error: profErr } = await supabase
           .from('profiles')
-          .update({
-            full_name: req.requested_details.full_name,
-            phone: req.requested_details.phone || undefined,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', req.requested_by)
+          .update(profileUpdates)
+          .eq('id', profileId)
+
+        if (profErr) {
+          console.warn('[Business] Could not update profile on approval in Supabase:', profErr)
+        }
       }
 
-      await supabase
+      const { error: reqErr } = await supabase
         .from('client_change_requests')
         .update({
           status: 'Approved',
@@ -1614,6 +1757,10 @@ export const useBusinessStore = defineStore('business-store', () => {
           reviewed_at: new Date().toISOString(),
         })
         .eq('id', req.id)
+
+      if (reqErr) {
+        console.error('[Business] Could not update change request status in Supabase:', reqErr)
+      }
     } catch (err) {
       console.warn('[Business] Could not sync approval to Supabase:', err)
     }
@@ -2241,6 +2388,7 @@ export const useBusinessStore = defineStore('business-store', () => {
     isFetchingClients,
     fetchClientsFromSupabase,
     fetchCustomerFromSupabase,
+    fetchCurrentCustomerFromSupabase,
     fetchChangeRequestsFromSupabase,
     // Change Requests
     submitChangeRequest,

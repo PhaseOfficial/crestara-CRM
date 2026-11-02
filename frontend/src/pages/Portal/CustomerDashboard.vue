@@ -17,11 +17,6 @@
       </div>
     </div>
 
-    <!-- Guided Onboarding / Getting Started Banner -->
-    <CustomerGettingStartedBanner
-      @open-guide="showGuideModal = true"
-    />
-
     <!-- Quick Stat Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Outstanding Balance -->
@@ -249,11 +244,6 @@
       v-model="showReceiptModal"
       :invoice="selectedInvoice"
     />
-
-    <!-- Interactive Guide Modal -->
-    <CustomerGuideModal
-      v-model="showGuideModal"
-    />
   </div>
 </template>
 
@@ -261,12 +251,9 @@
 import { ref, computed } from 'vue'
 import { useBusinessStore } from '@/stores/business'
 import { Button } from 'frappe-ui'
-import CustomerGettingStartedBanner from '@/components/Portal/CustomerGettingStartedBanner.vue'
-import CustomerGuideModal from '@/components/Modals/CustomerGuideModal.vue'
 import ReceiptModal from '@/components/Portal/ReceiptModal.vue'
 
 const business = useBusinessStore()
-const showGuideModal = ref(false)
 const showReceiptModal = ref(false)
 const selectedInvoice = ref(null)
 

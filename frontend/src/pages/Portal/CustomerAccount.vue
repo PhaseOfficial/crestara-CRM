@@ -622,16 +622,16 @@ function openChangeModal() {
 
   changeForm.company = c.company_name || u.organization || u.company || ''
   changeForm.company_registration_number = c.company_registration_number || ''
-  changeForm.full_name = c.first_name ? (c.first_name + ' ' + (c.last_name || '')) : (u.full_name || '')
-  changeForm.phone = c.phone || u.phone || '+1 (555) 789-0123'
+  changeForm.full_name = c.first_name ? (c.first_name + ' ' + (c.last_name || '')).trim() : (u.full_name || '')
+  changeForm.phone = c.phone || u.phone || ''
   changeForm.national_id_number = c.national_id_number || ''
   changeForm.gender = c.gender || ''
   changeForm.date_of_birth = c.date_of_birth || ''
-  changeForm.address = c.billing_address_line1 || u.address || '450 Mission Street, Floor 14'
-  changeForm.city = c.billing_city || u.city || 'San Francisco'
-  changeForm.state = c.billing_state_province || u.state || 'CA'
-  changeForm.zip = c.billing_postal_code || u.zip || '94105'
-  changeForm.tax_id = c.tin || c.tax_id || u.tax_id || 'US-882-99120'
+  changeForm.address = c.billing_address_line1 || u.address || ''
+  changeForm.city = c.billing_city || u.city || ''
+  changeForm.state = c.billing_state_province || u.state || ''
+  changeForm.zip = c.billing_postal_code || u.zip || ''
+  changeForm.tax_id = c.tin || c.tax_id || u.tax_id || ''
   changeForm.reason = ''
   showChangeModal.value = true
 }
@@ -675,7 +675,10 @@ function getRequestStatusBadge(status) {
 
 onMounted(async () => {
   try {
-    await business.fetchChangeRequestsFromSupabase()
+    await Promise.allSettled([
+      business.fetchCurrentCustomerFromSupabase(),
+      business.fetchChangeRequestsFromSupabase(),
+    ])
   } catch (err) {
     // ignore
   }
