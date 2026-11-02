@@ -3,38 +3,47 @@
     <template #default>
       <div class="bg-surface-base rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <!-- Receipt Top Bar -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-outline-gray-1 bg-surface-gray-1 dark:bg-surface-gray-2/70">
-          <div class="flex items-center gap-2">
-            <span class="lucide-receipt size-5 text-ink-green-7 dark:text-ink-green-4" />
-            <h2 class="text-base font-bold text-ink-gray-9">
+        <div class="flex items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-4 border-b border-outline-gray-1 bg-surface-gray-1 dark:bg-surface-gray-2/70 gap-2">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span class="lucide-receipt size-4 sm:size-5 text-ink-green-7 dark:text-ink-green-4 shrink-0" />
+            <h2 class="text-xs sm:text-base font-bold text-ink-gray-9 truncate">
               {{ __('Commercial Payment Receipt') }}
             </h2>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
               iconLeft="lucide-printer"
-              :label="__('Print')"
+              :tooltip="__('Print')"
+              class="shrink-0"
               @click="printReceipt"
-            />
+            >
+              <span class="hidden sm:inline">{{ __('Print') }}</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
               iconLeft="lucide-download"
-              :label="__('Download PDF')"
+              :tooltip="__('Download PDF')"
+              class="shrink-0"
               @click="downloadReceipt"
-            />
+            >
+              <span class="hidden sm:inline">{{ __('Download PDF') }}</span>
+            </Button>
             <Button
               variant="solid"
               size="sm"
               iconLeft="lucide-mail"
-              :label="__('Email Receipt')"
+              :tooltip="__('Email Receipt')"
+              class="shrink-0"
               @click="openEmailModal"
-            />
+            >
+              <span class="hidden sm:inline">{{ __('Email') }}</span>
+            </Button>
             <button
               type="button"
-              class="p-1 rounded-md text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-gray-8 dark:hover:text-ink-gray-2 hover:bg-surface-gray-2 transition-colors ml-1"
+              class="p-1 rounded-md text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-gray-8 dark:hover:text-ink-gray-2 hover:bg-surface-gray-2 transition-colors ml-0.5 shrink-0"
               @click="show = false"
             >
               <span class="lucide-x size-4" />

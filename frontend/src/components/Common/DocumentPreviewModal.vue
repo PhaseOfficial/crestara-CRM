@@ -3,49 +3,57 @@
     <template #default>
       <div class="flex flex-col h-[85vh] max-h-[900px] bg-surface-base rounded-2xl overflow-hidden">
         <!-- Modal Toolbar Header -->
-        <div class="flex items-center justify-between px-5 py-3.5 border-b border-outline-gray-1 bg-surface-gray-1 dark:bg-surface-gray-2/70 shrink-0">
-          <div class="flex items-center gap-2.5">
-            <span class="lucide-file-text size-5 text-ink-blue-7 dark:text-ink-blue-3" />
-            <div>
-              <h2 class="text-sm font-bold text-ink-gray-9">
+        <div class="flex items-center justify-between px-3.5 sm:px-5 py-2.5 sm:py-3.5 border-b border-outline-gray-1 bg-surface-gray-1 dark:bg-surface-gray-2/70 shrink-0 gap-2">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span class="lucide-file-text size-4 sm:size-5 text-ink-blue-7 dark:text-ink-blue-3 shrink-0" />
+            <div class="min-w-0 flex-1">
+              <h2 class="text-xs sm:text-sm font-bold text-ink-gray-9 truncate">
                 {{ title || (isReceipt ? __('Payment Receipt Preview') : __('Invoice PDF Preview')) }}
               </h2>
-              <p v-if="isReceipt && (payment?.receipt_number || invoice?.invoice_number)" class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 font-mono">
+              <p v-if="isReceipt && (payment?.receipt_number || invoice?.invoice_number)" class="text-[10px] sm:text-[11px] text-ink-gray-6 dark:text-ink-gray-4 font-mono truncate">
                 {{ payment?.receipt_number || payment?.transaction_ref }} <span v-if="invoice?.invoice_number">• {{ invoice.invoice_number }}</span>
               </p>
-              <p v-else-if="invoice?.invoice_number" class="text-[11px] text-ink-gray-6 dark:text-ink-gray-4 font-mono">
+              <p v-else-if="invoice?.invoice_number" class="text-[10px] sm:text-[11px] text-ink-gray-6 dark:text-ink-gray-4 font-mono truncate">
                 {{ invoice.invoice_number }}
               </p>
             </div>
           </div>
 
           <!-- Actions Toolbar -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
               iconLeft="lucide-printer"
-              :label="__('Print')"
-              :tooltip="__('Isolated Clean Print (No Screen Chrome)')"
+              :tooltip="__('Print')"
+              class="shrink-0"
               @click="handlePrint"
-            />
+            >
+              <span class="hidden sm:inline">{{ __('Print') }}</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
               iconLeft="lucide-download"
-              :label="__('Download PDF')"
+              :tooltip="__('Download PDF')"
+              class="shrink-0"
               @click="handleDownloadPdf"
-            />
+            >
+              <span class="hidden sm:inline">{{ __('Download PDF') }}</span>
+            </Button>
             <Button
               variant="solid"
               size="sm"
               iconLeft="lucide-mail"
-              :label="__('Email to Client')"
+              :tooltip="__('Email to Client')"
+              class="shrink-0"
               @click="handleEmail"
-            />
+            >
+              <span class="hidden sm:inline">{{ __('Email') }}</span>
+            </Button>
             <button
               type="button"
-              class="p-1 rounded-md text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-gray-8 dark:hover:text-ink-gray-2 hover:bg-surface-gray-2 transition-colors ml-1"
+              class="p-1 rounded-md text-ink-gray-4 dark:text-ink-gray-5 hover:text-ink-gray-8 dark:hover:text-ink-gray-2 hover:bg-surface-gray-2 transition-colors ml-0.5 shrink-0"
               @click="show = false"
             >
               <span class="lucide-x size-4" />

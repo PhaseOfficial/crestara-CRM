@@ -4,10 +4,11 @@
     <LayoutHeader class="print:hidden">
       <template #left-header>
         <div class="flex items-center gap-3">
-          <router-link to="/invoices" class="p-1.5 rounded-md hover:bg-surface-gray-2 text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 transition-colors">
+          <router-link to="/invoices" class="p-1.5 rounded-md hover:bg-surface-gray-2 text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 transition-colors shrink-0">
             <span class="lucide-arrow-left size-5" />
           </router-link>
-          <div class="flex items-center gap-2.5">
+          <!-- Desktop Title & Badges (Hidden on mobile) -->
+          <div class="hidden sm:flex items-center gap-2.5">
             <h1 class="text-lg font-bold text-ink-gray-9">
               {{ isNew ? __('New Invoice') : invoice.invoice_number }}
             </h1>
@@ -32,7 +33,7 @@
       </template>
 
       <template #right-header>
-        <div class="flex items-center gap-1.5 sm:gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 max-w-full [&>*]:shrink-0">
           <!-- 1-Click Mark as Paid -->
           <Button
             v-if="!isNew && invoice.balance_due > 0 && invoice.status !== 'Cancelled'"
@@ -131,6 +132,33 @@
         </div>
       </template>
     </LayoutHeader>
+
+    <!-- Mobile Subheader Row: Invoice Number, Status & Due Badges (Below icons on mobile) -->
+    <div
+      class="sm:hidden flex items-center justify-between px-4 py-2.5 bg-surface-base border-b border-outline-gray-1 shrink-0 print:hidden shadow-2xs"
+    >
+      <div class="flex items-center flex-wrap gap-2">
+        <h1 class="text-base font-bold text-ink-gray-9 tracking-tight">
+          {{ isNew ? __('New Invoice') : invoice.invoice_number }}
+        </h1>
+        <span
+          v-if="!isNew"
+          class="text-xs px-2.5 py-0.5 rounded-full font-semibold border shrink-0"
+          :class="getStatusClass(invoice.status)"
+        >
+          {{ invoice.status }}
+        </span>
+        <!-- Live Countdown Badge -->
+        <span
+          v-if="!isNew && headerCountdownBadge"
+          class="text-xs px-2.5 py-0.5 rounded-full font-semibold border shrink-0 inline-flex items-center gap-1.5 shadow-2xs"
+          :class="headerCountdownBadge.classes"
+        >
+          <span :class="headerCountdownBadge.icon" class="size-3" />
+          <span>{{ headerCountdownBadge.label }}</span>
+        </span>
+      </div>
+    </div>
 
     <!-- Invoice Sheet Canvas -->
     <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-20 md:pb-8 invoice-sheet-container print:p-0 print:overflow-visible">

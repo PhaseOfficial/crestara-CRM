@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
+  <div class="flex flex-col h-full overflow-hidden max-w-full">
     <LayoutHeader>
       <template #left-header>
         <ViewBreadcrumbs routeName="Dashboard" />
@@ -8,51 +8,64 @@
         <!-- Normal Mode Controls -->
         <template v-if="!editing">
           <Button
-            :label="__('Refresh')"
             :iconLeft="LucideRefreshCcw"
             :loading="isRefreshing"
+            :tooltip="__('Refresh Dashboard')"
             @click="refreshDashboard"
-          />
+          >
+            <span class="hidden sm:inline">{{ __('Refresh') }}</span>
+          </Button>
           <Button
             v-if="isAdmin() || isManager()"
-            :label="__('Edit Layout')"
             :iconLeft="LucidePenLine"
+            class="hidden sm:inline-flex"
+            :tooltip="__('Edit Layout')"
             @click="enableEditing"
-          />
+          >
+            <span class="hidden sm:inline">{{ __('Edit Layout') }}</span>
+          </Button>
           <Button
             variant="solid"
-            :label="__('New Invoice')"
             :iconLeft="LucidePlus"
+            :tooltip="__('New Invoice')"
             @click="router.push('/invoices')"
-          />
+          >
+            <span class="hidden sm:inline">{{ __('New Invoice') }}</span>
+          </Button>
         </template>
 
         <!-- Edit Mode Controls -->
         <template v-else>
           <Button
-            :label="__('Add Chart')"
             :iconLeft="LucidePlus"
+            :tooltip="__('Add Chart')"
             @click="showAddChartModal = true"
-          />
+          >
+            <span class="hidden sm:inline">{{ __('Add Chart') }}</span>
+          </Button>
           <Button
-            :label="__('Reset to Default')"
             :iconLeft="LucideUndo2"
+            :tooltip="__('Reset to Default')"
             @click="handleResetToDefault"
-          />
+          >
+            <span class="hidden sm:inline">{{ __('Reset to Default') }}</span>
+          </Button>
           <Button :label="__('Cancel')" @click="cancel" />
           <Button
             variant="solid"
-            :label="__('Save Layout')"
             :disabled="!dirty"
             :loading="isSaving"
+            :tooltip="__('Save Layout')"
             @click="save"
-          />
+          >
+            <span class="hidden sm:inline">{{ __('Save Layout') }}</span>
+          </Button>
         </template>
       </template>
     </LayoutHeader>
 
     <!-- Filter Bar -->
-    <div class="p-5 pb-2 flex flex-wrap items-center gap-3">
+    <div class="p-4 sm:p-5 pb-2 flex flex-wrap items-center gap-2 sm:gap-3 max-w-full overflow-hidden">
       <!-- Date Range Dropdown / Picker -->
       <Dropdown
         v-if="!showDatePicker"
@@ -63,7 +76,7 @@
         :button="{
           label: __(preset),
           class:
-            '!w-48 justify-start [&>span]:mr-auto [&>svg]:text-ink-gray-5',
+            '!w-44 sm:!w-48 justify-start [&>span]:mr-auto [&>svg]:text-ink-gray-5',
           variant: 'outline',
           iconRight: 'lucide-chevron-down',
           iconLeft: 'lucide-calendar',
@@ -72,7 +85,7 @@
       <DateRangePicker
         v-else
         ref="datePickerRef"
-        class="!w-48"
+        class="!w-44 sm:!w-48"
         :value="filters.period"
         variant="outline"
         :placeholder="__('Period')"
@@ -95,19 +108,6 @@
         </template>
       </DateRangePicker>
 
-      <!-- Staff Selector Dropdown -->
-      <Dropdown
-        v-if="isAdmin() || isManager()"
-        :options="staffOptions"
-        :button="{
-          label: selectedStaffLabel,
-          class:
-            '!w-48 justify-start [&>span]:mr-auto [&>svg]:text-ink-gray-5',
-          variant: 'outline',
-          iconRight: 'lucide-chevron-down',
-          iconLeft: 'lucide-user',
-        }"
-      />
 
       <!-- Active Period Badge -->
       <div
@@ -488,35 +488,6 @@ const presetOptions = computed(() => [
   },
 ])
 
-// Staff User Selector Options
-const selectedStaffLabel = computed(() => {
-  if (!filters.user) return __('All Staff')
-  const u = (business.users || []).find((user: any) => user.id === filters.user || user.email === filters.user)
-  return u ? u.full_name || u.email : __('All Staff')
-})
-
-const staffOptions = computed(() => [
-  {
-    group: 'Staff Filter',
-    hideLabel: true,
-    items: [
-      {
-        label: __('All Staff'),
-        onClick: () => {
-          filters.user = null
-          loadDashboard()
-        },
-      },
-      ...(business.users || []).map((u: any) => ({
-        label: u.full_name || u.email,
-        onClick: () => {
-          filters.user = u.id || u.email
-          loadDashboard()
-        },
-      })),
-    ],
-  },
-])
 
 function updateFilter(key: string, value: any, callback?: () => void) {
   if (key === 'period' && Array.isArray(value)) {
