@@ -46,7 +46,7 @@ $publicPath = Join-Path $frontendPath "public"
 foreach ($file in $requiredFiles) {
     $targetFile = Join-Path $distPath $file
     $sourceFile = Join-Path $publicPath $file
-    if (Test-Path $sourceFile) {
+    if ((Test-Path $sourceFile) -and (-not (Test-Path $targetFile))) {
         Copy-Item -Path $sourceFile -Destination $targetFile -Force
     }
 }
@@ -58,20 +58,20 @@ if (-not (Test-Path $targetApi)) {
     New-Item -ItemType Directory -Path $targetApi -Force | Out-Null
 }
 Get-ChildItem -Path $sourceApi -File | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination (Join-Path $targetApi $_.Name) -Force
+    $dest = Join-Path $targetApi $_.Name
+    if (-not (Test-Path $dest)) {
+        Copy-Item -Path $_.FullName -Destination $dest -Force
+    }
 }
 
 # 3. Create zip archive with Linux-compatible forward-slash relative paths
 Write-Host "`n[3/4] Creating deployment archive ($zipOutput)..." -ForegroundColor Yellow
 
-if (Test-Path $zipOutput) {
-    Remove-Item $zipOutput -Force
-}
-
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$zipArchive = [System.IO.Compression.ZipFile]::Open($zipOutput, [System.IO.Compression.ZipArchiveMode]::Create)
+$zipStream = [System.IO.File]::Open($zipOutput, [System.IO.FileMode]::Create, [System.IO.FileAccess]::ReadWrite)
+$zipArchive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
     Get-ChildItem -Path $distPath -Recurse -File | ForEach-Object {
         $relativePath = $_.FullName.Substring($distPath.Length).TrimStart("\", "/") -replace "\\", "/"
@@ -79,6 +79,7 @@ try {
     }
 } finally {
     $zipArchive.Dispose()
+    $zipStream.Dispose()
 }
 
 $zipItem = Get-Item $zipOutput
