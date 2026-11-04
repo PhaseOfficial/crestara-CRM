@@ -141,13 +141,12 @@
             :label="__('Remember me')"
             class="cursor-pointer select-none"
           />
-          <button
-            type="button"
+          <router-link
+            to="/reset-password"
             class="text-xs font-medium text-ink-blue-6 hover:underline focus:outline-none"
-            @click="setMode('forgot')"
           >
             {{ __('Forgot password?') }}
-          </button>
+          </router-link>
         </div>
 
         <!-- Confirm Password Field for Sign Up -->

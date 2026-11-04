@@ -69,6 +69,13 @@ export function useStaffNavFrequency() {
   // Note: Leads, Deals, Contacts, Call Logs, and Notes are temporarily retired into the background for current users.
   // Routes are commented out in src/router.js. Re-enable here when re-enabling routing.
   const candidateItems = [
+    {
+      key: 'Dashboard',
+      label: 'Dashboard',
+      to: '/dashboard',
+      icon: 'lucide-layout-dashboard',
+      matchPath: (path) => path === '/' || path.startsWith('/dashboard'),
+    },
     /*
     {
       key: 'Leads',

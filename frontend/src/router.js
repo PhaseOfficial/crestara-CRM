@@ -19,6 +19,11 @@ const routes = [
     component: () => import('@/pages/Login.vue'),
   },
   {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('@/pages/ResetPassword.vue'),
+  },
+  {
     path: '/',
     name: 'Home',
   },
@@ -286,8 +291,8 @@ router.beforeEach(async (to, from, next) => {
     currentRole = session.userRole || business.currentRole || 'Customer'
   }
 
-  if (to.name === 'Login') {
-    if (isLoggedIn) {
+  if (to.name === 'Login' || to.name === 'ResetPassword') {
+    if (to.name === 'Login' && isLoggedIn) {
       if (currentRole === 'Customer') {
         return next({ path: '/portal' })
       }

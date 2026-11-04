@@ -7,18 +7,18 @@
       <ShortcutTooltip :label="__('Create Event')" combo="Mod+E">
         <Button
           variant="solid"
-          :label="__('Create')"
           :disabled="isCreateDisabled"
           @click="newEvent"
         >
           <template #prefix>
             <span class="lucide-plus h-4" aria-hidden="true" />
           </template>
+          <span class="hidden sm:inline">{{ __('Create') }}</span>
         </Button>
       </ShortcutTooltip>
     </template>
   </LayoutHeader>
-  <div class="flex h-screen overflow-hidden">
+  <div class="flex flex-col md:flex-row flex-1 h-[calc(100vh-7.5rem)] md:h-[calc(100vh-3.5rem)] overflow-hidden w-full relative">
     <Calendar
       ref="calendar"
       class="flex-1 overflow-hidden"
@@ -51,9 +51,9 @@
           setCalendarDate,
         }"
       >
-        <div class="my-4 mx-5 flex justify-between items-center">
-          <!-- Left side: Month Year DatePicker -->
-          <div class="flex items-center">
+        <div class="px-3 sm:px-5 py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-outline-gray-1 bg-surface-base">
+          <!-- Top Row on Mobile / Left Side on Desktop: Month/Year & Date Navigation -->
+          <div class="flex items-center justify-between sm:justify-start gap-2">
             <DatePicker
               :modelValue="selectedMonthDate"
               :clearable="false"
@@ -62,49 +62,68 @@
               <template #trigger="{ togglePopover }">
                 <Button
                   variant="ghost"
-                  class="text-lg-medium text-ink-gray-7"
+                  class="text-base sm:text-lg-medium text-ink-gray-9 font-bold sm:font-semibold shrink-0"
                   :label="currentMonthYear"
                   iconRight="lucide-chevron-down"
                   @click="togglePopover"
                 />
               </template>
             </DatePicker>
+
+            <!-- Navigation Controls (< Today >) -->
+            <div class="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                icon="lucide-chevron-left"
+                class="size-7 sm:size-8 text-ink-gray-7"
+                :tooltip="__('Previous')"
+                @click="decrement"
+              />
+              <Button
+                :label="__('Today')"
+                variant="outline"
+                size="sm"
+                class="text-xs font-semibold px-2 sm:px-2.5 h-7 sm:h-8"
+                @click="setCalendarDate()"
+              />
+              <Button
+                variant="ghost"
+                icon="lucide-chevron-right"
+                class="size-7 sm:size-8 text-ink-gray-7"
+                :tooltip="__('Next')"
+                @click="increment"
+              />
+            </div>
           </div>
 
-          <!-- Right side: Navigation, View Selector & Staff Filter -->
-          <div class="flex items-center gap-x-1.5">
-            <Button
-              variant="ghost"
-              icon="lucide-chevron-left"
-              @click="decrement"
-            />
-            <Button
-              :label="__('Today')"
-              variant="ghost"
-              @click="setCalendarDate()"
-            />
-            <Button
-              variant="ghost"
-              icon="lucide-chevron-right"
-              @click="increment"
-            />
+          <!-- Bottom Row on Mobile / Right Side on Desktop: View Selector & Staff Filter -->
+          <div class="flex items-center justify-between sm:justify-end gap-2">
+            <!-- View Segmented Tabs -->
+            <div class="inline-flex rounded-lg p-0.5 bg-surface-gray-2 dark:bg-surface-gray-3 border border-outline-gray-2 text-xs font-medium w-full sm:w-auto justify-between sm:justify-start">
+              <button
+                v-for="v in [
+                  { label: __('Day'), value: 'Day' },
+                  { label: __('Week'), value: 'Week' },
+                  { label: __('Month'), value: 'Month' },
+                ]"
+                :key="v.value"
+                type="button"
+                class="flex-1 sm:flex-initial px-3 py-1 rounded-md transition-all font-semibold text-center"
+                :class="
+                  activeView === v.value
+                    ? 'bg-surface-base text-ink-gray-9 shadow-xs dark:bg-surface-gray-1'
+                    : 'text-ink-gray-6 hover:text-ink-gray-9'
+                "
+                @click="updateActiveView(v.value)"
+              >
+                {{ v.label }}
+              </button>
+            </div>
 
-            <!-- View Buttons -->
-            <FormControl
-              type="select"
-              class="mr-1 w-24"
-              :modelValue="activeView"
-              :options="[
-                { label: __('Day'), value: 'Day' },
-                { label: __('Week'), value: 'Week' },
-                { label: __('Month'), value: 'Month' },
-              ]"
-              @update:modelValue="updateActiveView($event)"
-            />
-
-            <!-- Staff User Selector Dropdown -->
+            <!-- Staff User Selector Dropdown (Hidden on mobile for clean calendar view) -->
             <Dropdown
               :options="staffOptions"
+              class="hidden sm:inline-flex"
               :button="{
                 label: selectedStaffLabel,
                 class: 'form-control text-sm font-medium !w-44 justify-start [&>span]:mr-auto',
@@ -133,7 +152,9 @@
     <div
       class="overflow-hidden flex-none transition-all duration-300 ease-in-out flex flex-col"
       :class="
-        showEventPanel ? 'w-[352px] border-l bg-surface-base' : 'w-0 border-l-0'
+        showEventPanel
+          ? 'fixed inset-0 z-50 w-full h-full md:relative md:inset-auto md:w-[352px] md:h-full border-l bg-surface-base shadow-2xl md:shadow-none'
+          : 'w-0 border-l-0 pointer-events-none'
       "
     >
       <CalendarEventPanel
@@ -192,6 +213,9 @@ const modeMap = {
 }
 
 const defaultMode = computed(() => {
+  if (typeof window !== 'undefined' && window.innerWidth < 640) {
+    return 'Day'
+  }
   return modeMap[business.settings.default_calendar_view] || 'Week'
 })
 

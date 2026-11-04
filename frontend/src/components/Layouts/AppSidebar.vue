@@ -258,7 +258,6 @@ const links = [
     label: 'Dashboard',
     icon: LucideLayoutDashboard,
     to: 'Dashboard',
-    condition: () => !props.mobile,
   },
   /*
    * RETIRED MODULES (Backgrounded for current users):
@@ -305,7 +304,6 @@ const links = [
     label: 'Calendar',
     icon: CalendarIcon,
     to: 'Calendar',
-    condition: () => !props.mobile,
   },
   /*
   {

@@ -6,6 +6,7 @@ export const STAFF_STORAGE_KEY = 'crm_staff_nav_clicks'
 export const CLIENT_STORAGE_KEY = 'crm_client_nav_clicks'
 
 export const DEFAULT_STAFF_COUNTS = {
+  Dashboard: 12,
   Leads: 10,
   Deals: 9,
   Clients: 8,
