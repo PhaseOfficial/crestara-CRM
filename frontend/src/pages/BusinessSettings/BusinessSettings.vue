@@ -5,7 +5,7 @@
       <template #left-header>
         <div class="flex items-center gap-2">
           <h1 class="text-base sm:text-xl font-bold text-ink-gray-9">{{ __('Business Settings') }}</h1>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-4 border border-outline-purple-2">
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-purple-2 text-ink-purple-8 border border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300">
             {{ __('Administrator Only') }}
           </span>
         </div>
@@ -22,7 +22,7 @@
           >
             <span
               v-if="savedSuccess"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 text-xs font-semibold shadow-xs"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 text-xs font-semibold shadow-xs"
             >
               <span class="lucide-check size-3.5" />
               {{ __('Settings saved!') }}
@@ -313,67 +313,6 @@
         </div>
       </div>
 
-      <!-- Server-Side Email Delivery Configuration -->
-      <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 class="text-base font-bold text-ink-gray-9 flex items-center gap-2">
-              <span class="lucide-mail size-4 text-ink-gray-5 dark:text-ink-gray-4" />
-              {{ __('Email Delivery Integration') }}
-            </h2>
-            <p class="text-xs text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">
-              {{ __('Automated invoice & commercial receipt dispatch with vector PDF attachments.') }}
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              iconLeft="send"
-              :label="__('Test Email Delivery')"
-              :loading="testingEmail"
-              @click="handleTestEmail"
-            />
-          </div>
-        </div>
-
-        <!-- Security & Server Notice -->
-        <div class="p-3.5 rounded-xl bg-surface-blue-2/60 dark:bg-blue-950/40 border border-outline-blue-2 dark:border-blue-800/50 text-xs text-ink-blue-7 dark:text-blue-200 flex items-start gap-2.5">
-          <span class="lucide-shield-check size-4 shrink-0 mt-0.5 text-ink-blue-6 dark:text-blue-400" />
-          <div class="space-y-1">
-            <p class="font-semibold">{{ __('Server-Side Security Enabled') }}</p>
-            <p class="text-[11px] opacity-90">
-              {{ __('Sensitive SMTP credentials and email server options are managed securely on your server in /api/send_email.php. Passwords are never sent across or stored in the browser.') }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Test Feedback Banner -->
-        <div
-          v-if="testResult"
-          class="p-3 rounded-xl text-xs flex items-center gap-2 border"
-          :class="testResult.success ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-red-2 text-ink-red-7 border-outline-red-2'"
-        >
-          <span :class="testResult.success ? 'lucide-check-circle size-4' : 'lucide-alert-circle size-4'" />
-          <span class="font-medium">{{ testResult.message }}</span>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormControl
-            v-model="form.from_name"
-            :label="__('Default Sender Name (From Name)')"
-            type="text"
-            placeholder="Crestara Billing Accounts"
-          />
-          <FormControl
-            v-model="form.from_email"
-            :label="__('Default Sender Email (From Email)')"
-            type="email"
-            placeholder="billing@crestara.com"
-          />
-        </div>
-      </div>
-
       <!-- Automated Payment Reminders Configuration Card -->
       <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -420,14 +359,14 @@
         <div
           v-if="cronTestResult"
           class="p-3 rounded-xl text-xs flex items-center gap-2 border"
-          :class="cronTestResult.success ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-red-2 text-ink-red-7 border-outline-red-2'"
+          :class="cronTestResult.success ? 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300' : 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300'"
         >
           <span :class="cronTestResult.success ? 'lucide-check-circle size-4' : 'lucide-alert-circle size-4'" />
           <span class="font-medium">{{ cronTestResult.message }}</span>
         </div>
 
         <!-- Schedule Inputs Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormControl
             v-model="form.reminder_days_before"
             :label="__('Pre-Deadline Countdown Days')"
@@ -443,14 +382,6 @@
             placeholder="3, 7"
             :description="__('Days after deadline passes to send gentle follow-ups')"
           />
-
-          <FormControl
-            v-model="form.cron_secret_token"
-            :label="__('Automation Security Token')"
-            type="text"
-            placeholder="cr_rem_live_secret"
-            :description="__('Security token required to trigger automated reminders')"
-          />
         </div>
 
         <div class="pt-1">
@@ -462,33 +393,6 @@
             />
             <span class="font-medium">{{ __('Also send an urgent reminder on the exact day of the payment deadline (Day 0)') }}</span>
           </label>
-        </div>
-
-        <!-- Server Automation Setup Instructions Box with Copyable Snippet -->
-        <div class="p-4 rounded-xl bg-surface-gray-1/60 dark:bg-surface-gray-2/20 border border-outline-gray-1 space-y-2.5 text-xs text-ink-gray-7 dark:text-ink-gray-4">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-ink-gray-9 text-xs flex items-center gap-1.5">
-              <span class="lucide-terminal size-3.5 text-ink-blue-7 dark:text-ink-blue-4" />
-              {{ __('Server Automated Schedule Setup') }}
-            </span>
-            <Button
-              size="sm"
-              variant="subtle"
-              :iconLeft="cronCopied ? 'check' : 'copy'"
-              :label="cronCopied ? __('Copied!') : __('Copy Command')"
-              @click="copyCronCommand"
-            />
-          </div>
-          <p class="text-[11px] leading-relaxed">
-            {{ __('In your hosting control panel, schedule a task to run') }} <strong>{{ __('Once Per Day (08:00 AM)') }}</strong>, {{ __('using this command:') }}
-          </p>
-          <div class="p-2.5 rounded-lg bg-surface-gray-2 dark:bg-surface-gray-1 font-mono text-[11px] text-ink-gray-9 overflow-x-auto border border-outline-gray-2 select-all">
-            /usr/local/bin/php /home/USERNAME/public_html/api/cron_reminders.php &gt;&gt; /home/USERNAME/cron_reminders.log 2&gt;&amp;1
-          </div>
-          <p class="text-[10px] text-ink-gray-5">
-            {{ __('Note: Replace USERNAME with your server username. Alternatively, use web automation with your security token:') }}
-            <code class="font-mono text-ink-blue-7 dark:text-ink-blue-3">curl -s "https://yourdomain.com/api/cron_reminders.php?token={{ form.cron_secret_token || 'cr_rem_live_secret' }}"</code>
-          </p>
         </div>
       </div>
 
@@ -581,8 +485,8 @@
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border"
                     :class="
                       user.role === 'Administrator'
-                        ? 'bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-4 border-outline-purple-2'
-                        : 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-4 border-outline-blue-2'
+                        ? 'bg-surface-purple-2 text-ink-purple-8 border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300'
+                        : 'bg-surface-blue-2 text-ink-blue-8 border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300'
                     "
                   >
                     {{ user.role === 'Administrator' ? __('Full System Access (Admin)') : __('CRM Staff Access (/dashboard)') }}
@@ -627,8 +531,8 @@
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0"
                 :class="
                   user.role === 'Administrator'
-                    ? 'bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-4 border-outline-purple-2'
-                    : 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-4 border-outline-blue-2'
+                    ? 'bg-surface-purple-2 text-ink-purple-8 border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300'
+                    : 'bg-surface-blue-2 text-ink-blue-8 border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300'
                 "
               >
                 {{ user.role }}
@@ -807,7 +711,6 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import { isMobileView } from '@/composables/settings'
 import { FormControl, Button, Avatar, Dialog } from 'frappe-ui'
 import CrmImageUploader from '@/components/Common/CrmImageUploader.vue'
-import { sendTestEmail } from '@/utils/mailer'
 import { loadImageAsBase64 } from '@/utils/pdfGenerator'
 
 const business = useBusinessStore()
@@ -892,24 +795,8 @@ const form = reactive({
   ...(business.settings || {}),
 })
 
-const testingEmail = ref(false)
-const testResult = ref(null)
-
 const testingCron = ref(false)
 const cronTestResult = ref(null)
-const cronCopied = ref(false)
-
-function copyCronCommand() {
-  const cmd = `0 8 * * * /usr/local/bin/php /home/USERNAME/public_html/api/cron_reminders.php >> /home/USERNAME/cron_reminders.log 2>&1`
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(cmd).then(() => {
-      cronCopied.value = true
-      setTimeout(() => {
-        cronCopied.value = false
-      }, 2500)
-    }).catch(() => {})
-  }
-}
 
 async function handleTestCron() {
   testingCron.value = true
@@ -918,7 +805,7 @@ async function handleTestCron() {
   try {
     // Persist current settings first
     await business.updateBusinessSettings(form)
-    const token = encodeURIComponent(form.cron_secret_token || 'cr_rem_live_secret')
+    const token = encodeURIComponent(business.settings?.cron_secret_token || 'cr_rem_live_secret')
     const res = await fetch(`/api/cron_reminders.php?token=${token}&dry_run=1`)
     const data = await res.json().catch(() => ({}))
 
@@ -940,37 +827,6 @@ async function handleTestCron() {
     setTimeout(() => {
       cronTestResult.value = null
     }, 10000)
-  }
-}
-
-async function handleTestEmail() {
-  const targetEmail = prompt('Enter recipient email address to send test dispatch:', form.business_email || form.from_email || '')
-  if (!targetEmail) return
-
-  testingEmail.value = true
-  testResult.value = null
-
-  try {
-    // Persist current settings first
-    await business.updateBusinessSettings(form)
-    await sendTestEmail({
-      recipientEmail: targetEmail.trim(),
-      businessSettings: form,
-    })
-    testResult.value = {
-      success: true,
-      message: `Test email successfully dispatched to ${targetEmail}!`,
-    }
-  } catch (err) {
-    testResult.value = {
-      success: false,
-      message: err.message || 'Failed to dispatch test email. Please verify server SMTP credentials or server logs.',
-    }
-  } finally {
-    testingEmail.value = false
-    setTimeout(() => {
-      testResult.value = null
-    }, 8000)
   }
 }
 

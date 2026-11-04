@@ -239,11 +239,6 @@ const routes = [
     component: () => import('@/pages/Portal/CustomerCalendar.vue'),
   },
   {
-    path: '/portal/promotions',
-    name: 'CustomerPromotions',
-    component: () => import('@/pages/Portal/CustomerPromotions.vue'),
-  },
-  {
     path: '/portal/account',
     name: 'CustomerAccount',
     component: () => import('@/pages/Portal/CustomerAccount.vue'),

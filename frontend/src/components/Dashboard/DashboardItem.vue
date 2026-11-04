@@ -34,8 +34,8 @@
               class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold border shrink-0"
               :class="
                 item.data.delta >= 0
-                  ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
-                  : 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'
+                  ? 'bg-surface-green-2 text-ink-green-8 border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300'
+                  : 'bg-surface-red-2 text-ink-red-8 border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300'
               "
             >
               <LucideTrendingUp v-if="item.data.delta >= 0" class="size-3" />
@@ -291,34 +291,34 @@ function getIconComponent(iconName) {
 function getIconThemeClass(theme) {
   switch (theme) {
     case 'green':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4'
+      return 'bg-surface-green-2 text-ink-green-8 dark:bg-emerald-950/50 dark:text-emerald-300'
     case 'amber':
-      return 'bg-surface-amber-2 text-ink-amber-7 dark:text-amber-300'
+      return 'bg-surface-amber-2 text-ink-amber-8 dark:bg-amber-950/50 dark:text-amber-300'
     case 'red':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4'
+      return 'bg-surface-red-2 text-ink-red-8 dark:bg-red-950/50 dark:text-red-300'
     case 'blue':
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3'
+      return 'bg-surface-blue-2 text-ink-blue-8 dark:bg-blue-950/50 dark:text-blue-300'
     case 'indigo':
-      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300'
     case 'cyan':
-      return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300'
+      return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300'
     case 'purple':
-      return 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+      return 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:bg-surface-gray-2/60 dark:text-ink-gray-3'
   }
 }
 
 function getBadgeClass(type) {
   switch (type) {
     case 'green':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-8 border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300'
     case 'amber':
-      return 'bg-surface-amber-2 text-ink-amber-7 dark:text-amber-300 border-outline-amber-2'
+      return 'bg-surface-amber-2 text-ink-amber-8 border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300'
     case 'red':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-8 border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'
   }
 }
 </script>

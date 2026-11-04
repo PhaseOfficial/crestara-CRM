@@ -107,7 +107,7 @@
                 <!-- Organization with Avatar & Subtitle -->
                 <td class="py-4 px-6">
                   <div class="flex items-center gap-3">
-                    <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0 overflow-hidden">
+                    <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 text-xs shrink-0 overflow-hidden">
                       <img
                         v-if="c.logo_url"
                         :src="c.logo_url"
@@ -119,7 +119,7 @@
                       </span>
                     </div>
                     <div>
-                      <div class="font-semibold text-ink-gray-9 text-sm hover:text-ink-blue-7 dark:hover:text-ink-blue-3 transition-colors">
+                      <div class="font-semibold text-ink-gray-9 text-sm hover:text-ink-blue-8 dark:hover:text-blue-400 transition-colors">
                         {{ c.company_name }}
                       </div>
                       <div class="text-xs text-ink-gray-7 dark:text-ink-gray-6">
@@ -173,7 +173,7 @@
                 <td class="py-4 px-6">
                   <span
                     class="px-2.5 py-1 rounded-full text-xs font-semibold border"
-                    :class="c.status === 'Active' ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'"
+                    :class="c.status === 'Active' ? 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold' : 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'"
                   >
                     {{ __(c.status || 'Active') }}
                   </span>
@@ -232,7 +232,7 @@
             <!-- Top Row: Avatar, Title, Status & Chevron -->
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-3 min-w-0">
-                <div class="size-10 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0 overflow-hidden">
+                <div class="size-10 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 text-xs shrink-0 overflow-hidden">
                   <img
                     v-if="c.logo_url"
                     :src="c.logo_url"
@@ -244,7 +244,7 @@
                   </span>
                 </div>
                 <div class="min-w-0">
-                  <div class="font-bold text-ink-gray-9 text-sm truncate hover:text-ink-blue-7 dark:hover:text-ink-blue-3 transition-colors">
+                  <div class="font-bold text-ink-gray-9 text-sm truncate hover:text-ink-blue-8 dark:hover:text-blue-400 transition-colors">
                     {{ c.company_name }}
                   </div>
                   <div class="text-xs text-ink-gray-7 dark:text-ink-gray-6 truncate">
@@ -256,7 +256,7 @@
               <div class="flex items-center gap-1.5 shrink-0">
                 <span
                   class="px-2 py-0.5 rounded-full text-[11px] font-semibold border"
-                  :class="c.status === 'Active' ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'"
+                  :class="c.status === 'Active' ? 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold' : 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'"
                 >
                   {{ __(c.status || 'Active') }}
                 </span>
@@ -272,7 +272,7 @@
                   {{ c.first_name ? `${c.first_name} ${c.last_name || ''}`.trim() : (c.contact_name || '—') }}
                 </span>
                 <div class="text-ink-gray-7 dark:text-ink-gray-6 truncate">
-                  <a v-if="c.primary_email || c.billing_email" :href="`mailto:${c.primary_email || c.billing_email}`" class="text-ink-blue-7 dark:text-ink-blue-3 hover:underline" @click.stop>
+                  <a v-if="c.primary_email || c.billing_email" :href="`mailto:${c.primary_email || c.billing_email}`" class="text-ink-blue-8 dark:text-blue-400 hover:underline" @click.stop>
                     {{ c.primary_email || c.billing_email }}
                   </a>
                   <span v-else>—</span>
@@ -385,50 +385,50 @@
                   <tr>
                     <th class="py-2.5 px-4 w-1/4">{{ __('Field') }}</th>
                     <th class="py-2.5 px-4 w-3/8">{{ __('Current Verified Record') }}</th>
-                    <th class="py-2.5 px-4 w-3/8 bg-surface-blue-1/50 dark:bg-surface-blue-2/30 text-ink-blue-8 dark:text-ink-blue-3">{{ __('Requested New Value') }}</th>
+                    <th class="py-2.5 px-4 w-3/8 bg-surface-blue-1/50 dark:bg-blue-950/40 text-ink-blue-8 dark:text-blue-300">{{ __('Requested New Value') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-outline-gray-1">
                   <tr v-if="req.requested_details.company && req.requested_details.company !== req.current_details.company">
                     <td class="py-2 px-4 font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('Company Name') }}</td>
                     <td class="py-2 px-4 text-ink-gray-6 dark:text-ink-gray-5 line-through">{{ req.current_details.company || '—' }}</td>
-                    <td class="py-2 px-4 font-bold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-1/30 dark:bg-surface-blue-2/20">{{ req.requested_details.company }}</td>
+                    <td class="py-2 px-4 font-bold text-ink-blue-8 dark:text-blue-300 bg-surface-blue-1/30 dark:bg-blue-950/30">{{ req.requested_details.company }}</td>
                   </tr>
 
                   <tr v-if="req.requested_details.company_registration_number && req.requested_details.company_registration_number !== req.current_details.company_registration_number">
                     <td class="py-2 px-4 font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('Company Reg. Number (CRN)') }}</td>
                     <td class="py-2 px-4 text-ink-gray-6 dark:text-ink-gray-5 line-through">{{ req.current_details.company_registration_number || '—' }}</td>
-                    <td class="py-2 px-4 font-bold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-1/30 dark:bg-surface-blue-2/20">{{ req.requested_details.company_registration_number }}</td>
+                    <td class="py-2 px-4 font-bold text-ink-blue-8 dark:text-blue-300 bg-surface-blue-1/30 dark:bg-blue-950/30">{{ req.requested_details.company_registration_number }}</td>
                   </tr>
 
                   <tr v-if="req.requested_details.tax_id && req.requested_details.tax_id !== req.current_details.tax_id">
                     <td class="py-2 px-4 font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('Tax ID / TIN / VAT') }}</td>
                     <td class="py-2 px-4 text-ink-gray-6 dark:text-ink-gray-5 line-through">{{ req.current_details.tax_id || '—' }}</td>
-                    <td class="py-2 px-4 font-bold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-1/30 dark:bg-surface-blue-2/20">{{ req.requested_details.tax_id }}</td>
+                    <td class="py-2 px-4 font-bold text-ink-blue-8 dark:text-blue-300 bg-surface-blue-1/30 dark:bg-blue-950/30">{{ req.requested_details.tax_id }}</td>
                   </tr>
 
                   <tr v-if="req.requested_details.full_name && req.requested_details.full_name !== req.current_details.full_name">
                     <td class="py-2 px-4 font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('Contact Full Name') }}</td>
                     <td class="py-2 px-4 text-ink-gray-6 dark:text-ink-gray-5 line-through">{{ req.current_details.full_name || '—' }}</td>
-                    <td class="py-2 px-4 font-bold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-1/30 dark:bg-surface-blue-2/20">{{ req.requested_details.full_name }}</td>
+                    <td class="py-2 px-4 font-bold text-ink-blue-8 dark:text-blue-300 bg-surface-blue-1/30 dark:bg-blue-950/30">{{ req.requested_details.full_name }}</td>
                   </tr>
 
                   <tr v-if="req.requested_details.phone && req.requested_details.phone !== req.current_details.phone">
                     <td class="py-2 px-4 font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('Phone Number') }}</td>
                     <td class="py-2 px-4 text-ink-gray-6 dark:text-ink-gray-5 line-through">{{ req.current_details.phone || '—' }}</td>
-                    <td class="py-2 px-4 font-bold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-1/30 dark:bg-surface-blue-2/20">{{ req.requested_details.phone }}</td>
+                    <td class="py-2 px-4 font-bold text-ink-blue-8 dark:text-blue-300 bg-surface-blue-1/30 dark:bg-blue-950/30">{{ req.requested_details.phone }}</td>
                   </tr>
 
                   <tr v-if="req.requested_details.address && req.requested_details.address !== req.current_details.address">
                     <td class="py-2 px-4 font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('Billing Address') }}</td>
                     <td class="py-2 px-4 text-ink-gray-6 dark:text-ink-gray-5 line-through">{{ req.current_details.address || '—' }}</td>
-                    <td class="py-2 px-4 font-bold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-1/30 dark:bg-surface-blue-2/20">{{ req.requested_details.address }}</td>
+                    <td class="py-2 px-4 font-bold text-ink-blue-8 dark:text-blue-300 bg-surface-blue-1/30 dark:bg-blue-950/30">{{ req.requested_details.address }}</td>
                   </tr>
 
                   <tr v-if="req.requested_details.city && req.requested_details.city !== req.current_details.city">
                     <td class="py-2 px-4 font-semibold text-ink-gray-8 dark:text-ink-gray-7">{{ __('City / Postal Code') }}</td>
                     <td class="py-2 px-4 text-ink-gray-6 dark:text-ink-gray-5 line-through">{{ req.current_details.city }} {{ req.current_details.zip }}</td>
-                    <td class="py-2 px-4 font-bold text-ink-blue-7 dark:text-ink-blue-3 bg-surface-blue-1/30 dark:bg-surface-blue-2/20">{{ req.requested_details.city }} {{ req.requested_details.zip }}</td>
+                    <td class="py-2 px-4 font-bold text-ink-blue-8 dark:text-blue-300 bg-surface-blue-1/30 dark:bg-blue-950/30">{{ req.requested_details.city }} {{ req.requested_details.zip }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -531,7 +531,7 @@
           <form class="space-y-6" @submit.prevent="saveClient">
             <!-- Section 1: Organization Details -->
             <div class="space-y-3">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-blue-7 dark:text-ink-blue-3 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-blue-8 dark:text-blue-400 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
                 <span class="lucide-building size-4" />
                 {{ __('1. Organization Legal Entity Details') }}
               </h4>
@@ -632,7 +632,7 @@
 
             <!-- Section 2: Primary Contact Person -->
             <div class="space-y-3">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-green-7 dark:text-ink-green-4 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-green-8 dark:text-emerald-400 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
                 <span class="lucide-user-check size-4" />
                 {{ __('2. Primary Contact Person & Representative') }}
               </h4>

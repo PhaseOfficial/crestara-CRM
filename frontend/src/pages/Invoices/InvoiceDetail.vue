@@ -532,14 +532,14 @@
                             </span>
                             <span
                               v-if="prod.type === 'Service' || !prod.track_stock"
-                              class="px-1.5 py-0.2 rounded text-[10px] bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-3 font-medium"
+                              class="px-1.5 py-0.2 rounded text-[10px] bg-surface-purple-2 text-ink-purple-8 border border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300 font-medium"
                             >
                               {{ __('Service') }}
                             </span>
                             <span
                               v-else
                               class="px-1.5 py-0.2 rounded text-[10px] font-medium"
-                              :class="prod.quantity_in_stock <= prod.low_stock_threshold ? 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4' : 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4'"
+                              :class="prod.quantity_in_stock <= prod.low_stock_threshold ? 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300' : 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300'"
                             >
                               {{ prod.quantity_in_stock }} {{ __('in stock') }}
                             </span>
@@ -1025,7 +1025,7 @@
                     {{ ev.title }}
                     <span
                       v-if="ev.status === 'Cancelled'"
-                      class="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-surface-red-2 text-ink-red-7 border border-outline-red-2 no-underline inline-block"
+                      class="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 no-underline inline-block"
                     >
                       {{ __('Cancelled') }}
                     </span>
@@ -1292,24 +1292,16 @@ const headerCountdownBadge = computed(() => {
     return null
   }
   const cd = calculateCountdown(invoice)
+  let label = `Due in ${cd.daysUntilDue}d`
   if (cd.isDueToday) {
-    return {
-      label: 'Due Today',
-      icon: 'lucide-bell-ring',
-      classes: 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2',
-    }
-  }
-  if (cd.isOverdue) {
-    return {
-      label: `${cd.daysPastDue}d overdue`,
-      icon: 'lucide-alert-circle',
-      classes: 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2',
-    }
+    label = 'Due Today'
+  } else if (cd.isOverdue) {
+    label = `${cd.daysPastDue}d overdue`
   }
   return {
-    label: `Due in ${cd.daysUntilDue}d`,
-    icon: 'lucide-clock',
-    classes: 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2',
+    label,
+    icon: cd.icon,
+    classes: cd.badgeClasses,
   }
 })
 
@@ -1642,20 +1634,20 @@ async function downloadPdfDirect() {
 function getStatusClass(status) {
   switch (status) {
     case 'Paid':
-      return 'status-badge-paid bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 font-semibold'
+      return 'status-badge-paid bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2 font-semibold'
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2 font-semibold'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
     case 'Partially paid':
     case 'Partially Paid':
-      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2 font-semibold'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-3 border border-outline-gray-2 dark:border-outline-gray-2/60 font-medium'
     case 'Cancelled':
       return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 line-through border border-outline-gray-2 font-medium'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-3 border border-outline-gray-2 font-medium'
   }
 }
 </script>

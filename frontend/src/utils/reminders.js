@@ -84,25 +84,32 @@ export function calculateCountdown(invoice, referenceDate = new Date()) {
   let badgeLabel = ''
   let badgeTheme = 'blue' // 'blue' | 'amber' | 'red' | 'green'
   let stage = 'upcoming' // 'upcoming' | 'due_today' | 'overdue' | 'settled'
+  let icon = 'lucide-clock'
 
   const isPaid = invoice?.status === 'Paid' || Number(invoice?.balance_due || 0) <= 0
   if (isPaid) {
     stage = 'settled'
     badgeLabel = 'Settled'
     badgeTheme = 'green'
+    icon = 'lucide-check'
   } else if (isDueToday) {
     stage = 'due_today'
     badgeLabel = 'Due Today'
     badgeTheme = 'amber'
+    icon = 'lucide-bell-ring'
   } else if (isOverdue) {
     stage = 'overdue'
     badgeLabel = `${daysPastDue} day${daysPastDue === 1 ? '' : 's'} overdue`
     badgeTheme = 'red'
+    icon = 'lucide-alert-circle'
   } else {
     stage = 'upcoming'
     badgeLabel = `Due in ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}`
     badgeTheme = 'blue'
+    icon = 'lucide-clock'
   }
+
+  const badgeClasses = getCountdownBadgeClasses(stage)
 
   return {
     daysUntilDue,
@@ -113,6 +120,27 @@ export function calculateCountdown(invoice, referenceDate = new Date()) {
     stage,
     badgeLabel,
     badgeTheme,
+    badgeClasses,
+    icon,
+  }
+}
+
+/**
+ * Returns canonical, accessible, high-contrast dark-mode ready badge classes for an invoice countdown stage.
+ * @param {'upcoming'|'due_today'|'overdue'|'settled'} stage
+ * @returns {string}
+ */
+export function getCountdownBadgeClasses(stage) {
+  switch (stage) {
+    case 'due_today':
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300'
+    case 'overdue':
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300'
+    case 'settled':
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300'
+    case 'upcoming':
+    default:
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300'
   }
 }
 

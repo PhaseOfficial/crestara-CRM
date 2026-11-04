@@ -52,7 +52,7 @@
               </h2>
               <span
                 class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase border"
-                :class="business.settings.reminder_enabled !== false ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border-outline-amber-2'"
+                :class="business.settings.reminder_enabled !== false ? 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300' : 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300'"
               >
                 {{ business.settings.reminder_enabled !== false ? __('Armed') : __('Disabled') }}
               </span>
@@ -79,7 +79,7 @@
         <div
           v-if="cronTestResult"
           class="p-4 rounded-xl text-xs flex items-center justify-between gap-3 border shadow-sm"
-          :class="cronTestResult.success ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'"
+          :class="cronTestResult.success ? 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300' : 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300'"
         >
           <div class="flex items-center gap-2">
             <span :class="cronTestResult.success ? 'lucide-check-circle size-4' : 'lucide-alert-circle size-4'" />
@@ -105,13 +105,13 @@
           </div>
           <div
             class="mt-2 text-2xl font-bold"
-            :class="overdueInvoices.length > 0 ? 'text-ink-red-7 dark:text-ink-red-4' : 'text-ink-gray-9'"
+            :class="overdueInvoices.length > 0 ? 'text-ink-red-8 dark:text-red-400' : 'text-ink-gray-9'"
           >
             {{ overdueInvoices.length }}
           </div>
           <span
             class="text-xs mt-1 block"
-            :class="overdueInvoices.length > 0 ? 'text-ink-red-7 dark:text-ink-red-4' : 'text-ink-gray-6 dark:text-ink-gray-4'"
+            :class="overdueInvoices.length > 0 ? 'text-ink-red-8 dark:text-red-400' : 'text-ink-gray-6 dark:text-ink-gray-4'"
           >
             {{ business.formatCurrency(totalOverdueAmount) }} {{ __('past deadline') }}
           </span>
@@ -125,7 +125,7 @@
           </div>
           <div
             class="mt-2 text-2xl font-bold"
-            :class="dueTodayInvoices.length > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+            :class="dueTodayInvoices.length > 0 ? 'text-ink-amber-8 dark:text-amber-300' : 'text-ink-gray-9'"
           >
             {{ dueTodayInvoices.length }}
           </div>
@@ -143,7 +143,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Upcoming Countdowns') }}</span>
             <span class="lucide-clock size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
-          <div class="mt-2 text-2xl font-bold text-ink-blue-7 dark:text-ink-blue-3">
+          <div class="mt-2 text-2xl font-bold text-ink-blue-8 dark:text-blue-300">
             {{ upcomingInvoices.length }}
           </div>
           <span class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 block">
@@ -157,7 +157,7 @@
             <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">{{ __('Total Dispatched') }}</span>
             <span class="lucide-mail-check size-4 text-ink-gray-5 dark:text-ink-gray-4" />
           </div>
-          <div class="mt-2 text-2xl font-bold text-ink-green-7 dark:text-ink-green-4">
+          <div class="mt-2 text-2xl font-bold text-ink-green-8 dark:text-emerald-300">
             {{ totalDispatchedCount }}
           </div>
           <span class="text-xs text-ink-gray-6 dark:text-ink-gray-4 mt-1 block">
@@ -260,7 +260,7 @@
 
                 <!-- Balance Due -->
                 <td class="py-4 px-6 text-right">
-                  <div class="font-mono font-bold text-sm" :class="item.countdown.isOverdue ? 'text-ink-red-7 dark:text-ink-red-4' : 'text-ink-amber-3'">
+                  <div class="font-mono font-bold text-sm" :class="item.countdown.isOverdue ? 'text-ink-red-8 dark:text-red-400' : 'text-ink-amber-8 dark:text-amber-400'">
                     {{ business.formatCurrency(item.balance_due, item.currency) }}
                   </div>
                   <div class="text-[10px] text-ink-gray-6 dark:text-ink-gray-5 font-mono">
@@ -270,14 +270,14 @@
 
                 <!-- Schedule Cadence -->
                 <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">
-                  <span v-if="item.custom_reminder_days" class="inline-flex items-center gap-1 font-semibold text-ink-blue-7 dark:text-ink-blue-3">
+                  <span v-if="item.custom_reminder_days" class="inline-flex items-center gap-1 font-semibold text-ink-blue-8 dark:text-blue-300">
                     <span class="lucide-sliders-horizontal size-3" />
                     <span>Custom: {{ item.custom_reminder_days }}</span>
                   </span>
                   <span v-else class="text-ink-gray-7 dark:text-ink-gray-6">
                     Default ({{ business.settings.reminder_days_before || '7, 3, 1' }})
                   </span>
-                  <div v-if="item.reminders_enabled === false" class="text-[10px] text-ink-red-7 dark:text-ink-red-4 font-semibold mt-0.5">
+                  <div v-if="item.reminders_enabled === false" class="text-[10px] text-ink-red-8 dark:text-red-400 font-semibold mt-0.5">
                     {{ __('Automated Reminders Paused') }}
                   </div>
                 </td>
@@ -291,7 +291,7 @@
                 <td class="py-4 px-6 text-center">
                   <span
                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono font-bold"
-                    :class="item.reminders_sent_count > 0 ? 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2' : 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2'"
+                    :class="item.reminders_sent_count > 0 ? 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300' : 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:text-ink-gray-3'"
                   >
                     {{ item.reminders_sent_count || 0 }}
                   </span>
@@ -373,7 +373,7 @@
               </div>
               <div class="text-right">
                 <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-5 block">{{ __('Balance Due') }}</span>
-                <span class="font-mono font-bold text-sm block" :class="item.countdown.isOverdue ? 'text-ink-red-7 dark:text-ink-red-4' : 'text-ink-amber-3'">
+                <span class="font-mono font-bold text-sm block" :class="item.countdown.isOverdue ? 'text-ink-red-8 dark:text-red-400' : 'text-ink-amber-8 dark:text-amber-400'">
                   {{ business.formatCurrency(item.balance_due, item.currency) }}
                 </span>
                 <span class="text-[10px] text-ink-gray-6 dark:text-ink-gray-5 block mt-0.5">
@@ -452,24 +452,9 @@ const activeRemindersList = computed(() => {
     })
     .map((inv) => {
       const cd = calculateCountdown(inv)
-      let badgeClasses = 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2'
-      let icon = 'lucide-clock'
-
-      if (cd.isDueToday) {
-        badgeClasses = 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2'
-        icon = 'lucide-bell-ring'
-      } else if (cd.isOverdue) {
-        badgeClasses = 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2'
-        icon = 'lucide-alert-circle'
-      }
-
       return {
         ...inv,
-        countdown: {
-          ...cd,
-          badgeClasses,
-          icon,
-        },
+        countdown: cd,
       }
     })
     .sort((a, b) => {

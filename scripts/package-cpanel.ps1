@@ -96,6 +96,7 @@ Write-Host "  2. Open 'File Manager' and navigate to: /home/{user}/crm.crestaraa
 Write-Host "  3. Click 'Upload' and select '$zipOutput'" -ForegroundColor White
 Write-Host "  4. Right-click 'crestara-crm-cpanel.zip' and click 'Extract' (into the same folder)" -ForegroundColor White
 Write-Host "  5. Ensure hidden files are shown (Settings > Show Hidden Files) to confirm .htaccess is extracted." -ForegroundColor White
-Write-Host "  6. In cPanel > 'Cron Jobs', add the following daily schedule at 08:00 AM:" -ForegroundColor White
+Write-Host "  6. (Optional) Open /api/config.php in cPanel File Manager to configure SMTP credentials or custom security key." -ForegroundColor White
+Write-Host "  7. In cPanel > 'Cron Jobs', add the following daily schedule at 08:00 AM:" -ForegroundColor White
 Write-Host "     0 8 * * * /usr/local/bin/php /home/{user}/crm.crestaraadvisorygroup.com/api/cron_reminders.php >> /home/{user}/cron_reminders.log 2>&1" -ForegroundColor Yellow
 Write-Host "`nDeployment package ready!" -ForegroundColor Green

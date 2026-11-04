@@ -25,7 +25,6 @@ export const DEFAULT_CLIENT_COUNTS = {
   Dashboard: 10,
   Purchases: 8,
   Calendar: 6,
-  Promotions: 4,
   Account: 2,
 }
 

@@ -1202,15 +1202,6 @@ export const useBusinessStore = defineStore('business-store', () => {
         completed: false,
       },
       {
-        id: 'explore_promotions',
-        title: 'Explore Promotions & Loyalty Discounts',
-        description: 'Discover active coupons, bundled credits, and enterprise discounts available on your account.',
-        icon: 'tag',
-        route: '/portal/promotions',
-        actionLabel: 'Browse Deals',
-        completed: false,
-      },
-      {
         id: 'schedule_appointment',
         title: 'Schedule Meetings on the Calendar',
         description: 'Book consultation sessions and support reviews directly with your dedicated account manager.',

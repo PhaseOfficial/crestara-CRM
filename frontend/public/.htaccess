@@ -3,7 +3,7 @@
 # ==============================================================================
 
 # Protect sensitive environment, git, and config files from direct browser access
-<FilesMatch "^(\.env|\.git|\.htaccess|\.htpasswd)">
+<FilesMatch "^(\.env|\.git|\.htaccess|\.htpasswd|config(\.sample)?\.php)">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

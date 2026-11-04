@@ -33,7 +33,7 @@
               class="hover:bg-surface-gray-1 transition-colors cursor-pointer"
               @click="openReceipt(inv)"
             >
-              <td class="py-4 px-6 font-mono font-bold text-ink-blue-7 dark:text-ink-blue-3">
+              <td class="py-4 px-6 font-mono font-bold text-ink-blue-8 dark:text-blue-400">
                 {{ inv.invoice_number }}
               </td>
               <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">{{ inv.issue_date }}</td>
@@ -41,12 +41,12 @@
               <td class="py-4 px-6 font-mono font-semibold text-ink-gray-9">
                 {{ business.formatCurrency(inv.total_amount, inv.currency) }}
               </td>
-              <td class="py-4 px-6 font-mono font-semibold text-ink-green-7 dark:text-ink-green-4">
+              <td class="py-4 px-6 font-mono font-semibold text-ink-green-8 dark:text-emerald-400">
                 {{ business.formatCurrency(inv.amount_paid, inv.currency) }}
               </td>
               <td
                 class="py-4 px-6 font-mono font-semibold"
-                :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+                :class="inv.balance_due > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'"
               >
                 {{ business.formatCurrency(inv.balance_due, inv.currency) }}
               </td>
@@ -99,7 +99,7 @@
           <!-- Top: Invoice Number + Status Badge -->
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
-              <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0">
+              <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 text-xs shrink-0">
                 <span class="lucide-receipt size-4" />
               </div>
               <div class="min-w-0">
@@ -131,11 +131,11 @@
               <span class="text-[10px] uppercase font-semibold text-ink-gray-7 dark:text-ink-gray-6 block">{{ __('Balance Due') }}</span>
               <span
                 class="font-mono font-bold text-sm block"
-                :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+                :class="inv.balance_due > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'"
               >
                 {{ business.formatCurrency(inv.balance_due, inv.currency) }}
               </span>
-              <span class="text-[10px] text-ink-green-7 dark:text-ink-green-4 font-mono">
+              <span class="text-[10px] text-ink-green-8 dark:text-emerald-400 font-mono">
                 Paid: {{ business.formatCurrency(inv.amount_paid, inv.currency) }}
               </span>
             </div>
@@ -218,20 +218,20 @@ function openPaymentModal(inv) {
 function getStatusBadgeClass(status) {
   switch (status) {
     case 'Paid':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 font-semibold'
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
     case 'Partially paid':
     case 'Partially Paid':
-      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2 font-semibold'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'
     case 'Cancelled':
-      return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-5 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-4'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'
   }
 }
 </script>

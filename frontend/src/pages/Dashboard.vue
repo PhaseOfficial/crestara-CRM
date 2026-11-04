@@ -169,7 +169,7 @@
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <div class="p-2 rounded-lg bg-surface-red-2 text-ink-red-7">
+                <div class="p-2 rounded-lg bg-surface-red-2 text-ink-red-8 border border-outline-red-2/40 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300">
                   <LucideAlertCircle class="size-4" />
                 </div>
                 <div>
@@ -183,7 +183,7 @@
               </div>
               <router-link
                 to="/reminders"
-                class="text-xs font-semibold text-ink-blue-7 dark:text-ink-blue-3 hover:underline"
+                class="text-xs font-semibold text-ink-blue-8 dark:text-blue-400 hover:underline"
               >
                 {{ __('View Reminders →') }}
               </router-link>
@@ -198,14 +198,14 @@
               >
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="font-mono font-bold text-xs text-ink-blue-7 dark:text-ink-blue-3">
+                    <span class="font-mono font-bold text-xs text-ink-blue-8 dark:text-blue-400">
                       {{ inv.invoice_number }}
                     </span>
                     <span class="text-xs text-ink-gray-9 font-medium truncate">
                       {{ inv.client_name }}
                     </span>
                   </div>
-                  <div class="text-[11px] text-ink-red-7 mt-0.5">
+                  <div class="text-[11px] text-ink-red-8 dark:text-red-400 mt-0.5">
                     {{ __('Due date was {0}', [inv.due_date]) }}
                   </div>
                 </div>
@@ -232,7 +232,7 @@
 
               <div
                 v-if="overdueInvoices.length === 0"
-                class="py-8 text-center text-xs text-ink-green-7 dark:text-ink-green-4 font-medium"
+                class="py-8 text-center text-xs text-ink-green-8 dark:text-emerald-400 font-medium"
               >
                 ✓ {{ __('All invoices are paid or within agreed payment terms. Zero overdue accounts!') }}
               </div>
@@ -245,7 +245,7 @@
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <div class="p-2 rounded-lg bg-surface-green-2 text-ink-green-7">
+                <div class="p-2 rounded-lg bg-surface-green-2 text-ink-green-8 border border-outline-green-2/40 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300">
                   <LucideReceiptText class="size-4" />
                 </div>
                 <div>
@@ -259,7 +259,7 @@
               </div>
               <router-link
                 to="/transactions"
-                class="text-xs font-semibold text-ink-blue-7 dark:text-ink-blue-3 hover:underline"
+                class="text-xs font-semibold text-ink-blue-8 dark:text-blue-400 hover:underline"
               >
                 {{ __('All Transactions →') }}
               </router-link>
@@ -287,10 +287,10 @@
                 </div>
 
                 <div class="text-right shrink-0">
-                  <span class="font-mono font-bold text-xs text-ink-green-7 dark:text-ink-green-4 block">
+                  <span class="font-mono font-bold text-xs text-ink-green-8 dark:text-emerald-400 block">
                     +{{ business.formatCurrency(tx.amount, tx.currency) }}
                   </span>
-                  <span class="text-[10px] text-ink-green-7 uppercase font-semibold">
+                  <span class="text-[10px] text-ink-green-8 dark:text-emerald-400 uppercase font-semibold">
                     {{ __('Settled') }}
                   </span>
                 </div>

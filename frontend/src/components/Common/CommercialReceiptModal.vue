@@ -73,7 +73,7 @@
             </div>
 
             <div class="sm:text-right space-y-1">
-              <span class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 uppercase tracking-wider">
+              <span class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 uppercase tracking-wider">
                 {{ __('Official Receipt') }}
               </span>
               <h3 class="text-xl font-bold font-mono text-ink-gray-9">
@@ -131,7 +131,7 @@
                   <td class="p-3 text-ink-gray-7 dark:text-ink-gray-6 font-medium">
                     {{ payment?.payment_method || 'Electronic Transfer' }}
                   </td>
-                  <td class="p-3 text-right font-mono font-bold text-sm text-ink-green-7 dark:text-ink-green-4">
+                  <td class="p-3 text-right font-mono font-bold text-sm text-ink-green-8 dark:text-emerald-400">
                     {{ curSign }}{{ formatNum(payment?.amount) }}
                   </td>
                 </tr>
@@ -142,8 +142,8 @@
           <!-- Reconciliation & Seal -->
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <!-- Official Verification Seal Badge -->
-            <div class="flex items-center gap-3 p-3 rounded-xl border border-outline-green-2 bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 max-w-sm">
-              <span class="lucide-badge-check size-8 shrink-0 text-ink-green-7 dark:text-ink-green-4" />
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-outline-green-2 bg-surface-green-2 text-ink-green-8 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-300 max-w-sm">
+              <span class="lucide-badge-check size-8 shrink-0 text-ink-green-8 dark:text-emerald-400" />
               <div class="text-[11px]">
                 <div class="font-bold tracking-tight uppercase">{{ __('Audit Verified Settlement') }}</div>
                 <div class="text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">{{ __('Authenticated commercial receipt recorded in ledger.') }}</div>
@@ -156,13 +156,13 @@
                 <span>{{ __('Invoice Total:') }}</span>
                 <span class="font-mono font-medium text-ink-gray-9">{{ curSign }}{{ formatNum(invoice.total_amount) }}</span>
               </div>
-              <div class="flex justify-between font-bold text-sm text-ink-green-7 dark:text-ink-green-4 border-t border-outline-gray-1 pt-1.5">
+              <div class="flex justify-between font-bold text-sm text-ink-green-8 dark:text-emerald-400 border-t border-outline-gray-1 pt-1.5">
                 <span>{{ __('Amount Paid (This Receipt):') }}</span>
                 <span class="font-mono">{{ curSign }}{{ formatNum(payment?.amount) }}</span>
               </div>
               <div v-if="invoice" class="flex justify-between font-bold text-xs">
                 <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Remaining Balance:') }}</span>
-                <span class="font-mono" :class="invoice.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-green-7 dark:text-ink-green-4'">
+                <span class="font-mono" :class="invoice.balance_due > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-green-8 dark:text-emerald-400'">
                   {{ curSign }}{{ formatNum(invoice.balance_due) }}
                 </span>
               </div>

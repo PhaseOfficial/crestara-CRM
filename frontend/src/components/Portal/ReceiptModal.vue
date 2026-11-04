@@ -44,7 +44,7 @@
             <p v-if="invoice.contact_name" class="text-xs text-ink-gray-7 dark:text-ink-gray-6 mt-0.5">
               {{ invoice.contact_name }}
             </p>
-            <p v-if="invoice.client_email" class="text-xs text-ink-blue-7 dark:text-ink-blue-3 mt-0.5">
+            <p v-if="invoice.client_email" class="text-xs text-ink-blue-8 dark:text-blue-400 mt-0.5">
               {{ invoice.client_email }}
             </p>
           </div>
@@ -108,13 +108,13 @@
               <span>{{ __('Total:') }}</span>
               <span class="font-mono">{{ business.formatCurrency(invoice.total_amount, invoice.currency) }}</span>
             </div>
-            <div class="flex justify-between text-ink-green-7 dark:text-ink-green-4 font-medium text-xs sm:text-sm">
+            <div class="flex justify-between text-ink-green-8 dark:text-emerald-400 font-medium text-xs sm:text-sm">
               <span>{{ __('Amount Paid:') }}</span>
               <span class="font-mono">{{ business.formatCurrency(invoice.amount_paid, invoice.currency) }}</span>
             </div>
             <div
               class="flex justify-between font-bold text-xs sm:text-sm pt-1 border-t border-outline-gray-1/60"
-              :class="invoice.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+              :class="invoice.balance_due > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'"
             >
               <span>{{ __('Balance Due:') }}</span>
               <span class="font-mono">{{ business.formatCurrency(invoice.balance_due, invoice.currency) }}</span>
@@ -169,20 +169,20 @@ function printReceipt() {
 function getStatusBadgeClass(status) {
   switch (status) {
     case 'Paid':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
     case 'Partially paid':
     case 'Partially Paid':
-      return 'bg-surface-amber-2 text-ink-amber-7 dark:text-ink-amber-4 border-outline-amber-2'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'
     case 'Cancelled':
-      return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-5 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-4'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'
   }
 }
 </script>

@@ -18,7 +18,7 @@
     </div>
 
     <!-- Quick Stat Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <!-- Outstanding Balance -->
       <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
@@ -29,7 +29,7 @@
         </div>
         <div
           class="text-2xl font-bold font-mono"
-          :class="customerBalance > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+          :class="customerBalance > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'"
         >
           {{ business.formatCurrency(customerBalance) }}
         </div>
@@ -65,25 +65,9 @@
         <div class="text-2xl font-bold font-mono text-ink-gray-9">
           1
         </div>
-        <p class="text-xs text-ink-green-7 dark:text-ink-green-4 font-medium">
+        <p class="text-xs text-ink-green-8 dark:text-emerald-400 font-medium">
           {{ __('Next renewal Nov 15, 2026') }}
         </p>
-      </div>
-
-      <!-- Active Promotions -->
-      <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold uppercase tracking-wider text-ink-gray-7 dark:text-ink-gray-6">
-            {{ __('Active Promotions') }}
-          </span>
-          <span class="lucide-tag size-4 text-ink-gray-5 dark:text-ink-gray-4" />
-        </div>
-        <div class="text-2xl font-bold font-mono text-ink-gray-9">
-          {{ business.promotions.length }}
-        </div>
-        <router-link to="/portal/promotions" class="text-xs text-ink-blue-7 dark:text-ink-blue-3 hover:underline block font-medium">
-          {{ __('View available discounts →') }}
-        </router-link>
       </div>
     </div>
 
@@ -120,7 +104,7 @@
               class="hover:bg-surface-gray-1 transition-colors cursor-pointer"
               @click="openReceipt(inv)"
             >
-              <td class="py-4 px-6 font-mono font-bold text-ink-blue-7 dark:text-ink-blue-3">
+              <td class="py-4 px-6 font-mono font-bold text-ink-blue-8 dark:text-blue-400">
                 {{ inv.invoice_number }}
               </td>
               <td class="py-4 px-6 text-xs text-ink-gray-7 dark:text-ink-gray-6">
@@ -134,7 +118,7 @@
               </td>
               <td
                 class="py-4 px-6 font-mono font-semibold"
-                :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+                :class="inv.balance_due > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'"
               >
                 {{ business.formatCurrency(inv.balance_due, inv.currency) }}
               </td>
@@ -176,7 +160,7 @@
           <!-- Top Row: Entity, Status & Chevron -->
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
-              <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0">
+              <div class="size-9 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 text-xs shrink-0">
                 <span class="lucide-receipt size-4" />
               </div>
               <div class="min-w-0">
@@ -208,11 +192,11 @@
               <span class="text-[10px] uppercase font-semibold text-ink-gray-7 dark:text-ink-gray-6 block">{{ __('Balance Due') }}</span>
               <span
                 class="font-mono font-bold text-sm block"
-                :class="inv.balance_due > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+                :class="inv.balance_due > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'"
               >
                 {{ business.formatCurrency(inv.balance_due, inv.currency) }}
               </span>
-              <span class="text-[10px] text-ink-green-7 dark:text-ink-green-4 font-mono">
+              <span class="text-[10px] text-ink-green-8 dark:text-emerald-400 font-mono">
                 Paid: {{ business.formatCurrency(inv.amount_paid, inv.currency) }}
               </span>
             </div>
@@ -285,20 +269,20 @@ function openReceipt(inv) {
 function getStatusBadgeClass(status) {
   switch (status) {
     case 'Paid':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
     case 'Partially paid':
     case 'Partially Paid':
-      return 'bg-surface-amber-2 text-ink-amber-7 dark:text-ink-amber-4 border-outline-amber-2'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-3 border border-outline-gray-2 dark:border-outline-gray-2/60 font-medium'
     case 'Cancelled':
-      return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 line-through border border-outline-gray-2 font-medium'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-3 border border-outline-gray-2 font-medium'
   }
 }
 </script>

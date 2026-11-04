@@ -8,7 +8,7 @@
     </div>
 
     <!-- Official Information Policy Notice Banner -->
-    <div class="bg-surface-blue-2 dark:bg-surface-blue-2/40 rounded-xl p-4 flex items-start gap-3 border border-outline-blue-2 text-ink-blue-7 dark:text-ink-blue-3">
+    <div class="bg-surface-blue-2 dark:bg-blue-950/40 rounded-xl p-4 flex items-start gap-3 border border-outline-blue-2 dark:border-blue-800/60 text-ink-blue-8 dark:text-blue-200">
       <span class="lucide-shield-check size-5 mt-0.5 shrink-0" />
       <div class="text-xs space-y-1">
         <p class="font-bold text-sm text-ink-blue-8 dark:text-blue-200">
@@ -53,7 +53,7 @@
         <div class="flex items-center gap-3">
           <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-gray-2 dark:bg-surface-gray-1 border border-outline-gray-2/60 text-xs">
             <span class="text-ink-gray-7 dark:text-ink-gray-6">{{ __('Profile Verification:') }}</span>
-            <span class="font-bold font-mono text-ink-blue-7 dark:text-ink-blue-3">{{ business.profileCompletion.percentage }}%</span>
+            <span class="font-bold font-mono text-ink-blue-8 dark:text-blue-400">{{ business.profileCompletion.percentage }}%</span>
           </div>
 
           <Button
@@ -382,7 +382,7 @@
           <form class="space-y-6" @submit.prevent="submitRequest">
             <!-- Section 1: Legal Entity Updates -->
             <div class="space-y-3">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-blue-7 dark:text-ink-blue-3 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-blue-8 dark:text-blue-400 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
                 <span class="lucide-building size-4" />
                 {{ __('1. Organization Legal Entity Details') }}
               </h4>
@@ -410,7 +410,7 @@
 
             <!-- Section 2: Contact Representative Updates -->
             <div class="space-y-3">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-green-7 dark:text-ink-green-4 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-green-8 dark:text-emerald-400 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
                 <span class="lucide-user-check size-4" />
                 {{ __('2. Primary Contact Representative') }}
               </h4>
@@ -664,12 +664,12 @@ async function submitRequest() {
 function getRequestStatusBadge(status) {
   switch (status) {
     case 'Approved':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     case 'Rejected':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 font-semibold'
     case 'Pending':
     default:
-      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border-outline-amber-2'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
   }
 }
 

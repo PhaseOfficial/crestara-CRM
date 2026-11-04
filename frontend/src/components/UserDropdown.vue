@@ -33,8 +33,8 @@
               class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border"
               :class="
                 business.currentRole === 'Administrator'
-                  ? 'bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-4 border-outline-purple-2'
-                  : 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-4 border-outline-blue-2'
+                  ? 'bg-surface-purple-2 text-ink-purple-8 border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300'
+                  : 'bg-surface-blue-2 text-ink-blue-8 border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300'
               "
             >
               {{ business.currentRole }}

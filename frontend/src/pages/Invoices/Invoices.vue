@@ -250,7 +250,7 @@
             <!-- Row 1: Document Avatar + Invoice # + Status Badge + Chevron -->
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <div class="size-8 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center text-ink-blue-7 dark:text-ink-blue-3">
+                <div class="size-8 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300">
                   <span class="lucide-file-text size-4" />
                 </div>
                 <span class="font-mono font-bold text-ink-gray-9 text-xs bg-surface-gray-2 dark:bg-surface-gray-1 px-2 py-0.5 rounded border border-outline-gray-2/60">
@@ -466,24 +466,16 @@ function getInvoiceCountdown(inv) {
     return null
   }
   const cd = calculateCountdown(inv)
+  let label = `Due in ${cd.daysUntilDue}d`
   if (cd.isDueToday) {
-    return {
-      label: 'Due Today',
-      icon: 'lucide-bell-ring',
-      classes: 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2',
-    }
-  }
-  if (cd.isOverdue) {
-    return {
-      label: `${cd.daysPastDue}d overdue`,
-      icon: 'lucide-alert-circle',
-      classes: 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2',
-    }
+    label = 'Due Today'
+  } else if (cd.isOverdue) {
+    label = `${cd.daysPastDue}d overdue`
   }
   return {
-    label: `Due in ${cd.daysUntilDue}d`,
-    icon: 'lucide-clock',
-    classes: 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2',
+    label,
+    icon: cd.icon,
+    classes: cd.badgeClasses,
   }
 }
 
@@ -525,20 +517,20 @@ function onPaymentSuccess() {
 function getStatusClass(status) {
   switch (status) {
     case 'Paid':
-      return 'status-badge-paid bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2 font-semibold'
+      return 'status-badge-paid bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 dark:text-ink-red-4 border border-outline-red-2 font-semibold'
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2 font-semibold'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
     case 'Partially paid':
     case 'Partially Paid':
-      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border border-outline-amber-2 font-semibold'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-3 border border-outline-gray-2 dark:border-outline-gray-2/60 font-medium'
     case 'Cancelled':
       return 'bg-surface-gray-2 text-ink-gray-5 dark:text-ink-gray-4 line-through border border-outline-gray-2 font-medium'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border border-outline-gray-2 font-medium'
+      return 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-3 border border-outline-gray-2 font-medium'
   }
 }
 </script>

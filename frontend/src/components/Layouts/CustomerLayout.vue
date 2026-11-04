@@ -14,7 +14,7 @@
               />
             </router-link>
             <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2"
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300"
             >
               {{ __('Client Portal') }}
             </span>
@@ -110,7 +110,7 @@
         <div v-if="business.currentRole !== 'Customer'" class="pt-2 border-t border-outline-gray-1 px-3">
           <button
             type="button"
-            class="w-full text-left py-2 text-xs font-semibold text-ink-blue-7 dark:text-ink-blue-3"
+            class="w-full text-left py-2 text-xs font-semibold text-ink-blue-8 dark:text-blue-400"
             @click="router.push('/dashboard')"
           >
             ← {{ __('Return to CRM Workspace') }}
@@ -171,7 +171,6 @@ const navItems = [
   { key: 'Dashboard', label: 'Dashboard', to: '/portal' },
   { key: 'Purchases', label: 'My Purchases & Invoices', to: '/portal/purchases' },
   { key: 'Calendar', label: 'My Calendar', to: '/portal/calendar' },
-  { key: 'Promotions', label: 'Promotions', to: '/portal/promotions' },
   { key: 'Account', label: 'My Account', to: '/portal/account' },
 ]
 

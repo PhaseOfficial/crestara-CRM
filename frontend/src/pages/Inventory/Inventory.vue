@@ -16,12 +16,12 @@
 
     <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-6">
       <!-- Low Stock Alert Banner -->
-      <div v-if="!dismissAlert && business.lowStockItems.length" class="bg-surface-amber-2 border border-outline-amber-2 rounded-xl p-4 flex items-center justify-between">
+      <div v-if="!dismissAlert && business.lowStockItems.length" class="bg-surface-amber-2 dark:bg-amber-950/40 border border-outline-amber-2 dark:border-amber-800/60 rounded-xl p-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <span class="lucide-alert-triangle size-5 text-ink-amber-7 shrink-0" />
+          <span class="lucide-alert-triangle size-5 text-ink-amber-8 dark:text-amber-300 shrink-0" />
           <div>
-            <h4 class="text-xs font-bold text-ink-amber-7">{{ __('Low Stock Warning') }}</h4>
-            <p class="text-xs text-ink-amber-7 opacity-90 mt-0.5">
+            <h4 class="text-xs font-bold text-ink-amber-8 dark:text-amber-300">{{ __('Low Stock Warning') }}</h4>
+            <p class="text-xs text-ink-amber-8 dark:text-amber-200/90 opacity-90 mt-0.5">
               {{ __('The following items are running below reorder threshold: {0}', [business.lowStockItems.map(i => `${i.name} (${i.quantity_in_stock} left)`).join(', ')]) }}
             </p>
           </div>
@@ -111,8 +111,8 @@
                 
                 <td class="py-3 px-6">
                   <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="item.type === 'Product' ? 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3' : 'bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-3'"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border"
+                    :class="item.type === 'Product' ? 'bg-surface-blue-2 text-ink-blue-8 border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300' : 'bg-surface-purple-2 text-ink-purple-8 border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300'"
                   >
                     {{ item.type }}
                   </span>
@@ -125,7 +125,7 @@
                 <!-- Gross Margin for Administrators -->
                 <td v-if="business.isAdmin" class="py-3 px-6 text-xs text-ink-gray-7">
                   <div v-if="item.unit_price > 0 && item.cost_price > 0">
-                    <span class="font-semibold text-ink-green-7 dark:text-ink-green-4">
+                    <span class="font-semibold text-ink-green-8 dark:text-emerald-400">
                       {{ Math.round(((item.unit_price - item.cost_price) / item.unit_price) * 100) }}%
                     </span>
                     <span class="text-[10px] text-ink-gray-4 block">cost: {{ business.formatCurrency(item.cost_price) }}</span>
@@ -135,13 +135,13 @@
 
                 <!-- Stock Level Column with Quick Adjustment -->
                 <td class="py-3 px-6">
-                  <span v-if="!item.track_stock || item.type === 'Service'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-4">
+                  <span v-if="!item.track_stock || item.type === 'Service'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-surface-purple-2 text-ink-purple-8 border border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300">
                     {{ __('Service / Untracked') }}
                   </span>
                   <div v-else class="flex items-center gap-2">
                     <span
-                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold"
-                      :class="item.quantity_in_stock <= item.low_stock_threshold ? 'bg-surface-red-2 text-ink-red-7 border border-outline-red-2' : 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4'"
+                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border"
+                      :class="item.quantity_in_stock <= item.low_stock_threshold ? 'bg-surface-red-2 text-ink-red-8 border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300' : 'bg-surface-green-2 text-ink-green-8 border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300'"
                     >
                       {{ item.quantity_in_stock }} {{ __('units') }}
                       <span v-if="item.quantity_in_stock <= item.low_stock_threshold" class="ml-1 text-[10px] uppercase">({{ __('Low') }})</span>
@@ -213,8 +213,8 @@
                 </div>
               </div>
               <span
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
-                :class="item.type === 'Product' ? 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3' : 'bg-surface-purple-2 text-ink-purple-7 dark:text-ink-purple-3'"
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 border"
+                :class="item.type === 'Product' ? 'bg-surface-blue-2 text-ink-blue-8 border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300' : 'bg-surface-purple-2 text-ink-purple-8 border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300'"
               >
                 {{ item.type }}
               </span>
@@ -237,13 +237,13 @@
               </div>
               <div class="text-right">
                 <span class="text-[10px] uppercase font-semibold text-ink-gray-5 block">{{ __('Stock Level') }}</span>
-                <span v-if="!item.track_stock || item.type === 'Service'" class="text-ink-purple-7 dark:text-ink-purple-4 font-semibold text-xs">
+                <span v-if="!item.track_stock || item.type === 'Service'" class="text-ink-purple-8 dark:text-purple-300 font-semibold text-xs">
                   {{ __('Service') }}
                 </span>
                 <div v-else class="flex items-center justify-end gap-1.5 mt-0.5">
                   <span
                     class="font-bold text-xs"
-                    :class="item.quantity_in_stock <= item.low_stock_threshold ? 'text-ink-red-3' : 'text-ink-gray-9'"
+                    :class="item.quantity_in_stock <= item.low_stock_threshold ? 'text-ink-red-8 dark:text-red-400' : 'text-ink-gray-9'"
                   >
                     {{ item.quantity_in_stock }} {{ __('units') }}
                   </span>
@@ -368,7 +368,7 @@
             </div>
 
             <!-- Service Notice (Services do not have inventory stock) -->
-            <div v-if="formData.type === 'Service'" class="bg-surface-purple-2/40 border border-outline-purple-2 rounded-lg p-3 text-xs text-ink-purple-7 dark:text-ink-purple-3 flex items-center gap-2">
+            <div v-if="formData.type === 'Service'" class="bg-surface-purple-2/40 border border-outline-purple-2 dark:bg-purple-950/40 dark:border-purple-800/60 rounded-lg p-3 text-xs text-ink-purple-8 dark:text-purple-200 flex items-center gap-2">
               <span class="lucide-sparkles size-4 shrink-0" />
               <span>{{ __('Services and retainers do not hold physical stock. Inventory stock tracking is automatically disabled.') }}</span>
             </div>

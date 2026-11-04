@@ -81,7 +81,7 @@
           </div>
         </div>
 
-        <div class="bg-surface-blue-2 dark:bg-surface-blue-2/40 border border-outline-blue-2 rounded-xl p-5 text-xs text-ink-blue-7 dark:text-ink-blue-3 space-y-2">
+        <div class="bg-surface-blue-2 dark:bg-blue-950/40 border border-outline-blue-2 dark:border-blue-800/60 rounded-xl p-5 text-xs text-ink-blue-8 dark:text-blue-200 space-y-2">
           <div class="flex items-center gap-1.5 font-bold text-sm text-ink-blue-8 dark:text-blue-200">
             <span class="lucide-shield-check size-4" />
             {{ __('Automatic Reminders') }}
@@ -200,11 +200,11 @@ const nextRenewalDate = computed(() => {
 function getEventBadge(type) {
   switch (type) {
     case 'Invoice Due':
-      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border-outline-amber-2'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Renewal':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     default:
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
   }
 }
 
@@ -212,11 +212,11 @@ function getEventStatusBadge(status) {
   switch (status) {
     case 'Action Required':
     case 'Overdue':
-      return 'bg-surface-amber-2 text-ink-amber-8 dark:text-amber-300 border-outline-amber-2'
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Auto-Renew':
-      return 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     default:
-      return 'bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
   }
 }
 </script>

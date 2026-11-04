@@ -6,7 +6,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <!-- Left Info -->
       <div class="flex items-start sm:items-center gap-3.5">
-        <div class="size-10 rounded-xl bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center shrink-0 text-ink-blue-7 dark:text-ink-blue-3">
+        <div class="size-10 rounded-xl bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center shrink-0 text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300">
           <span class="lucide-compass size-5" />
         </div>
         <div>
@@ -14,7 +14,7 @@
             <h3 class="text-sm font-bold text-ink-gray-9">
               {{ __('Getting Started with Your Client Portal') }}
             </h3>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-blue-2 text-ink-blue-7 dark:text-ink-blue-3 border border-outline-blue-2">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300">
               {{ business.completedOnboardingStepsCount }} / {{ business.customerOnboardingSteps.length }} {{ __('Steps') }}
             </span>
           </div>

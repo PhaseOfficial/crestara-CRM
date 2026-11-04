@@ -8,7 +8,7 @@
       :key="item.key"
       type="button"
       class="relative flex flex-1 flex-col items-center justify-center py-1 px-1 transition-colors min-h-[48px] focus:outline-none"
-      :class="isItemActive(item) ? 'text-ink-blue-7 dark:text-ink-blue-3 font-semibold' : 'text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 dark:hover:text-ink-gray-2'"
+      :class="isItemActive(item) ? 'text-ink-blue-8 dark:text-blue-400 font-semibold' : 'text-ink-gray-6 dark:text-ink-gray-4 hover:text-ink-gray-9 dark:hover:text-ink-gray-2'"
       @click="handleNavigate(item)"
     >
       <!-- Active Top Accent Pill -->

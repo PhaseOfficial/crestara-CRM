@@ -216,13 +216,6 @@ export function useClientNavFrequency() {
       matchPath: (path) => path.startsWith('/portal/calendar'),
     },
     {
-      key: 'Promotions',
-      label: 'Promotions',
-      to: '/portal/promotions',
-      icon: 'lucide-sparkles',
-      matchPath: (path) => path.startsWith('/portal/promotions'),
-    },
-    {
       key: 'Account',
       label: 'My Account',
       to: '/portal/account',

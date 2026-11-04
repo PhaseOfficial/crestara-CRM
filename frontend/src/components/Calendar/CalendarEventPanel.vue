@@ -78,7 +78,7 @@
           </div>
           <div
             v-if="_event.status === 'Cancelled'"
-            class="inline-flex items-center gap-1.5 w-fit px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-red-2 text-ink-red-7 border border-outline-red-2"
+            class="inline-flex items-center gap-1.5 w-fit px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300"
           >
             <span class="lucide-calendar-x size-3" />
             <span>{{ __('Meeting Cancelled') }}</span>

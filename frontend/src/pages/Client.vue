@@ -53,7 +53,7 @@
             :tooltip="__('Back to Clients')"
             @click="router.push('/clients')"
           />
-          <div class="size-10 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-7 dark:text-ink-blue-3 text-xs shrink-0 overflow-hidden">
+          <div class="size-10 rounded-lg bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center font-bold text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 text-xs shrink-0 overflow-hidden">
             <img
               v-if="client.logo_url"
               :src="client.logo_url"
@@ -71,7 +71,7 @@
               </h1>
               <span
                 class="px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0"
-                :class="client.status === 'Active' ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border-outline-green-2' : 'bg-surface-gray-2 text-ink-gray-7 dark:text-ink-gray-6 border-outline-gray-2'"
+                :class="client.status === 'Active' ? 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold' : 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'"
               >
                 {{ __(client.status || 'Active') }}
               </span>
@@ -161,7 +161,7 @@
                   :title="__('Copy CRN')"
                   @click="copyToClipboard(client.company_registration_number, 'crn')"
                 >
-                  <span :class="copiedField === 'crn' ? 'lucide-check text-ink-green-7 dark:text-ink-green-4' : 'lucide-copy'" class="size-3.5 inline-block" />
+                  <span :class="copiedField === 'crn' ? 'lucide-check text-ink-green-8 dark:text-emerald-400' : 'lucide-copy'" class="size-3.5 inline-block" />
                 </button>
               </div>
             </div>
@@ -178,7 +178,7 @@
                   :title="__('Copy Tax ID')"
                   @click="copyToClipboard(client.tin || client.tax_id, 'tin')"
                 >
-                  <span :class="copiedField === 'tin' ? 'lucide-check text-ink-green-7 dark:text-ink-green-4' : 'lucide-copy'" class="size-3.5 inline-block" />
+                  <span :class="copiedField === 'tin' ? 'lucide-check text-ink-green-8 dark:text-emerald-400' : 'lucide-copy'" class="size-3.5 inline-block" />
                 </button>
               </div>
             </div>
@@ -192,7 +192,7 @@
                 :href="client.website.startsWith('http') ? client.website : 'https://' + client.website"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-xs text-ink-blue-7 dark:text-ink-blue-3 hover:underline flex items-center gap-1"
+                class="text-xs text-ink-blue-8 dark:text-blue-400 hover:underline flex items-center gap-1"
               >
                 <span class="truncate max-w-[200px]">{{ client.website.replace(/^https?:\/\//, '') }}</span>
                 <span class="lucide-external-link size-3 shrink-0" />
@@ -219,7 +219,7 @@
               <a
                 v-if="client.billing_email || client.primary_email"
                 :href="'mailto:' + (client.billing_email || client.primary_email)"
-                class="truncate text-ink-blue-7 dark:text-ink-blue-3 hover:underline text-xs"
+                class="truncate text-ink-blue-8 dark:text-blue-400 hover:underline text-xs"
               >
                 {{ client.billing_email || client.primary_email }}
               </a>
@@ -230,7 +230,7 @@
               <a
                 v-if="client.phone || client.mobile_no"
                 :href="'tel:' + (client.phone || client.mobile_no)"
-                class="text-xs text-ink-gray-9 hover:text-ink-blue-7 dark:hover:text-ink-blue-3 hover:underline"
+                class="text-xs text-ink-gray-9 hover:text-ink-blue-8 dark:hover:text-blue-400 hover:underline"
               >
                 {{ client.phone || client.mobile_no }}
               </a>
@@ -264,7 +264,7 @@
             </div>
             <div class="flex justify-between items-center pt-2 border-t border-outline-gray-1">
               <span class="text-ink-gray-7 dark:text-ink-gray-6 font-medium">{{ __('Total Outstanding') }}</span>
-              <span class="font-bold font-mono text-sm" :class="clientBalance > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'">
+              <span class="font-bold font-mono text-sm" :class="clientBalance > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'">
                 ${{ Number(clientBalance).toLocaleString() }}
               </span>
             </div>
@@ -284,7 +284,7 @@
             :href="googleMapsUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-xs text-ink-blue-7 dark:text-ink-blue-3 hover:underline flex items-center gap-1 font-medium"
+            class="text-xs text-ink-blue-8 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
           >
             <span>{{ __('View on Map') }}</span>
             <span class="lucide-external-link size-3" />
@@ -339,13 +339,13 @@
                 class="hover:bg-surface-gray-1 transition-colors cursor-pointer group"
                 @click="router.push(`/invoices/${inv.id}`)"
               >
-                <td class="py-3 px-4 font-mono font-bold text-ink-blue-7 dark:text-ink-blue-3">
+                <td class="py-3 px-4 font-mono font-bold text-ink-blue-8 dark:text-blue-400">
                   {{ inv.invoice_number }}
                 </td>
                 <td class="py-3 px-4 text-ink-gray-7 dark:text-ink-gray-6">{{ inv.issue_date }}</td>
                 <td class="py-3 px-4 text-ink-gray-7 dark:text-ink-gray-6">{{ inv.due_date }}</td>
                 <td class="py-3 px-4 font-mono font-semibold text-ink-gray-9">{{ business.formatCurrency(inv.total_amount, inv.currency) }}</td>
-                <td class="py-3 px-4 font-mono font-semibold" :class="Number(inv.balance_due) > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'">
+                <td class="py-3 px-4 font-mono font-semibold" :class="Number(inv.balance_due) > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'">
                   {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </td>
                 <td class="py-3 px-4">
@@ -412,7 +412,7 @@
             <!-- Card Header: Number + Status Badge + Chevron -->
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="font-mono font-bold text-ink-blue-7 dark:text-ink-blue-3 text-sm">{{ inv.invoice_number }}</span>
+                <span class="font-mono font-bold text-ink-blue-8 dark:text-blue-400 text-sm">{{ inv.invoice_number }}</span>
                 <span
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
                   :class="getStatusBadgeClass(inv.status)"
@@ -434,7 +434,7 @@
                 <span class="text-[10px] uppercase font-semibold text-ink-gray-6 dark:text-ink-gray-5 block">{{ __('Amount Due') }}</span>
                 <span
                   class="font-bold font-mono text-sm block"
-                  :class="Number(inv.balance_due) > 0 ? 'text-ink-amber-3' : 'text-ink-gray-9'"
+                  :class="Number(inv.balance_due) > 0 ? 'text-ink-amber-8 dark:text-amber-400' : 'text-ink-gray-9'"
                 >
                   {{ business.formatCurrency(inv.balance_due, inv.currency) }}
                 </span>
@@ -526,7 +526,7 @@
         <form class="space-y-6" @submit.prevent="saveClient">
           <!-- Section 1: Organization Details -->
           <div class="space-y-3">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-ink-blue-7 dark:text-ink-blue-3 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-ink-blue-8 dark:text-blue-400 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
               <span class="lucide-building size-4" />
               {{ __('1. Organization Legal Entity Details') }}
             </h4>
@@ -643,7 +643,7 @@
 
           <!-- Section 2: Primary Contact Person -->
           <div class="space-y-3">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-ink-green-7 dark:text-ink-green-4 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-ink-green-8 dark:text-emerald-400 flex items-center gap-1.5 border-b border-outline-gray-1 pb-1">
               <span class="lucide-user-check size-4" />
               {{ __('2. Primary Contact Person & Representative') }}
             </h4>
@@ -963,19 +963,20 @@ function copyToClipboard(text, fieldName) {
 function getStatusBadgeClass(status) {
   switch (status) {
     case 'Paid':
-      return 'bg-surface-green-2 text-ink-green-7 border border-outline-green-2'
+      return 'bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 font-semibold'
     case 'Overdue':
-      return 'bg-surface-red-2 text-ink-red-7 border border-outline-red-2'
+      return 'bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300 font-semibold'
     case 'Issued':
-      return 'bg-surface-blue-2 text-ink-blue-7 border border-outline-blue-2'
+      return 'bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-semibold'
     case 'Partially paid':
-      return 'bg-surface-amber-2 text-ink-amber-7 border border-outline-amber-2'
+    case 'Partially Paid':
+      return 'bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300 font-semibold'
     case 'Draft':
-      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'
     case 'Cancelled':
-      return 'bg-surface-gray-2 text-ink-gray-5 border border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-5 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-4'
     default:
-      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2'
+      return 'bg-surface-gray-2 text-ink-gray-7 border border-outline-gray-2 dark:bg-surface-gray-2/60 dark:border-outline-gray-2 dark:text-ink-gray-3'
   }
 }
 

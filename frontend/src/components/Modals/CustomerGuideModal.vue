@@ -29,7 +29,7 @@
               <div class="flex items-center gap-2.5 truncate">
                 <div
                   class="size-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold"
-                  :class="step.completed ? 'bg-surface-green-2 text-ink-green-7 dark:text-ink-green-4 border border-outline-green-2' : (activeStepIndex === idx ? 'bg-surface-blue-3 text-ink-blue-8 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-surface-gray-2 dark:bg-surface-gray-1 text-ink-gray-7 dark:text-ink-gray-6')"
+                  :class="step.completed ? 'bg-surface-green-2 text-ink-green-8 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300 border border-outline-green-2' : (activeStepIndex === idx ? 'bg-surface-blue-3 text-ink-blue-8 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-surface-gray-2 dark:bg-surface-gray-1 text-ink-gray-7 dark:text-ink-gray-6')"
                 >
                   <span v-if="step.completed" class="lucide-check size-3.5" />
                   <span v-else>{{ idx + 1 }}</span>
@@ -39,7 +39,7 @@
 
               <span
                 v-if="step.completed"
-                class="text-[10px] text-ink-green-7 dark:text-ink-green-4 font-bold shrink-0"
+                class="text-[10px] text-ink-green-8 dark:text-emerald-400 font-bold shrink-0"
               >
                 {{ __('Completed') }}
               </span>
@@ -52,11 +52,11 @@
           <div class="space-y-4">
             <!-- Step Header Banner -->
             <div class="flex items-start gap-3 bg-surface-gray-1/80 dark:bg-surface-gray-1/40 p-4 rounded-xl border border-outline-gray-1">
-              <div class="size-10 rounded-xl bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center shrink-0 text-ink-blue-7 dark:text-ink-blue-3">
+              <div class="size-10 rounded-xl bg-surface-blue-2 border border-outline-blue-2 flex items-center justify-center shrink-0 text-ink-blue-8 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300">
                 <span :class="`lucide-${activeStep.icon}`" class="size-5" />
               </div>
               <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-ink-blue-7 dark:text-ink-blue-3 block">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-ink-blue-8 dark:text-blue-400 block">
                   {{ __('Step {0} of {1}', [activeStepIndex + 1, business.customerOnboardingSteps.length]) }}
                 </span>
                 <h4 class="text-base font-bold text-ink-gray-9 mt-0.5">
@@ -77,7 +77,7 @@
 
               <ul class="space-y-2.5 pl-1">
                 <li v-for="(tip, tIdx) in stepExplanations[activeStep.id]" :key="tIdx" class="flex items-start gap-2">
-                  <span class="lucide-check-circle size-3.5 text-ink-blue-7 dark:text-ink-blue-3 shrink-0 mt-0.5" />
+                  <span class="lucide-check-circle size-3.5 text-ink-blue-8 dark:text-blue-400 shrink-0 mt-0.5" />
                   <span class="leading-relaxed text-ink-gray-8 dark:text-ink-gray-2">{{ __(tip) }}</span>
                 </li>
               </ul>
@@ -91,7 +91,7 @@
               class="text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 hover:text-ink-gray-9 transition flex items-center gap-1"
               @click="toggleStepCompletion"
             >
-              <span :class="activeStep.completed ? 'lucide-square-check text-ink-green-7 dark:text-ink-green-4' : 'lucide-square'" class="size-4" />
+              <span :class="activeStep.completed ? 'lucide-square-check text-ink-green-8 dark:text-emerald-400' : 'lucide-square'" class="size-4" />
               <span>{{ activeStep.completed ? __('Mark as Incomplete') : __('Mark as Done') }}</span>
             </button>
 
@@ -160,11 +160,6 @@ const stepExplanations = {
     'Make payments securely using Bank Wire, Credit Card, or Direct Debit.',
     'Invoices are automatically updated to "Paid" status immediately upon settlement.',
     'Download signed payment confirmation receipts with transaction reference IDs.',
-  ],
-  explore_promotions: [
-    'View special active promotional discounts, bundled software credits, and loyalty rewards.',
-    'Discounts apply automatically at checkout or when paying eligible recurring invoices.',
-    'Exclusive enterprise rates are updated monthly by your account executive.',
   ],
   schedule_appointment: [
     'Book consultation meetings or support reviews directly on the interactive portal calendar.',

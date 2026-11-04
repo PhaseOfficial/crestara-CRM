@@ -21,6 +21,26 @@
 			prose-th:p-2
 			prose-th:relative;
   }
+
+  /* High-Contrast Semantic Indicator Pills & Badges (WCAG AA Compliant in Dark Mode) */
+  .indicator-pill-admin {
+    @apply bg-surface-purple-2 text-ink-purple-8 border border-outline-purple-2 dark:bg-purple-950/50 dark:border-purple-800/60 dark:text-purple-300;
+  }
+  .indicator-pill-staff {
+    @apply bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300;
+  }
+  .indicator-pill-due {
+    @apply bg-surface-blue-2 text-ink-blue-8 border border-outline-blue-2 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300;
+  }
+  .indicator-pill-due-today {
+    @apply bg-surface-amber-2 text-ink-amber-8 border border-outline-amber-2 dark:bg-amber-950/50 dark:border-amber-800/60 dark:text-amber-300;
+  }
+  .indicator-pill-overdue {
+    @apply bg-surface-red-2 text-ink-red-8 border border-outline-red-2 dark:bg-red-950/50 dark:border-red-800/60 dark:text-red-300;
+  }
+  .indicator-pill-paid {
+    @apply bg-surface-green-2 text-ink-green-8 border border-outline-green-2 dark:bg-emerald-950/50 dark:border-emerald-800/60 dark:text-emerald-300;
+  }
 }
 
 /* Reka menu content (e.g. the kebab menu inside PrimaryDropdown) portals to
