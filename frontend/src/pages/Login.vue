@@ -212,6 +212,16 @@
         </div>
       </form>
     </div>
+
+    <!-- RedCupSeries link -->
+    <a
+      href="https://web.redcupseries.co.zw"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="fixed bottom-4 right-4 text-xs text-ink-gray-4 hover:text-ink-gray-7 transition-colors"
+    >
+      Powered by redcupseries
+    </a>
   </div>
 </template>
 

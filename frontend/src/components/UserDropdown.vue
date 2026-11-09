@@ -124,12 +124,6 @@ const dropdownItems = computed(() => {
           onClick: () => setTheme(currentTheme.value === 'dark' ? 'light' : 'dark'),
         },
         {
-          label: __('Settings'),
-          icon: 'lucide-settings',
-          onClick: () => (showSettings.value = true),
-          condition: () => !isMobileView.value,
-        },
-        {
           label: __('About Crestara CRM'),
           icon: 'lucide-info',
           onClick: () => (showAboutModal.value = true),

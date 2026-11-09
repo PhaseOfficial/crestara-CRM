@@ -25,7 +25,7 @@
           <SidebarItem
             id="search-btn"
             :label="__('Search & Commands')"
-            @click="openCommandPalette"
+            :onClick="openCommandPalette"
           >
             <template #prefix>
               <span class="lucide-search size-4 text-ink-gray-7" />
@@ -43,9 +43,8 @@
           <SidebarItem
             id="notifications-btn"
             :label="__('Notifications')"
-            :to="mobile ? { name: 'Notifications' } : undefined"
-            :active="mobile && activeItem === 'Notifications'"
-            @click="onNotificationsClick"
+            :active="activeItem === 'Notifications'"
+            :onClick="onNotificationsClick"
           >
             <template #prefix>
               <span class="relative grid size-4 place-items-center">
@@ -59,9 +58,10 @@
             <template #suffix>
               <Badge
                 v-if="unreadNotificationsCount"
-                class="mr-2"
+                class="mr-2 cursor-pointer"
                 :label="unreadNotificationsCount"
                 variant="subtle"
+                @click.stop="onNotificationsClick"
               />
             </template>
           </SidebarItem>
@@ -129,7 +129,7 @@
             v-if="isManager() && isDemoDataCreated"
             :label="__('Clear Demo Data')"
             class="!text-ink-red-6 hover:!bg-surface-red-2"
-            @click="() => clearDemoData()"
+            :onClick="() => clearDemoData()"
           >
             <template #prefix>
               <BrushCleaningIcon class="size-4" />
@@ -137,7 +137,7 @@
           </SidebarItem>
           <SidebarItem
             :label="__('Help')"
-            @click="toggleHelpModal"
+            :onClick="toggleHelpModal"
           >
             <template #prefix>
               <HelpIcon class="size-4 text-ink-gray-7" />
@@ -145,7 +145,7 @@
           </SidebarItem>
           <SidebarItem
             :label="isCollapsed ? __('Expand') : __('Collapse')"
-            @click="isSidebarCollapsed = !isSidebarCollapsed"
+            :onClick="() => (isSidebarCollapsed = !isSidebarCollapsed)"
           >
             <template #prefix>
               <CollapseSidebar
@@ -157,7 +157,6 @@
         </div>
       </div>
     </Sidebar>
-    <Notifications v-if="!mobile" />
   </div>
 
   <template v-if="!mobile">
@@ -201,7 +200,6 @@ import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import CollapseSidebar from '@/components/Icons/CollapseSidebar.vue'
 import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import HelpIcon from '@/components/Icons/HelpIcon.vue'
-import Notifications from '@/components/Notifications.vue'
 import Settings from '@/components/Settings/Settings.vue'
 import { viewsStore } from '@/stores/views'
 import { useBusinessStore } from '@/stores/business'
@@ -497,9 +495,9 @@ watch(
 function onNotificationsClick(event) {
   if (props.mobile) {
     selectItem(event, 'Notifications')
-  } else {
-    toggleNotificationPanel()
+    mobileSidebarOpened.value = false
   }
+  toggleNotificationPanel()
 }
 
 // onboarding

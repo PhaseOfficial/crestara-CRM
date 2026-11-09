@@ -193,7 +193,7 @@
             v-model="searchQuery"
             type="search"
             :placeholder="__('Search invoice or client...')"
-            iconLeft="search"
+            iconLeft="lucide-search"
           />
         </div>
       </div>

@@ -39,7 +39,7 @@
             v-if="!isNew && invoice.balance_due > 0 && invoice.status !== 'Cancelled'"
             variant="solid"
             theme="green"
-            icon="check-check"
+            icon="lucide-check-check"
             :tooltip="__('Mark as Paid in Full')"
             @click="handleMarkAsPaid"
           />
@@ -48,7 +48,7 @@
           <Button
             v-if="!isNew && invoice.balance_due > 0 && invoice.status !== 'Cancelled'"
             variant="outline"
-            icon="credit-card"
+            icon="lucide-credit-card"
             :tooltip="__('Record Payment')"
             @click="showPaymentModal = true"
           />
@@ -58,7 +58,7 @@
             v-if="!isNew && (invoice.status === 'Paid' || invoice.balance_due <= 0) && invoice.payments && invoice.payments.length > 0"
             variant="solid"
             theme="green"
-            icon="file-text"
+            icon="lucide-file-text"
             :tooltip="__('View Official Commercial Receipt')"
             @click="openReceiptModal(invoice.payments[0])"
           />
@@ -67,7 +67,7 @@
           <Button
             v-if="!isNew"
             variant="outline"
-            icon="printer"
+            icon="lucide-printer"
             :tooltip="__('Preview & Print Document')"
             @click="showPreviewModal = true"
           />
@@ -88,7 +88,7 @@
           <Button
             v-if="!isNew"
             variant="outline"
-            icon="mail"
+            icon="lucide-mail"
             :tooltip="invoice.status === 'Paid' ? __('Email Official Receipt') : __('Email Invoice to Client')"
             @click="openInvoiceEmailModal"
           />
@@ -97,7 +97,7 @@
           <Button
             v-if="!isNew && invoice.status !== 'Paid' && invoice.status !== 'Cancelled' && Number(invoice.balance_due) > 0"
             variant="outline"
-            icon="bell"
+            icon="lucide-bell"
             :tooltip="__('Send Payment Reminder to Client')"
             @click="showReminderModal = true"
           />
@@ -106,7 +106,7 @@
           <Button
             v-if="!isNew"
             variant="outline"
-            icon="calendar"
+            icon="lucide-calendar"
             :tooltip="__('Schedule Meeting or View in Calendar')"
             @click="openCalendarForInvoice"
           />
@@ -116,7 +116,7 @@
             v-if="!isNew && invoice.status !== 'Cancelled' && invoice.status !== 'Paid'"
             variant="outline"
             theme="red"
-            icon="x-circle"
+            icon="lucide-circle-x"
             :tooltip="__('Cancel Invoice')"
             @click="cancelCurrentInvoice"
           />
@@ -124,7 +124,7 @@
           <!-- Save Changes / Create & Issue -->
           <Button
             variant="solid"
-            icon="save"
+            icon="lucide-save"
             :tooltip="isNew ? __('Create & Issue Invoice') : __('Save Invoice Changes')"
             :loading="saving"
             @click="saveInvoice"
@@ -1037,7 +1037,7 @@
                   </div>
                 </div>
               </div>
-              <Button size="xs" variant="ghost" icon="external-link" :label="__('Open in Calendar')" />
+              <Button size="xs" variant="ghost" icon="lucide-external-link" :label="__('Open in Calendar')" />
             </div>
           </div>
           <p v-else class="text-xs text-ink-gray-5">

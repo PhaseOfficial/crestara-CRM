@@ -8,6 +8,33 @@ export const READ_STORAGE_KEY = 'crestara_notifications_read'
 export const DISMISSED_STORAGE_KEY = 'crestara_notifications_dismissed'
 export const CUSTOM_STORAGE_KEY = 'crestara_custom_notifications'
 
+export const VALID_BADGE_THEMES = new Set([
+  'gray',
+  'blue',
+  'green',
+  'amber',
+  'red',
+  'violet',
+  'orange',
+])
+
+export function getBadgeTheme(type) {
+  switch (type) {
+    case 'Alert':
+      return 'red'
+    case 'Warning':
+      return 'amber'
+    case 'Action':
+      return 'blue'
+    case 'Task':
+      return 'violet'
+    case 'Event':
+      return 'green'
+    default:
+      return 'gray'
+  }
+}
+
 export function loadStoredSet(key) {
   try {
     const raw = localStorage.getItem(key)

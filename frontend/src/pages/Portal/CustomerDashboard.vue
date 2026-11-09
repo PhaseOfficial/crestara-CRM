@@ -12,7 +12,7 @@
       </div>
       <div class="flex items-center gap-2">
         <router-link to="/portal/purchases">
-          <Button variant="solid" :label="__('View Invoices & Receipts')" iconLeft="receipt" />
+          <Button variant="solid" :label="__('View Invoices & Receipts')" iconLeft="lucide-receipt" />
         </router-link>
       </div>
     </div>
@@ -134,7 +134,7 @@
                 <Button
                   size="xs"
                   variant="outline"
-                  iconLeft="file-text"
+                  iconLeft="lucide-file-text"
                   :label="__('View')"
                   @click="openReceipt(inv)"
                 />
@@ -207,7 +207,7 @@
             <Button
               size="sm"
               variant="outline"
-              iconLeft="file-text"
+              iconLeft="lucide-file-text"
               :label="__('View Receipt / Invoice')"
               class="w-full sm:w-auto"
               @click="openReceipt(inv)"

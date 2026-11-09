@@ -66,14 +66,14 @@
                     variant="solid"
                     theme="green"
                     :label="__('Pay Now')"
-                    iconLeft="credit-card"
+                    iconLeft="lucide-credit-card"
                     @click="openPaymentModal(inv)"
                   />
                   <Button
                     size="xs"
                     variant="outline"
                     :label="__('View Receipt')"
-                    iconLeft="file-text"
+                    iconLeft="lucide-file-text"
                     @click="openReceipt(inv)"
                   />
                 </div>
@@ -148,14 +148,14 @@
               size="sm"
               variant="solid"
               theme="green"
-              iconLeft="credit-card"
+              iconLeft="lucide-credit-card"
               :label="__('Pay Now')"
               @click="openPaymentModal(inv)"
             />
             <Button
               size="sm"
               variant="outline"
-              iconLeft="file-text"
+              iconLeft="lucide-file-text"
               :label="__('View Receipt')"
               @click="openReceipt(inv)"
             />

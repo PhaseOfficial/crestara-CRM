@@ -58,7 +58,7 @@
 
           <Button
             variant="solid"
-            iconLeft="file-edit"
+            iconLeft="lucide-file-edit"
             :label="__('Request Detail Change')"
             @click="openChangeModal"
           />

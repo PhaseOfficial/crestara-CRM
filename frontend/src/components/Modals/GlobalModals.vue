@@ -36,8 +36,12 @@
     v-if="showHelpModal"
     v-model="showHelpModal"
   />
+
+  <!-- Global Notifications Modal -->
+  <Notifications />
 </template>
 <script setup>
+import Notifications from '@/components/Notifications.vue'
 import FieldLayoutDialogContainer from '@/components/Modals/FieldLayoutDialogContainer.vue'
 import ChangePasswordModal from '@/components/Modals/ChangePasswordModal.vue'
 import CreateDocumentModal from '@/components/Modals/CreateDocumentModal.vue'

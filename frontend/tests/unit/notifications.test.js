@@ -6,6 +6,8 @@ import {
   loadCustomNotifications,
   saveCustomNotifications,
   CUSTOM_STORAGE_KEY,
+  getBadgeTheme,
+  VALID_BADGE_THEMES,
 } from '@/utils/notificationGenerators'
 
 describe('Notifications Generator & Storage Utilities', () => {
@@ -184,5 +186,19 @@ describe('Notifications Generator & Storage Utilities', () => {
     const loaded = loadCustomNotifications()
     expect(loaded).toHaveLength(1)
     expect(loaded[0].title).toBe('Payment Reminder')
+  })
+
+  it('maps notification types to themes supported by frappe-ui Badge', () => {
+    const types = ['Alert', 'Warning', 'Action', 'Task', 'Event', 'Unknown', null, undefined]
+    types.forEach((type) => {
+      const theme = getBadgeTheme(type)
+      expect(VALID_BADGE_THEMES.has(theme)).toBe(true)
+    })
+    expect(getBadgeTheme('Task')).toBe('violet')
+    expect(getBadgeTheme('Alert')).toBe('red')
+    expect(getBadgeTheme('Warning')).toBe('amber')
+    expect(getBadgeTheme('Action')).toBe('blue')
+    expect(getBadgeTheme('Event')).toBe('green')
+    expect(getBadgeTheme('Custom')).toBe('gray')
   })
 })

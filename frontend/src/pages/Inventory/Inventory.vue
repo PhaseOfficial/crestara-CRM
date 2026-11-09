@@ -56,7 +56,7 @@
             v-model="searchQuery"
             type="search"
             :placeholder="__('Search item name or code...')"
-            iconLeft="search"
+            iconLeft="lucide-search"
           />
         </div>
       </div>

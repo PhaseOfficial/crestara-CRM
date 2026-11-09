@@ -30,7 +30,7 @@
           </transition>
           <Button
             variant="solid"
-            iconLeft="check"
+            iconLeft="lucide-check"
             :label="isMobileView ? '' : __('Save Settings')"
             :tooltip="__('Save Settings')"
             :loading="saving"
@@ -329,7 +329,7 @@
             <Button
               variant="outline"
               size="sm"
-              iconLeft="play"
+              iconLeft="lucide-play"
               :label="__('Test Automated Reminders')"
               :loading="testingCron"
               @click="handleTestCron"
@@ -436,7 +436,7 @@
                 {{ __('Staff') }} ({{ staffCount }})
               </button>
             </div>
-            <Button size="sm" variant="outline" :label="__('Invite Staff')" iconLeft="user-plus" @click="showInvite = true" />
+            <Button size="sm" variant="outline" :label="__('Invite Staff')" iconLeft="lucide-user-plus" @click="showInvite = true" />
           </div>
         </div>
 
@@ -653,7 +653,7 @@
             <Button variant="subtle" :label="__('Cancel')" @click="closeInviteModal" />
             <Button
               variant="solid"
-              :iconLeft="existingClientAccount ? 'arrow-up-right' : 'user-plus'"
+              :iconLeft="existingClientAccount ? 'lucide-arrow-up-right' : 'lucide-user-plus'"
               :label="existingClientAccount ? __('Upgrade to {0}', [__(newMember.role)]) : __('Add Member')"
               :disabled="!newMember.email || !newMember.full_name"
               :class="existingClientAccount ? '!bg-amber-600 hover:!bg-amber-500 active:!bg-amber-700 !text-white dark:!bg-amber-500 dark:hover:!bg-amber-400 dark:!text-gray-950 font-bold shadow-sm' : ''"

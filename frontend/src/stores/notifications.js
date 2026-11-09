@@ -6,6 +6,8 @@ import {
   READ_STORAGE_KEY,
   DISMISSED_STORAGE_KEY,
   CUSTOM_STORAGE_KEY,
+  VALID_BADGE_THEMES,
+  getBadgeTheme,
   loadStoredSet,
   saveStoredSet,
   loadCustomNotifications,
@@ -17,6 +19,8 @@ export {
   READ_STORAGE_KEY,
   DISMISSED_STORAGE_KEY,
   CUSTOM_STORAGE_KEY,
+  VALID_BADGE_THEMES,
+  getBadgeTheme,
   loadStoredSet,
   saveStoredSet,
   loadCustomNotifications,
@@ -74,12 +78,22 @@ export const notificationsStore = defineStore('crm-notifications', () => {
     return notifications.data
   }
 
-  function toggle() {
-    visible.value = !visible.value
+  function toggle(val) {
+    if (typeof val === 'boolean') {
+      visible.value = val
+    } else {
+      visible.value = !visible.value
+    }
     if (visible.value) {
       refreshNotifications()
     }
   }
+
+  watch(visible, (isOpen) => {
+    if (isOpen) {
+      refreshNotifications()
+    }
+  })
 
   function markAsRead(id) {
     if (!id) return

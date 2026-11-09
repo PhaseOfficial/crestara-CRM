@@ -139,7 +139,7 @@
         <Button
           class="w-fit"
           :label="__('Add Notification')"
-          iconLeft="plus"
+          iconLeft="lucide-plus"
           @click="
             notifications.push({
               type: 'Notification',
@@ -234,7 +234,7 @@
         <Button
           class="w-fit"
           :label="__('Add Notification')"
-          iconLeft="plus"
+          iconLeft="lucide-plus"
           @click="
             allDayNotifications.push({
               type: 'Notification',

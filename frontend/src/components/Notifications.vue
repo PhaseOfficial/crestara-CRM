@@ -1,73 +1,98 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div
-    v-if="visible"
-    ref="target"
-    class="absolute z-20 h-screen bg-surface-base border-r border-outline-gray-1 transition-all duration-300 ease-in-out shadow-2xl"
-    :style="{
-      'max-width': '420px',
-      'min-width': '400px',
-      left: 'calc(100% + 1px)',
-    }"
+  <Dialog
+    v-model:open="visible"
+    size="2xl"
+    bare
   >
-    <div class="flex h-screen flex-col text-ink-gray-9">
-      <!-- Header -->
-      <div class="flex justify-between items-center px-4 pt-[15px] pb-3 border-b border-outline-gray-1">
-        <div class="flex items-center gap-2">
-          <div class="text-lg-medium text-ink-gray-8">
-            {{ __('Notifications') }}
+    <div
+      class="w-full flex flex-col overflow-hidden rounded-2xl border border-outline-gray-2 bg-surface-base shadow-2xl text-ink-gray-9 transition-all max-h-[85vh]"
+    >
+      <!-- Accessible Title & Description for Screen Readers (Reka UI) -->
+      <DialogTitle class="sr-only">{{ __('Notifications') }}</DialogTitle>
+      <DialogDescription class="sr-only">
+        {{ __('View and manage notifications, alerts, and calendar events') }}
+      </DialogDescription>
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-outline-gray-1 px-5 py-4 bg-surface-base">
+        <div class="flex items-center gap-3">
+          <div class="size-9 rounded-xl bg-surface-gray-2 flex items-center justify-center border border-outline-gray-2 shrink-0">
+            <NotificationsIcon class="size-5 text-ink-gray-7" />
           </div>
-          <Badge
-            v-if="unreadCount > 0"
-            :label="unreadCount"
-            theme="red"
-            variant="subtle"
-            size="sm"
-          />
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-semibold text-ink-gray-9">
+                {{ __('Notifications') }}
+              </h3>
+              <Badge
+                v-if="unreadCount > 0"
+                :label="unreadCount"
+                theme="red"
+                variant="subtle"
+                size="sm"
+              />
+            </div>
+            <p class="text-xs text-ink-gray-5 mt-0.5">
+              {{ __('Stay updated on invoices, tasks, stock alerts, and events') }}
+            </p>
+          </div>
         </div>
-        <div class="flex items-center gap-1">
+
+        <div class="flex items-center gap-2">
+          <Button
+            v-if="unreadCount > 0 && activeTab !== 'events'"
+            :tooltip="__('Mark all as read')"
+            :label="__('Mark all as read')"
+            :iconLeft="MarkAsDoneIcon"
+            variant="ghost"
+            class="text-xs hidden sm:inline-flex"
+            @click="markAllAsRead"
+          />
           <Button
             v-if="unreadCount > 0 && activeTab !== 'events'"
             :tooltip="__('Mark all as read')"
             :icon="MarkAsDoneIcon"
             variant="ghost"
-            class="text-xs"
+            class="text-xs sm:hidden"
             @click="markAllAsRead"
           />
           <Button
             icon="lucide-x"
             variant="ghost"
-            class="size-7"
-            @click="toggle"
+            class="size-8 text-ink-gray-5 hover:text-ink-gray-8 rounded-lg"
+            @click="closeModal"
           />
         </div>
       </div>
 
       <!-- Navigation Tabs -->
-      <TabButtons
-        v-model="activeTab"
-        :options="tabs"
-        class="flex px-4 py-2 border-b border-outline-gray-1 [&_button]:w-full [&_div]:w-full [&_button>span]:w-full"
-      />
+      <div class="px-5 pt-3 pb-2.5 border-b border-outline-gray-1 bg-surface-base">
+        <TabButtons
+          v-model="activeTab"
+          :options="tabs"
+          class="flex w-full sm:w-auto [&_button]:flex-1 sm:[&_button]:flex-initial"
+        />
+      </div>
 
       <!-- Tab Content: All or Unread Notifications -->
-      <div v-if="activeTab !== 'events'" class="flex-1 overflow-y-auto">
+      <div v-if="activeTab !== 'events'" class="flex-1 overflow-y-auto min-h-[300px] max-h-[55vh]">
         <div
           v-if="displayedNotifications.length"
-          class="divide-y divide-outline-gray-1 text-base"
+          class="divide-y divide-outline-gray-1 text-sm"
         >
           <div
             v-for="n in displayedNotifications"
             :key="n.id || n.comment"
-            class="flex cursor-pointer items-start justify-between gap-3 px-4 py-3 hover:bg-surface-gray-2 group transition"
+            class="flex cursor-pointer items-start justify-between gap-3.5 px-5 py-3.5 hover:bg-surface-gray-2 group transition"
             @click="handleNotificationClick(n)"
           >
             <!-- Left: Unread indicator & Icon Badge / Avatar -->
             <div class="flex items-start gap-3 flex-1 min-w-0">
               <div class="mt-1 flex items-center gap-2 shrink-0">
                 <div
-                  class="size-[6px] rounded-full shrink-0"
-                  :class="[n.read ? 'bg-transparent' : 'bg-surface-red-7']"
+                  class="size-2 rounded-full shrink-0"
+                  :class="[n.read ? 'bg-transparent' : 'bg-surface-red-7 ring-2 ring-surface-red-2']"
                 />
 
                 <!-- WhatsApp Notification Icon -->
@@ -105,8 +130,8 @@
 
               <!-- Center: Text, Badges, and Metadata -->
               <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between gap-1 mb-1">
-                  <span class="text-sm font-semibold text-ink-gray-9 truncate">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <span class="text-sm font-semibold text-ink-gray-9 truncate" :class="{ 'font-bold': !n.read }">
                     {{ n.title }}
                   </span>
                   <Badge
@@ -139,11 +164,11 @@
 
             <!-- Right: Dismiss Action (Hover) -->
             <button
-              class="opacity-0 group-hover:opacity-100 p-1 text-ink-gray-4 hover:text-ink-gray-8 hover:bg-surface-gray-3 rounded transition shrink-0"
+              class="opacity-0 group-hover:opacity-100 p-1.5 text-ink-gray-4 hover:text-ink-gray-8 hover:bg-surface-gray-3 rounded-md transition shrink-0"
               :title="__('Dismiss')"
               @click.stop="handleDismiss(n.id)"
             >
-              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -159,16 +184,29 @@
           description="You are completely caught up!"
           :icon="NotificationsIcon"
           width="lg"
-          class="py-12"
+          class="py-14"
         />
       </div>
 
       <!-- Tab Content: Calendar Events -->
-      <div v-else-if="activeTab === 'events'" class="flex-1 overflow-y-auto">
+      <div v-else-if="activeTab === 'events'" class="flex-1 overflow-y-auto min-h-[300px] max-h-[55vh] p-2">
         <EventNotificationsArea />
       </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between border-t border-outline-gray-1 px-5 py-3 bg-surface-gray-1 text-xs text-ink-gray-5">
+        <span>
+          {{ displayedNotifications.length }} {{ activeTab === 'unread' ? __('unread notification(s)') : __('notification(s)') }}
+        </span>
+        <Button
+          variant="subtle"
+          size="sm"
+          :label="__('Close')"
+          @click="closeModal"
+        />
+      </div>
     </div>
-  </div>
+  </Dialog>
 </template>
 
 <script setup>
@@ -182,12 +220,13 @@ import {
   visible,
   notifications,
   notificationsStore,
+  getBadgeTheme,
 } from '@/stores/notifications'
 import { useEventNotificationAlert } from '@/data/notifications'
 import { globalStore } from '@/stores/global'
 import { timeAgo, sanitizeHTML } from '@/utils'
-import { onClickOutside } from '@vueuse/core'
-import { TabButtons, Badge, Button } from 'frappe-ui'
+import { Dialog, TabButtons, Badge, Button } from 'frappe-ui'
+import { DialogTitle, DialogDescription } from 'reka-ui'
 import { ref, computed, onMounted, onBeforeUnmount, h } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -197,22 +236,17 @@ const store = notificationsStore()
 const { handleEventNotification } = useEventNotificationAlert()
 
 const activeTab = ref('all')
-const tabs = [
+const tabs = computed(() => [
   { label: __('All'), value: 'all' },
-  { label: __('Unread'), value: 'unread' },
-  { label: __('Events'), value: 'events' },
-]
-
-const target = ref(null)
-onClickOutside(
-  target,
-  () => {
-    if (visible.value) store.toggle()
-  },
   {
-    ignore: ['#notifications-btn'],
+    label:
+      unreadCount.value > 0
+        ? `${__('Unread')} (${unreadCount.value})`
+        : __('Unread'),
+    value: 'unread',
   },
-)
+  { label: __('Events'), value: 'events' },
+])
 
 const unreadCount = computed(() => {
   return (notifications.data || []).filter((n) => !n.read).length
@@ -226,21 +260,8 @@ const displayedNotifications = computed(() => {
   return list
 })
 
-function getBadgeTheme(type) {
-  switch (type) {
-    case 'Alert':
-      return 'red'
-    case 'Warning':
-      return 'amber'
-    case 'Action':
-      return 'blue'
-    case 'Task':
-      return 'purple'
-    case 'Event':
-      return 'green'
-    default:
-      return 'gray'
-  }
+function closeModal() {
+  visible.value = false
 }
 
 function resolveIcon(type) {
@@ -281,7 +302,7 @@ function resolveIcon(type) {
 
 function handleNotificationClick(n) {
   store.markAsRead(n.id || n.comment || n.name)
-  store.toggle()
+  visible.value = false
   const targetRoute = getRoute(n)
   if (targetRoute) {
     router.push(targetRoute)
@@ -294,10 +315,6 @@ function handleDismiss(id) {
 
 function markAllAsRead() {
   store.markAllAsRead()
-}
-
-function toggle() {
-  store.toggle()
 }
 
 onBeforeUnmount(() => {

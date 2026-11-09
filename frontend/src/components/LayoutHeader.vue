@@ -3,6 +3,7 @@
     <slot>
       <header
         class="flex h-10.5 items-center justify-between py-[7px] sm:pl-5 pl-2"
+        :class="$props.class"
       >
         <div class="flex items-center gap-2">
           <slot name="left-header" />
@@ -16,6 +17,13 @@
 </template>
 <script setup>
 import { ref, nextTick } from 'vue'
+
+defineProps({
+  class: {
+    type: [String, Object, Array],
+    default: '',
+  },
+})
 
 const showHeader = ref(false)
 

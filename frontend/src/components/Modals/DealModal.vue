@@ -71,7 +71,7 @@
             :loading="isEnriching"
             :disabled="!deal.doc.website"
             :tooltip="__('Fill fields from the company website')"
-            iconLeft="zap"
+            iconLeft="lucide-zap"
             @click="enrichFromWebsite"
           />
         </div>

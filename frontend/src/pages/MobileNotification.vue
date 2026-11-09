@@ -109,7 +109,11 @@ import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import MarkAsDoneIcon from '@/components/Icons/MarkAsDoneIcon.vue'
 import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { notifications, notificationsStore } from '@/stores/notifications'
+import {
+  notifications,
+  notificationsStore,
+  getBadgeTheme,
+} from '@/stores/notifications'
 import { globalStore } from '@/stores/global'
 import { timeAgo, sanitizeHTML } from '@/utils'
 import { Breadcrumbs, Badge, Button } from 'frappe-ui'
@@ -119,23 +123,6 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const { $socket } = globalStore()
 const store = notificationsStore()
-
-function getBadgeTheme(type) {
-  switch (type) {
-    case 'Alert':
-      return 'red'
-    case 'Warning':
-      return 'amber'
-    case 'Action':
-      return 'blue'
-    case 'Task':
-      return 'purple'
-    case 'Event':
-      return 'green'
-    default:
-      return 'gray'
-  }
-}
 
 function resolveIcon(type) {
   return {

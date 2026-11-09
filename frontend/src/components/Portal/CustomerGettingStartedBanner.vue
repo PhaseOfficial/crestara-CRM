@@ -39,7 +39,7 @@
 
         <Button
           variant="solid"
-          iconLeft="book-open"
+          iconLeft="lucide-book-open"
           :label="__('Explore Guide')"
           @click="$emit('open-guide')"
         />
