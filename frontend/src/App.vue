@@ -41,7 +41,7 @@ import { Dialogs } from '@/utils/dialogs'
 import { sessionStore } from '@/stores/session'
 import { isMobileView } from '@/composables/settings'
 import { FrappeUIProvider, setConfig, useTheme, LoadingIndicator } from 'frappe-ui'
-import { computed, defineAsyncComponent, provide, h, watch } from 'vue'
+import { computed, defineAsyncComponent, provide, h, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -49,9 +49,19 @@ const session = sessionStore()
 provide('session', session)
 
 const { setTheme, currentTheme } = useTheme()
-if (!localStorage.getItem('theme')) {
+try {
+  if (typeof localStorage !== 'undefined' && !localStorage.getItem('theme')) {
+    setTheme('light')
+  }
+} catch {
   setTheme('light')
 }
+
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window.__APP_MOUNTED__ = true
+  }
+})
 
 watch(
   currentTheme,

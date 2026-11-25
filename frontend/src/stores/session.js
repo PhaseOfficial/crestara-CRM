@@ -12,22 +12,26 @@ export const sessionStore = defineStore('crm-session', () => {
 
   function syncUserCookie(userObj) {
     if (typeof document === 'undefined') return
-    if (userObj?.email) {
-      document.cookie = `user_id=${userObj.email}; path=/; max-age=2592000`
-      if (typeof window !== 'undefined') {
-        window.frappe_boot = window.frappe_boot || {}
-        window.frappe_boot.session = { user: userObj.email }
-        window.boot = window.boot || {}
-        window.boot.session = { user: userObj.email }
+    try {
+      if (userObj?.email) {
+        document.cookie = `user_id=${userObj.email}; path=/; max-age=2592000; SameSite=Lax`
+        if (typeof window !== 'undefined') {
+          window.frappe_boot = window.frappe_boot || {}
+          window.frappe_boot.session = { user: userObj.email }
+          window.boot = window.boot || {}
+          window.boot.session = { user: userObj.email }
+        }
+      } else {
+        document.cookie = 'user_id=; path=/; max-age=0; SameSite=Lax'
+        if (typeof window !== 'undefined') {
+          window.frappe_boot = window.frappe_boot || {}
+          window.frappe_boot.session = { user: 'Guest' }
+          window.boot = window.boot || {}
+          window.boot.session = { user: 'Guest' }
+        }
       }
-    } else {
-      document.cookie = 'user_id=; path=/; max-age=0'
-      if (typeof window !== 'undefined') {
-        window.frappe_boot = window.frappe_boot || {}
-        window.frappe_boot.session = { user: 'Guest' }
-        window.boot = window.boot || {}
-        window.boot.session = { user: 'Guest' }
-      }
+    } catch (e) {
+      console.warn('[Session] Cookie sync error (Safari privacy restriction):', e)
     }
   }
 
@@ -73,37 +77,65 @@ export const sessionStore = defineStore('crm-session', () => {
     }
     if (!userId) return
 
-    profileSubscription = supabase
-      .channel(`profile-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${userId}`,
-        },
-        (payload) => {
-          if (payload.new && Object.keys(payload.new).length > 0) {
-            userProfile.value = payload.new
-          }
-        },
-      )
-      .subscribe()
+    try {
+      profileSubscription = supabase
+        .channel(`profile-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${userId}`,
+          },
+          (payload) => {
+            if (payload.new && Object.keys(payload.new).length > 0) {
+              userProfile.value = payload.new
+            }
+          },
+        )
+        .subscribe()
+    } catch (e) {
+      console.warn('[Session] Realtime profile subscription error:', e)
+    }
   }
 
-  // Initialize session from Supabase
-  const initPromise = supabase.auth.getSession().then(async ({ data: { session } }) => {
-    currentSession.value = session
-    currentUser.value = session?.user || null
-    if (session?.user?.id) {
-      await fetchProfile(session.user.id)
-      subscribeToProfile(session.user.id)
-    }
-    isInitialized.value = true
-    syncUserCookie(session?.user)
-    return session
-  })
+  // Initialize session from Supabase with 3.5s safety timeout
+  const initPromise = Promise.race([
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        currentSession.value = session
+        currentUser.value = session?.user || null
+        if (session?.user?.id) {
+          try {
+            await fetchProfile(session.user.id)
+            subscribeToProfile(session.user.id)
+          } catch (e) {
+            console.warn('[Session] Profile fetch warning:', e)
+          }
+        }
+        isInitialized.value = true
+        syncUserCookie(session?.user)
+        return session
+      })
+      .catch((err) => {
+        console.warn('[Session] Supabase getSession failed, falling back to guest mode:', err)
+        isInitialized.value = true
+        syncUserCookie(null)
+        return null
+      }),
+    new Promise((resolve) =>
+      setTimeout(() => {
+        if (!isInitialized.value) {
+          console.warn('[Session] Supabase init timed out after 3.5s, proceeding in guest mode')
+          isInitialized.value = true
+          syncUserCookie(null)
+          resolve(null)
+        }
+      }, 3500),
+    ),
+  ])
 
   // Listen to Auth State changes (login, logout, token refresh)
   supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -222,7 +254,8 @@ export const sessionStore = defineStore('crm-session', () => {
         }
         syncUserCookie(null)
         if (typeof window !== 'undefined') {
-          window.location.replace('/crm/login')
+          const target = window.location.pathname.startsWith('/crm') ? '/crm/login' : '/login'
+          window.location.replace(target)
         } else {
           router.replace({ name: 'Login' })
           logoutLoading.value = false
@@ -240,8 +273,11 @@ export const sessionStore = defineStore('crm-session', () => {
   }
 
   async function resetPasswordForEmail({ email }) {
+    const redirectBase = typeof window !== 'undefined'
+      ? (window.location.pathname.startsWith('/crm') ? `${window.location.origin}/crm/reset-password` : `${window.location.origin}/reset-password`)
+      : undefined
     return supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/crm/reset-password` : undefined,
+      redirectTo: redirectBase,
     })
   }
 

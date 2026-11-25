@@ -14,6 +14,19 @@ const esbuildLucidePlugin = {
   },
 }
 
+// Rewrites unsupported regex lookbehind assertions in vendor code for Safari < 16.4 compatibility
+const safariRegexCompatPlugin = {
+  name: 'safari-regex-compat-plugin',
+  transform(code) {
+    if (code && code.includes('(?<=^|[^`])')) {
+      return {
+        code: code.replaceAll('(?<=^|[^`])', '(?:^|[^`])'),
+        map: null,
+      }
+    }
+  },
+}
+
 const mockOnboardingPlugin = {
   name: 'mock-onboarding-plugin',
   configureServer(server) {
@@ -47,6 +60,7 @@ const mockOnboardingPlugin = {
 export default defineConfig(() => {
   return {
     plugins: [
+      safariRegexCompatPlugin,
       mockOnboardingPlugin,
       frappeui({
         frappeProxy: false,
@@ -93,6 +107,7 @@ export default defineConfig(() => {
       outDir: 'dist',
       emptyOutDir: true,
       sourcemap: false,
+      target: ['es2020', 'safari14', 'chrome87', 'firefox78', 'edge88'],
     },
   }
 })

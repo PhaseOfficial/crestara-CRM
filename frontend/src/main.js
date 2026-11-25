@@ -1,3 +1,24 @@
+// Polyfill Object.hasOwn for older Safari/WebKit engines (< 15.4)
+if (typeof Object.hasOwn !== 'function') {
+  Object.hasOwn = function (obj, prop) {
+    if (obj == null) {
+      throw new TypeError('Cannot convert undefined or null to object')
+    }
+    return Object.prototype.hasOwnProperty.call(Object(obj), prop)
+  }
+}
+
+// Fallback for navigator.userAgentData on Safari/WebKit
+if (typeof navigator !== 'undefined' && !navigator.userAgentData) {
+  const isMacLike = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '')
+  // @ts-ignore
+  navigator.userAgentData = {
+    platform: isMacLike ? 'macOS' : navigator.platform || 'Unknown',
+    mobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || ''),
+    brands: [],
+  }
+}
+
 import './index.css'
 
 import { createApp } from 'vue'

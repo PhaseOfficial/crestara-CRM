@@ -20,7 +20,9 @@ import LucideCommand from '~icons/lucide/command'
 import LucideShift from '~icons/lucide/arrow-big-up'
 import LucideAlt from '~icons/lucide/option'
 
-const isMac = navigator.userAgent.includes('Mac')
+const isMac =
+  typeof navigator !== 'undefined' &&
+  /Mac|iPod|iPhone|iPad/i.test(navigator.userAgent || navigator.platform || '')
 
 defineProps({
   meta: Boolean,

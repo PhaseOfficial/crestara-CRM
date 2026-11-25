@@ -259,8 +259,14 @@ const handleMobileView = (componentName) => {
   return window.innerWidth < 768 ? `Mobile${componentName}` : componentName
 }
 
+// Support both standalone domain root (cPanel) and proxy path (/crm) seamlessly
+const getRouterBase = () => {
+  if (typeof window === 'undefined') return '/crm'
+  return window.location.pathname.startsWith('/crm') ? '/crm' : ''
+}
+
 let router = createRouter({
-  history: createWebHistory('/crm'),
+  history: createWebHistory(getRouterBase()),
   routes,
 })
 
@@ -270,9 +276,13 @@ router.beforeEach(async (to, from, next) => {
   const session = sessionStore()
   if (!session.isInitialized) {
     try {
-      await session.initPromise
+      // 3.5s safety timeout ensures navigation never deadlocks into a blank white screen
+      await Promise.race([
+        session.initPromise,
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ])
     } catch (e) {
-      // ignore
+      console.warn('[Router] Session initialization timeout/error fallback:', e)
     }
   }
 

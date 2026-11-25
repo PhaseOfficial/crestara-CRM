@@ -126,12 +126,25 @@ export const useBusinessStore = defineStore('business-store', () => {
   const tasks = ref(cleanStoredList('tasks'))
 
   // Role: 'Administrator' | 'Staff' | 'Customer'
-  const currentRole = ref(localStorage.getItem('crestara_current_role') || 'Customer')
+  function getStoredRole() {
+    try {
+      return (typeof localStorage !== 'undefined' && localStorage.getItem('crestara_current_role')) || 'Customer'
+    } catch {
+      return 'Customer'
+    }
+  }
+  const currentRole = ref(getStoredRole())
 
   function setRole(role) {
     if (['Administrator', 'Staff', 'Customer'].includes(role)) {
       currentRole.value = role
-      localStorage.setItem('crestara_current_role', role)
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('crestara_current_role', role)
+        }
+      } catch (e) {
+        console.warn('Could not save crestara_current_role to localStorage:', e)
+      }
     }
   }
 
