@@ -3,7 +3,7 @@
 /* ==========================================================================
    SAFARI & MACOS COLOR THEME & MODAL BACKGROUND COMPATIBILITY
    Ensures solid, opaque backgrounds for all dialogs, modals, and surfaces
-   even when color-mix() or oklch() is not supported by the browser engine.
+   strictly preserving Frappe UI's authentic charcoal/carbon dark theme.
    ========================================================================== */
 
 :root {
@@ -11,42 +11,49 @@
   --surface-elevation-1: #ffffff;
   --surface-elevation-2: #ffffff;
   --surface-elevation-3: #ffffff;
-  --surface-gray-1: #f8fafc;
-  --surface-gray-2: #f1f5f9;
-  --surface-gray-3: #e2e8f0;
-  --surface-gray-4: #cbd5e1;
-  --surface-gray-5: #94a3b8;
-  --surface-gray-6: #64748b;
-  --surface-gray-7: #475569;
-  --surface-gray-8: #334155;
-  --surface-gray-9: #1e293b;
-  --surface-gray-10: #0f172a;
+  --surface-gray-1: #f8f8f8;
+  --surface-gray-2: #f4f4f5;
+  --surface-gray-3: #ececee;
+  --surface-gray-4: #e4e4e7;
+  --surface-gray-5: #d1d1d6;
+  --surface-gray-6: #a1a1aa;
+  --surface-gray-7: #71717a;
+  --surface-gray-8: #52525b;
+  --surface-gray-9: #3f3f46;
+  --surface-gray-10: #171717;
 
-  --ink-base: #0f172a;
-  --ink-gray-9: #0f172a;
-  --ink-gray-8: #1e293b;
-  --ink-gray-7: #334155;
-  --ink-gray-6: #475569;
-  --ink-gray-5: #64748b;
-  --ink-gray-4: #94a3b8;
+  --ink-base: #171717;
+  --ink-gray-9: #171717;
+  --ink-gray-8: #242424;
+  --ink-gray-7: #52525b;
+  --ink-gray-6: #71717a;
+  --ink-gray-5: #a1a1aa;
+  --ink-gray-4: #d1d1d6;
 
   --outline-base: #ffffff;
-  --outline-gray-1: #e2e8f0;
-  --outline-gray-2: #cbd5e1;
-  --outline-gray-3: #94a3b8;
-  --outline-gray-4: #64748b;
+  --outline-gray-1: #ececee;
+  --outline-gray-2: #e4e4e7;
+  --outline-gray-3: #d1d1d6;
+  --outline-gray-4: #a1a1aa;
+  --outline-elevation-1: #ececee;
+  --outline-elevation-2: #e4e4e7;
 
+  --surface-blue-1: #eff6ff;
   --surface-blue-2: #dbeafe;
+  --surface-green-1: #f0fdf4;
   --surface-green-2: #dcfce7;
+  --surface-amber-1: #fffbeb;
   --surface-amber-2: #fef3c7;
+  --surface-red-1: #fef2f2;
   --surface-red-2: #fee2e2;
+  --surface-purple-1: #faf5ff;
   --surface-purple-2: #f3e8ff;
 
-  --ink-blue-8: #1e40af;
-  --ink-green-8: #166534;
-  --ink-amber-8: #92400e;
-  --ink-red-8: #991b1b;
-  --ink-purple-8: #6b21a8;
+  --ink-blue-8: #1d4ed8;
+  --ink-green-8: #15803d;
+  --ink-amber-8: #b45309;
+  --ink-red-8: #b91c1c;
+  --ink-purple-8: #7e22ce;
 
   --outline-blue-2: #bfdbfe;
   --outline-green-2: #bbf7d0;
@@ -57,52 +64,60 @@
 
 [data-theme='dark'],
 .dark {
-  --surface-base: #0f172a;
-  --surface-elevation-1: #1e293b;
-  --surface-elevation-2: #1e293b;
-  --surface-elevation-3: #334155;
-  --surface-gray-1: #18181b;
-  --surface-gray-2: #27272a;
-  --surface-gray-3: #3f3f46;
-  --surface-gray-4: #52525b;
-  --surface-gray-5: #71717a;
-  --surface-gray-6: #a1a1aa;
-  --surface-gray-7: #d4d4d8;
-  --surface-gray-8: #e4e4e7;
-  --surface-gray-9: #f4f4f5;
-  --surface-gray-10: #fafafa;
+  /* Exact Frappe UI charcoal/carbon dark theme */
+  --surface-base: #171717;
+  --surface-elevation-1: #1f1f1f;
+  --surface-elevation-2: #242424;
+  --surface-elevation-3: #383838;
+  --surface-gray-1: #1f1f1f;
+  --surface-gray-2: #292929;
+  --surface-gray-3: #383838;
+  --surface-gray-4: #424242;
+  --surface-gray-5: #575757;
+  --surface-gray-6: #7a7a7a;
+  --surface-gray-7: #999999;
+  --surface-gray-8: #afafaf;
+  --surface-gray-9: #d9d9d9;
+  --surface-gray-10: #f8f8f8;
 
-  --ink-base: #f8fafc;
-  --ink-gray-9: #ffffff;
-  --ink-gray-8: #f8fafc;
-  --ink-gray-7: #e2e8f0;
-  --ink-gray-6: #cbd5e1;
-  --ink-gray-5: #94a3b8;
-  --ink-gray-4: #64748b;
+  --ink-base: #171717;
+  --ink-gray-9: #f8f8f8;
+  --ink-gray-8: #d9d9d9;
+  --ink-gray-7: #afafaf;
+  --ink-gray-6: #999999;
+  --ink-gray-5: #7a7a7a;
+  --ink-gray-4: #575757;
 
-  --outline-base: #0f172a;
-  --outline-gray-1: #27272a;
-  --outline-gray-2: #3f3f46;
-  --outline-gray-3: #52525b;
-  --outline-gray-4: #71717a;
+  --outline-base: #171717;
+  --outline-gray-1: #292929;
+  --outline-gray-2: #383838;
+  --outline-gray-3: #424242;
+  --outline-gray-4: #7a7a7a;
+  --outline-elevation-1: #292929;
+  --outline-elevation-2: #383838;
 
-  --surface-blue-2: #172554;
-  --surface-green-2: #052e16;
-  --surface-amber-2: #451a03;
-  --surface-red-2: #450a0a;
-  --surface-purple-2: #3b0764;
+  --surface-blue-1: #0f233d;
+  --surface-blue-2: #0a2e5c;
+  --surface-green-1: #072716;
+  --surface-green-2: #0e3521;
+  --surface-amber-1: #331c06;
+  --surface-amber-2: #452608;
+  --surface-red-1: #391416;
+  --surface-red-2: #592222;
+  --surface-purple-1: #2c1042;
+  --surface-purple-2: #391457;
 
-  --ink-blue-8: #93c5fd;
-  --ink-green-8: #86efac;
-  --ink-amber-8: #fde047;
-  --ink-red-8: #fca5a5;
-  --ink-purple-8: #d8b4fe;
+  --ink-blue-8: #349bef;
+  --ink-green-8: #369768;
+  --ink-amber-8: #e9a143;
+  --ink-red-8: #eb4c4c;
+  --ink-purple-8: #c993ef;
 
-  --outline-blue-2: #1e3a8a;
-  --outline-green-2: #14532d;
-  --outline-amber-2: #78350f;
-  --outline-red-2: #7f1d1d;
-  --outline-purple-2: #581c87;
+  --outline-blue-2: #063465;
+  --outline-green-2: #0b4229;
+  --outline-amber-2: #5a2d07;
+  --outline-red-2: #742a2a;
+  --outline-purple-2: #491870;
 }
 
 /* Base surface background fallback */
@@ -110,10 +125,20 @@ html,
 body,
 #app {
   background-color: var(--surface-base, #ffffff);
-  color: var(--ink-gray-9, #0f172a);
+  color: var(--ink-gray-9, #171717);
 }
 
-/* Modals & Dialogs Solid Opaque Background Guarantee */
+[data-theme='dark'] html,
+[data-theme='dark'] body,
+[data-theme='dark'] #app,
+.dark html,
+.dark body,
+.dark #app {
+  background-color: var(--surface-base, #171717);
+  color: var(--ink-gray-9, #f8f8f8);
+}
+
+/* Modals & Dialogs Solid Opaque Background Guarantee (Matching Frappe UI Elevation) */
 .dialog-content,
 [data-dialog],
 [role='dialog'],
@@ -121,8 +146,8 @@ div[data-reka-dialog-content],
 div[data-radix-dialog-content] {
   background-color: #ffffff !important;
   background-color: var(--surface-elevation-1, #ffffff) !important;
-  color: var(--ink-gray-9, #0f172a);
-  border: 1px solid var(--outline-gray-1, #e2e8f0);
+  color: var(--ink-gray-9, #171717);
+  border: 1px solid var(--outline-gray-1, #ececee);
 }
 
 [data-theme='dark'] .dialog-content,
@@ -135,10 +160,10 @@ div[data-radix-dialog-content] {
 .dark [role='dialog'],
 .dark div[data-reka-dialog-content],
 .dark div[data-radix-dialog-content] {
-  background-color: #1e293b !important;
-  background-color: var(--surface-elevation-1, #1e293b) !important;
-  color: var(--ink-gray-9, #ffffff);
-  border-color: var(--outline-gray-1, #334155);
+  background-color: #1f1f1f !important;
+  background-color: var(--surface-elevation-1, #1f1f1f) !important;
+  color: var(--ink-gray-9, #f8f8f8);
+  border-color: var(--outline-gray-1, #292929);
 }
 
 /* Dialog inner containers & bare layout panels */
@@ -158,13 +183,13 @@ div[data-radix-dialog-content] {
 .dark .dialog-content .bg-surface-elevation-1,
 .dark .dialog-content .bg-surface-elevation-2,
 .dark .dialog-content .bg-surface-base {
-  background-color: #1e293b;
-  background-color: var(--surface-elevation-2, var(--surface-elevation-1, #1e293b));
+  background-color: #242424;
+  background-color: var(--surface-elevation-2, var(--surface-elevation-1, #1f1f1f));
 }
 
 /* Dialog Overlay backdrop with WebKit support */
 .dialog-overlay {
-  background-color: rgba(0, 0, 0, 0.5) !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
@@ -183,36 +208,36 @@ div[data-radix-dialog-content] {
   background-color: var(--surface-elevation-3, #ffffff);
 }
 .bg-surface-gray-1 {
-  background-color: var(--surface-gray-1, #f8fafc);
+  background-color: var(--surface-gray-1, #f8f8f8);
 }
 .bg-surface-gray-2 {
-  background-color: var(--surface-gray-2, #f1f5f9);
+  background-color: var(--surface-gray-2, #f4f4f5);
 }
 .bg-surface-gray-3 {
-  background-color: var(--surface-gray-3, #e2e8f0);
+  background-color: var(--surface-gray-3, #ececee);
 }
 
 .text-ink-gray-9 {
-  color: var(--ink-gray-9, #0f172a);
+  color: var(--ink-gray-9, #171717);
 }
 .text-ink-gray-8 {
-  color: var(--ink-gray-8, #1e293b);
+  color: var(--ink-gray-8, #242424);
 }
 .text-ink-gray-7 {
-  color: var(--ink-gray-7, #334155);
+  color: var(--ink-gray-7, #52525b);
 }
 .text-ink-gray-6 {
-  color: var(--ink-gray-6, #475569);
+  color: var(--ink-gray-6, #71717a);
 }
 .text-ink-gray-5 {
-  color: var(--ink-gray-5, #64748b);
+  color: var(--ink-gray-5, #a1a1aa);
 }
 
 .border-outline-gray-1 {
-  border-color: var(--outline-gray-1, #e2e8f0);
+  border-color: var(--outline-gray-1, #ececee);
 }
 .border-outline-gray-2 {
-  border-color: var(--outline-gray-2, #cbd5e1);
+  border-color: var(--outline-gray-2, #e4e4e7);
 }
 
 @layer components {
