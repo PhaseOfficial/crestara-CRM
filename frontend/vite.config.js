@@ -27,6 +27,24 @@ const safariRegexCompatPlugin = {
   },
 }
 
+// Injects fallback CSS declarations before modern color-mix() properties for Safari < 16.2 and older WebKit
+const safariCssCompatPlugin = {
+  name: 'safari-css-compat-plugin',
+  enforce: 'post',
+  generateBundle(options, bundle) {
+    for (const [fileName, asset] of Object.entries(bundle)) {
+      if (fileName.endsWith('.css') && typeof asset.source === 'string') {
+        asset.source = asset.source.replace(
+          /(background-color|color|border-color):(color-mix\(in srgb,\s*var\((--[a-zA-Z0-9_-]+)[^)]*\)[^;}]*\))/g,
+          function (match, prop, expr, varName) {
+            return prop + ':var(' + varName + ');' + prop + ':' + expr
+          }
+        )
+      }
+    }
+  },
+}
+
 const mockOnboardingPlugin = {
   name: 'mock-onboarding-plugin',
   configureServer(server) {
@@ -61,6 +79,7 @@ export default defineConfig(() => {
   return {
     plugins: [
       safariRegexCompatPlugin,
+      safariCssCompatPlugin,
       mockOnboardingPlugin,
       frappeui({
         frappeProxy: false,

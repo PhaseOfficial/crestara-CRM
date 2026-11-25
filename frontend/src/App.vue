@@ -49,9 +49,40 @@ const session = sessionStore()
 provide('session', session)
 
 const { setTheme, currentTheme } = useTheme()
+
+const applyThemeToDOM = (theme) => {
+  if (typeof document === 'undefined') return
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+  const root = document.documentElement
+  const body = document.body
+
+  root.classList.toggle('dark', Boolean(isDark))
+  root.setAttribute('data-theme', isDark ? 'dark' : 'light')
+
+  if (body) {
+    body.classList.toggle('dark', Boolean(isDark))
+    body.setAttribute('data-theme', isDark ? 'dark' : 'light')
+  }
+}
+
 try {
-  if (typeof localStorage !== 'undefined' && !localStorage.getItem('theme')) {
-    setTheme('light')
+  if (typeof localStorage !== 'undefined') {
+    const saved = localStorage.getItem('theme')
+    if (saved) {
+      setTheme(saved)
+    } else {
+      const prefersDark =
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+      setTheme(prefersDark ? 'dark' : 'light')
+    }
   }
 } catch {
   setTheme('light')
@@ -60,21 +91,28 @@ try {
 onMounted(() => {
   if (typeof window !== 'undefined') {
     window.__APP_MOUNTED__ = true
+    applyThemeToDOM(currentTheme.value)
+
+    const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    if (mql) {
+      const handleMediaChange = () => {
+        if (currentTheme.value === 'system') {
+          applyThemeToDOM('system')
+        }
+      }
+      if (mql.addEventListener) {
+        mql.addEventListener('change', handleMediaChange)
+      } else if (mql.addListener) {
+        mql.addListener(handleMediaChange)
+      }
+    }
   }
 })
 
 watch(
   currentTheme,
   (theme) => {
-    if (typeof document !== 'undefined') {
-      const isDark =
-        theme === 'dark' ||
-        (theme === 'system' &&
-          typeof window !== 'undefined' &&
-          window.matchMedia('(prefers-color-scheme: dark)').matches)
-      document.documentElement.classList.toggle('dark', Boolean(isDark))
-      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
-    }
+    applyThemeToDOM(theme)
   },
   { immediate: true }
 )

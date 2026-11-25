@@ -1,5 +1,220 @@
 @import 'frappe-ui/style.css';
 
+/* ==========================================================================
+   SAFARI & MACOS COLOR THEME & MODAL BACKGROUND COMPATIBILITY
+   Ensures solid, opaque backgrounds for all dialogs, modals, and surfaces
+   even when color-mix() or oklch() is not supported by the browser engine.
+   ========================================================================== */
+
+:root {
+  --surface-base: #ffffff;
+  --surface-elevation-1: #ffffff;
+  --surface-elevation-2: #ffffff;
+  --surface-elevation-3: #ffffff;
+  --surface-gray-1: #f8fafc;
+  --surface-gray-2: #f1f5f9;
+  --surface-gray-3: #e2e8f0;
+  --surface-gray-4: #cbd5e1;
+  --surface-gray-5: #94a3b8;
+  --surface-gray-6: #64748b;
+  --surface-gray-7: #475569;
+  --surface-gray-8: #334155;
+  --surface-gray-9: #1e293b;
+  --surface-gray-10: #0f172a;
+
+  --ink-base: #0f172a;
+  --ink-gray-9: #0f172a;
+  --ink-gray-8: #1e293b;
+  --ink-gray-7: #334155;
+  --ink-gray-6: #475569;
+  --ink-gray-5: #64748b;
+  --ink-gray-4: #94a3b8;
+
+  --outline-base: #ffffff;
+  --outline-gray-1: #e2e8f0;
+  --outline-gray-2: #cbd5e1;
+  --outline-gray-3: #94a3b8;
+  --outline-gray-4: #64748b;
+
+  --surface-blue-2: #dbeafe;
+  --surface-green-2: #dcfce7;
+  --surface-amber-2: #fef3c7;
+  --surface-red-2: #fee2e2;
+  --surface-purple-2: #f3e8ff;
+
+  --ink-blue-8: #1e40af;
+  --ink-green-8: #166534;
+  --ink-amber-8: #92400e;
+  --ink-red-8: #991b1b;
+  --ink-purple-8: #6b21a8;
+
+  --outline-blue-2: #bfdbfe;
+  --outline-green-2: #bbf7d0;
+  --outline-amber-2: #fde68a;
+  --outline-red-2: #fecaca;
+  --outline-purple-2: #e9d5ff;
+}
+
+[data-theme='dark'],
+.dark {
+  --surface-base: #0f172a;
+  --surface-elevation-1: #1e293b;
+  --surface-elevation-2: #1e293b;
+  --surface-elevation-3: #334155;
+  --surface-gray-1: #18181b;
+  --surface-gray-2: #27272a;
+  --surface-gray-3: #3f3f46;
+  --surface-gray-4: #52525b;
+  --surface-gray-5: #71717a;
+  --surface-gray-6: #a1a1aa;
+  --surface-gray-7: #d4d4d8;
+  --surface-gray-8: #e4e4e7;
+  --surface-gray-9: #f4f4f5;
+  --surface-gray-10: #fafafa;
+
+  --ink-base: #f8fafc;
+  --ink-gray-9: #ffffff;
+  --ink-gray-8: #f8fafc;
+  --ink-gray-7: #e2e8f0;
+  --ink-gray-6: #cbd5e1;
+  --ink-gray-5: #94a3b8;
+  --ink-gray-4: #64748b;
+
+  --outline-base: #0f172a;
+  --outline-gray-1: #27272a;
+  --outline-gray-2: #3f3f46;
+  --outline-gray-3: #52525b;
+  --outline-gray-4: #71717a;
+
+  --surface-blue-2: #172554;
+  --surface-green-2: #052e16;
+  --surface-amber-2: #451a03;
+  --surface-red-2: #450a0a;
+  --surface-purple-2: #3b0764;
+
+  --ink-blue-8: #93c5fd;
+  --ink-green-8: #86efac;
+  --ink-amber-8: #fde047;
+  --ink-red-8: #fca5a5;
+  --ink-purple-8: #d8b4fe;
+
+  --outline-blue-2: #1e3a8a;
+  --outline-green-2: #14532d;
+  --outline-amber-2: #78350f;
+  --outline-red-2: #7f1d1d;
+  --outline-purple-2: #581c87;
+}
+
+/* Base surface background fallback */
+html,
+body,
+#app {
+  background-color: var(--surface-base, #ffffff);
+  color: var(--ink-gray-9, #0f172a);
+}
+
+/* Modals & Dialogs Solid Opaque Background Guarantee */
+.dialog-content,
+[data-dialog],
+[role='dialog'],
+div[data-reka-dialog-content],
+div[data-radix-dialog-content] {
+  background-color: #ffffff !important;
+  background-color: var(--surface-elevation-1, #ffffff) !important;
+  color: var(--ink-gray-9, #0f172a);
+  border: 1px solid var(--outline-gray-1, #e2e8f0);
+}
+
+[data-theme='dark'] .dialog-content,
+[data-theme='dark'] [data-dialog],
+[data-theme='dark'] [role='dialog'],
+[data-theme='dark'] div[data-reka-dialog-content],
+[data-theme='dark'] div[data-radix-dialog-content],
+.dark .dialog-content,
+.dark [data-dialog],
+.dark [role='dialog'],
+.dark div[data-reka-dialog-content],
+.dark div[data-radix-dialog-content] {
+  background-color: #1e293b !important;
+  background-color: var(--surface-elevation-1, #1e293b) !important;
+  color: var(--ink-gray-9, #ffffff);
+  border-color: var(--outline-gray-1, #334155);
+}
+
+/* Dialog inner containers & bare layout panels */
+.dialog-content > div,
+.dialog-content .bg-surface-elevation-1,
+.dialog-content .bg-surface-elevation-2,
+.dialog-content .bg-surface-base {
+  background-color: #ffffff;
+  background-color: var(--surface-elevation-2, var(--surface-elevation-1, #ffffff));
+}
+
+[data-theme='dark'] .dialog-content > div,
+[data-theme='dark'] .dialog-content .bg-surface-elevation-1,
+[data-theme='dark'] .dialog-content .bg-surface-elevation-2,
+[data-theme='dark'] .dialog-content .bg-surface-base,
+.dark .dialog-content > div,
+.dark .dialog-content .bg-surface-elevation-1,
+.dark .dialog-content .bg-surface-elevation-2,
+.dark .dialog-content .bg-surface-base {
+  background-color: #1e293b;
+  background-color: var(--surface-elevation-2, var(--surface-elevation-1, #1e293b));
+}
+
+/* Dialog Overlay backdrop with WebKit support */
+.dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* Fallback background utility classes for browsers without color-mix */
+.bg-surface-base {
+  background-color: var(--surface-base, #ffffff);
+}
+.bg-surface-elevation-1 {
+  background-color: var(--surface-elevation-1, #ffffff);
+}
+.bg-surface-elevation-2 {
+  background-color: var(--surface-elevation-2, #ffffff);
+}
+.bg-surface-elevation-3 {
+  background-color: var(--surface-elevation-3, #ffffff);
+}
+.bg-surface-gray-1 {
+  background-color: var(--surface-gray-1, #f8fafc);
+}
+.bg-surface-gray-2 {
+  background-color: var(--surface-gray-2, #f1f5f9);
+}
+.bg-surface-gray-3 {
+  background-color: var(--surface-gray-3, #e2e8f0);
+}
+
+.text-ink-gray-9 {
+  color: var(--ink-gray-9, #0f172a);
+}
+.text-ink-gray-8 {
+  color: var(--ink-gray-8, #1e293b);
+}
+.text-ink-gray-7 {
+  color: var(--ink-gray-7, #334155);
+}
+.text-ink-gray-6 {
+  color: var(--ink-gray-6, #475569);
+}
+.text-ink-gray-5 {
+  color: var(--ink-gray-5, #64748b);
+}
+
+.border-outline-gray-1 {
+  border-color: var(--outline-gray-1, #e2e8f0);
+}
+.border-outline-gray-2 {
+  border-color: var(--outline-gray-2, #cbd5e1);
+}
+
 @layer components {
   .prose-f {
     @apply break-all
