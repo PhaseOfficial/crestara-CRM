@@ -256,7 +256,15 @@ const routes = [
 ]
 
 const handleMobileView = (componentName) => {
-  return window.innerWidth < 768 ? `Mobile${componentName}` : componentName
+  const isTabletOrMobile =
+    typeof window !== 'undefined' &&
+    typeof navigator !== 'undefined' &&
+    (window.innerWidth < 1024 ||
+      (((navigator.maxTouchPoints && navigator.maxTouchPoints > 1) || 'ontouchstart' in window) &&
+        (/iPad|Tablet|PlayBook/i.test(navigator.userAgent) ||
+          (/Android/i.test(navigator.userAgent) && !/Mobile/i.test(navigator.userAgent)) ||
+          (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1))))
+  return isTabletOrMobile ? `Mobile${componentName}` : componentName
 }
 
 // Support both standalone domain root (cPanel) and proxy path (/crm) seamlessly

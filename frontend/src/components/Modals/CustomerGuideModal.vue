@@ -5,9 +5,9 @@
     size="3xl"
   >
     <template #default>
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[420px]">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[420px]">
         <!-- Left Steps Navigation (4 cols) -->
-        <div class="md:col-span-5 border-r border-outline-gray-1 pr-4 space-y-2">
+        <div class="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-outline-gray-1 pb-4 lg:pb-0 lg:pr-4 space-y-2">
           <div class="flex items-center justify-between pb-3 border-b border-outline-gray-1">
             <span class="text-xs font-bold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
               {{ __('Onboarding Checklist') }}
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Right Step Details & Action Walkthrough (7 cols) -->
-        <div class="md:col-span-7 flex flex-col justify-between space-y-6">
+        <div class="lg:col-span-7 flex flex-col justify-between space-y-6">
           <div class="space-y-4">
             <!-- Step Header Banner -->
             <div class="flex items-start gap-3 bg-surface-gray-1/80 dark:bg-surface-gray-1/40 p-4 rounded-xl border border-outline-gray-1">

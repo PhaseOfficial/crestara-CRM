@@ -161,7 +161,7 @@
     </div>
 
     <!-- Invoice Sheet Canvas -->
-    <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-20 md:pb-8 invoice-sheet-container print:p-0 print:overflow-visible">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-20 lg:pb-8 invoice-sheet-container print:p-0 print:overflow-visible">
       <div class="max-w-4xl mx-auto bg-surface-base rounded-2xl border border-outline-gray-1 p-6 sm:p-8 shadow-sm space-y-8 print:border-none print:shadow-none print:p-0">
         <!-- Top Row: Business Branding & Invoice Metadata -->
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-outline-gray-1 pb-6">
@@ -579,8 +579,8 @@
             <Button size="sm" variant="outline" :label="__('Add Custom Item')" iconLeft="lucide-plus" class="print:hidden" @click="addCustomItem" />
           </div>
 
-          <!-- Desktop Table (>= 768px) -->
-          <div class="hidden md:block border border-outline-gray-1 rounded-xl overflow-hidden print:border-outline-gray-2">
+          <!-- Desktop Table (>= 1024px) -->
+          <div class="hidden lg:block border border-outline-gray-1 rounded-xl overflow-hidden print:border-outline-gray-2">
             <table class="w-full text-left text-sm border-collapse">
               <thead class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
                 <tr>
@@ -650,8 +650,8 @@
             </table>
           </div>
 
-          <!-- Mobile Line Items (< 768px, Hidden on print) -->
-          <div class="md:hidden space-y-3 print:hidden">
+          <!-- Mobile & Tablet Line Items (< 1024px, Hidden on print) -->
+          <div class="lg:hidden space-y-3 print:hidden">
             <div
               v-for="(item, idx) in invoice.items"
               :key="item.id || idx"

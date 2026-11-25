@@ -21,7 +21,7 @@
       </template>
     </LayoutHeader>
 
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-6 animate-pulse">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-6 animate-pulse">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div v-for="i in 3" :key="i" class="h-44 rounded-xl bg-surface-base border border-outline-gray-1 p-5 space-y-3">
           <div class="h-3 w-28 rounded bg-surface-gray-2 dark:bg-surface-gray-1" />
@@ -113,7 +113,7 @@
     </LayoutHeader>
 
     <!-- Body Layout with Safe Mobile Clearance -->
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-6">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-6">
       <!-- Pending Verification Banner (if change request is pending) -->
       <div
         v-if="pendingChangeRequest"
@@ -318,8 +318,8 @@
           </div>
         </div>
 
-        <!-- Desktop View (>= 768px) -->
-        <div class="hidden md:block overflow-x-auto">
+        <!-- Desktop View (>= 1024px) -->
+        <div class="hidden lg:block overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
@@ -401,8 +401,8 @@
           </table>
         </div>
 
-        <!-- Mobile Adaptive Cards View (< 768px) -->
-        <div class="md:hidden divide-y divide-outline-gray-1">
+        <!-- Mobile & Tablet Adaptive Cards View (< 1024px) -->
+        <div class="lg:hidden divide-y divide-outline-gray-1">
           <div
             v-for="inv in clientInvoices"
             :key="inv.id"

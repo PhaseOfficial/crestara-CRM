@@ -27,7 +27,7 @@
       <!-- Right Action & Progress -->
       <div class="flex items-center gap-4 self-end sm:self-center">
         <!-- Progress Bar -->
-        <div class="hidden md:flex flex-col items-end gap-1 w-32">
+        <div class="hidden lg:flex flex-col items-end gap-1 w-32">
           <span class="text-[11px] font-bold font-mono text-ink-gray-7 dark:text-ink-gray-6">{{ business.onboardingPercentage }}%</span>
           <div class="w-full bg-surface-gray-2 dark:bg-surface-gray-1 h-1.5 rounded-full overflow-hidden border border-outline-gray-1">
             <div

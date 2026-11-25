@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-base/95 backdrop-blur border-t border-outline-gray-1 px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg flex items-center justify-around"
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-base/95 backdrop-blur border-t border-outline-gray-1 px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg flex items-center justify-around"
     aria-label="Staff mobile bottom navigation"
   >
     <!-- Top 4 Dynamic Most-Used Tabs -->

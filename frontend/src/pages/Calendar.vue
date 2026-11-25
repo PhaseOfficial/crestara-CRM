@@ -18,7 +18,7 @@
       </ShortcutTooltip>
     </template>
   </LayoutHeader>
-  <div class="flex flex-col md:flex-row flex-1 h-[calc(100vh-7.5rem)] md:h-[calc(100vh-3.5rem)] overflow-hidden w-full relative">
+  <div class="flex flex-col lg:flex-row flex-1 h-[calc(100vh-7.5rem)] lg:h-[calc(100vh-3.5rem)] overflow-hidden w-full relative">
     <Calendar
       ref="calendar"
       class="flex-1 overflow-hidden"

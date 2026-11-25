@@ -41,7 +41,7 @@
     </LayoutHeader>
 
     <!-- Canvas with Safe Mobile Bottom Nav Clearance -->
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-12 md:pb-8 space-y-6 max-w-5xl w-full mx-auto">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-20 lg:pb-8 space-y-6 max-w-5xl w-full mx-auto">
       <!-- Company Information Card -->
       <div class="bg-surface-base rounded-xl border border-outline-gray-1 p-5 sm:p-6 shadow-sm space-y-4">
         <div>
@@ -440,8 +440,8 @@
           </div>
         </div>
 
-        <!-- Desktop Staff Table (>= 768px) -->
-        <div class="hidden md:block border border-outline-gray-1 rounded-lg overflow-hidden overflow-x-auto">
+        <!-- Desktop Staff Table (>= 1024px) -->
+        <div class="hidden lg:block border border-outline-gray-1 rounded-lg overflow-hidden overflow-x-auto">
           <table class="w-full text-left text-sm border-collapse">
             <thead>
               <tr class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
@@ -502,8 +502,8 @@
           </table>
         </div>
 
-        <!-- Mobile Adaptive Cards View (< 768px) -->
-        <div class="md:hidden border border-outline-gray-1 rounded-lg divide-y divide-outline-gray-1 overflow-hidden">
+        <!-- Mobile & Tablet Adaptive Cards View (< 1024px) -->
+        <div class="lg:hidden border border-outline-gray-1 rounded-lg divide-y divide-outline-gray-1 overflow-hidden">
           <div
             v-for="user in filteredStaffUsers"
             :key="user.id"

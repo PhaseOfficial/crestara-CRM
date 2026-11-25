@@ -21,7 +21,7 @@
           </div>
 
           <!-- Desktop Navigation Links -->
-          <nav class="hidden md:flex space-x-1">
+          <nav class="hidden lg:flex space-x-1">
             <router-link
               v-for="item in navItems"
               :key="item.to"
@@ -81,7 +81,7 @@
 
             <!-- Mobile menu button -->
             <button
-              class="md:hidden p-2 rounded-md text-ink-gray-7 dark:text-ink-gray-6 hover:text-ink-gray-9 hover:bg-surface-gray-2"
+              class="lg:hidden p-2 rounded-md text-ink-gray-7 dark:text-ink-gray-6 hover:text-ink-gray-9 hover:bg-surface-gray-2"
               @click="mobileMenuOpen = !mobileMenuOpen"
             >
               <span :class="mobileMenuOpen ? 'lucide-x' : 'lucide-menu'" class="size-5" />
@@ -91,7 +91,7 @@
       </div>
 
       <!-- Mobile drawer links -->
-      <div v-if="mobileMenuOpen" class="md:hidden border-t border-outline-gray-1 px-4 pt-2 pb-3 space-y-1 bg-surface-base shadow-lg">
+      <div v-if="mobileMenuOpen" class="lg:hidden border-t border-outline-gray-1 px-4 pt-2 pb-3 space-y-1 bg-surface-base shadow-lg">
         <router-link
           v-for="item in navItems"
           :key="item.to"
@@ -120,7 +120,7 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6">
       <slot />
     </main>
 
@@ -134,7 +134,7 @@
     <CustomerBottomNav />
 
     <!-- Footer -->
-    <footer class="bg-surface-base border-t border-outline-gray-1 py-4 text-center text-xs text-ink-gray-6 dark:text-ink-gray-5 pb-20 md:pb-4">
+    <footer class="bg-surface-base border-t border-outline-gray-1 py-4 text-center text-xs text-ink-gray-6 dark:text-ink-gray-5 pb-20 lg:pb-4">
       <div class="max-w-7xl mx-auto px-4">
         © {{ new Date().getFullYear() }} {{ business.settings.business_name }}. {{ __('Customer Workspace') }}
       </div>

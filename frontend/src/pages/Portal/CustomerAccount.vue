@@ -215,8 +215,8 @@
         </span>
       </div>
 
-      <!-- Desktop View (>= 768px) -->
-      <div class="hidden md:block overflow-x-auto">
+      <!-- Desktop View (>= 1024px) -->
+      <div class="hidden lg:block overflow-x-auto">
         <table class="w-full text-left border-collapse text-sm">
           <thead class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
             <tr>
@@ -295,8 +295,8 @@
         </table>
       </div>
 
-      <!-- Mobile Adaptive Cards (< 768px) -->
-      <div class="md:hidden divide-y divide-outline-gray-1">
+      <!-- Mobile & Tablet Adaptive Cards (< 1024px) -->
+      <div class="lg:hidden divide-y divide-outline-gray-1">
         <div
           v-for="req in customerRequests"
           :key="req.id"

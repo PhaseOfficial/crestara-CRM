@@ -11,8 +11,8 @@
 
     <!-- Invoices List & Mobile Adaptive Cards -->
     <div class="bg-surface-base rounded-xl border border-outline-gray-1 overflow-hidden shadow-sm">
-      <!-- Desktop Table (>= 768px) -->
-      <div class="hidden md:block overflow-x-auto">
+      <!-- Desktop Table (>= 1024px) -->
+      <div class="hidden lg:block overflow-x-auto">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
             <tr class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-7 dark:text-ink-gray-6 uppercase tracking-wider">
@@ -88,8 +88,8 @@
         </table>
       </div>
 
-      <!-- Mobile Adaptive Cards View (< 768px) -->
-      <div class="md:hidden divide-y divide-outline-gray-1">
+      <!-- Mobile & Tablet Adaptive Cards View (< 1024px) -->
+      <div class="lg:hidden divide-y divide-outline-gray-1">
         <div
           v-for="inv in invoices"
           :key="inv.id"

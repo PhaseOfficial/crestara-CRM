@@ -14,7 +14,7 @@
       </template>
     </LayoutHeader>
 
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6 space-y-6">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-6">
       <!-- Low Stock Alert Banner -->
       <div v-if="!dismissAlert && business.lowStockItems.length" class="bg-surface-amber-2 dark:bg-amber-950/40 border border-outline-amber-2 dark:border-amber-800/60 rounded-xl p-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -63,8 +63,8 @@
 
       <!-- Inventory Table & Mobile Adaptive Cards -->
       <div class="bg-surface-base rounded-xl border border-outline-gray-1 overflow-hidden shadow-sm">
-        <!-- Desktop Table (>= 768px) -->
-        <div class="hidden md:block overflow-x-auto">
+        <!-- Desktop Table (>= 1024px) -->
+        <div class="hidden lg:block overflow-x-auto">
           <table class="w-full text-left border-collapse text-sm">
             <thead>
               <tr class="bg-surface-gray-1 border-b border-outline-gray-1 text-xs font-semibold text-ink-gray-6 uppercase tracking-wider">
@@ -186,8 +186,8 @@
           </table>
         </div>
 
-        <!-- Mobile Adaptive Cards View (< 768px) -->
-        <div class="md:hidden divide-y divide-outline-gray-1">
+        <!-- Mobile & Tablet Adaptive Cards View (< 1024px) -->
+        <div class="lg:hidden divide-y divide-outline-gray-1">
           <div
             v-for="item in filteredInventory"
             :key="item.id"
